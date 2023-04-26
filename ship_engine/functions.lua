@@ -5,8 +5,9 @@ ship_engine.engine_enabled = function(meta)
     return meta:get_int("enabled") == 1
 end
 
-local function round(v)
-    return math.floor(v + 0.5)
+local function round(number, steps)
+    steps = steps or 1
+    return math.floor(number * steps + 0.5) / steps
 end
 
 function ship_engine.update_formspec(data, running, enabled, has_mese, percent, charge, charge_max)
@@ -16,11 +17,12 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
     local tier = data.tier
     local ltier = string.lower(tier)
     local formspec = nil
+    percent = round(percent, 2)
 
     if typename == 'engine' then
         local charge_percent = 0
         if charge and charge > 0 and charge_max then
-            charge_percent = (math.floor(charge / round(charge_max) * 100 * 100) / 100)
+            charge_percent = (math.floor(charge / (charge_max) * 100 * 100) / 100)
         end
         local btnName = "State: "
         if enabled then
@@ -50,7 +52,7 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
     if typename == 'engine_core' then
         local charge_percent = 0
         if charge and charge > 0 and charge_max then
-            charge_percent = (math.floor(charge / round(charge_max) * 100 * 100) / 100)
+            charge_percent = round(math.floor(charge / (charge_max) * 100 * 100) / 100, 2)
         end
         if charge == nil then
             charge = 0

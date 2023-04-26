@@ -122,6 +122,17 @@ function ship_engine.register_engine(data)
     end
 
     local tube = {
+        insert_object = function(pos, node, stack, direction)
+            local meta = minetest.get_meta(pos)
+            local inv = meta:get_inventory()
+            local added = inv:add_item("src", stack)
+            return added
+        end,
+        can_insert = function(pos, node, stack, direction)
+            local meta = minetest.get_meta(pos)
+            local inv = meta:get_inventory()
+            return inv:room_for_item("src", stack)
+        end,
         connect_sides = {
             front = 1,
             left = 1,
@@ -132,6 +143,11 @@ function ship_engine.register_engine(data)
         }
     }
     data.tube = tube
+    
+    if data.tube then
+        groups.tubedevice = 1
+        groups.tubedevice_receiver = 1
+    end
 
     if data.can_insert then
         tube.can_insert = data.can_insert
@@ -275,6 +291,16 @@ function ship_engine.register_engine(data)
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
             return technic.machine_after_dig_node
+        end,
+        on_push_item = function(pos, dir, item)
+            local tube_dir = minetest.get_meta(pos):get_int("tube_dir")
+            if dir == tubelib2.Turn180Deg[tube_dir] then
+                local s = minetest.get_meta(pos):get_string("peer_pos")
+                if s and s ~= "" then
+                    push_item(minetest.string_to_pos(s))
+                    return true
+                end
+            end
         end,
         on_rotate = screwdriver.disallow,
         can_dig = technic.machine_can_dig,

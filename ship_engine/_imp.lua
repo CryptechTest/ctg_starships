@@ -9,7 +9,7 @@ if event.type == "program" or event.type == "on" then
     digiline_send("timer2", "1")
     digiline_send("timer2", "loop_on")
 
-    digiline_send("disp1", "System\nBooted...")
+    digiline_send("disp1", "System\nBooted...\n\nWaiting\nCharge..")
     digiline_send("disp2", "...")
     digiline_send("disp3", " \n ")
     digiline_send("disp4", " \n \nLoading...\n \n \n ")
@@ -52,7 +52,7 @@ if event.type == "digiline" and event.channel == "timer1" and event.msg == "done
 end
 
 if event.type == "digiline" and event.channel == "timer2" and event.msg == "done" then
-    digiline_send("disp2", "tick")
+    --digiline_send("disp2", "tick")
 
     digiline_send("ram1", {
         command = "read",
@@ -85,8 +85,12 @@ if event.type == "digiline" then
             address = 0,
             data = tostring(tonumber(event.msg) + 1)
         })
-        digiline_send("disp2", "" .. event.msg)
-
+        local message = "" -- event.msg
+        -- digiline_send("disp2", "" .. message)
+        if tonumber(event.msg) > 3 then 
+            local time = os.datetable()
+            digiline_send("disp2", time.hour .. ":" .. time.min .. ":" .. time.sec)
+        end
     end
 
     if event.channel == "ship_scout" and event.msg.command == "dest" then
@@ -120,7 +124,8 @@ if event.type == "digiline" then
             message = message .. "STATUS: " .. 'OFF\n'
         end
         if event.msg.charge > 0 then
-            message = message .. "CHRG: " .. round(tostring((event.msg.charge / event.msg.charge_max) * 100), 2) .. "%"
+            message = message .. "CHRG: " .. tostring(round((event.msg.charge / event.msg.charge_max) * 100, 100)) ..
+                          "%"
         else
             message = message .. "CHRG: 0%"
         end
@@ -146,10 +151,13 @@ if event.type == "digiline" then
         end
         if event.msg.charge > 0 then
             digiline_send("disp4",
-                "CHRG: " .. round(tostring((event.msg.charge / event.msg.charge_max) * 100), 2) .. "%")
+                "CHRG: " .. tostring(round((event.msg.charge / event.msg.charge_max) * 100, 100)) .. "%")
         else
             digiline_send("disp4", "CHRG: 0%")
         end
+
+        mem.eng1_charge = event.msg.charge
+        mem.eng1_charge_m = event.msg.charge_max
 
         -- local chrg_r = event.msg.charge
         -- digiline_send("ram1", {command = "write", address = "0", data = chrg_r})
@@ -173,10 +181,14 @@ if event.type == "digiline" then
             })
         end
         if event.msg.charge > 0 then
-            digiline_send("disp4", "CHRG: " .. tostring((event.msg.charge / event.msg.charge_max) * 100) .. "%")
+            digiline_send("disp4",
+                "CHRG: " .. tostring(round((event.msg.charge / event.msg.charge_max) * 100, 100)) .. "%")
         else
             digiline_send("disp4", "CHRG: 0%")
         end
+
+        mem.eng2_charge = event.msg.charge
+        mem.eng2_charge_m = event.msg.charge_max
 
         -- local chrg_l = event.msg.charge
         -- digiline_send("ram1", {command = "write", address = "1", data = chrg_l})
