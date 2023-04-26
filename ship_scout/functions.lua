@@ -1,0 +1,71 @@
+local S = minetest.get_translator(minetest.get_current_modname())
+
+local function round(v)
+    return math.floor(v + 0.5)
+end
+
+function ship_scout.update_formspec(data, loc, ready, message)
+    local machine_name = data.machine_name
+    local machine_desc = "Starship Nav Interface"
+    local typename = data.typename
+    local tier = data.tier
+    local ltier = string.lower(tier)
+    local formspec = nil
+
+    if typename == 'ship_scout' then
+
+        local bg = "image[0,0.5;9.78,6.5;starfield_2.png]image[5,3.25;2.2,0.88;bg2.png]"
+
+        local icon_fan = "image[5,1;1,1;icon_fan.png]"
+        local icon_env = "image[6,1;1,1;icon_life_support.png]"
+        local icon_eng = "image[5,2;1,1;lv_engine_front_active.png]"
+        local icon_lit = "image[6,2;1,1;icon_light.png]"
+
+        local img_ship = "image[2,2;1,1;starship_icon.png]"
+        local img_hole_1 = "image_button[2,1;1,1;space_wormhole1.png;btn_hole_1;;true;false;space_wormhole2.png]" -- top
+        local img_hole_2 = "image_button[2,3;1,1;space_wormhole1.png;btn_hole_2;;true;false;space_wormhole2.png]" -- bottom
+        local img_hole_3 = "image_button[1,2;1,1;space_wormhole1.png;btn_hole_3;;true;false;space_wormhole2.png]" -- left
+        local img_hole_4 = "image_button[3,2;1,1;space_wormhole1.png;btn_hole_4;;true;false;space_wormhole2.png]" -- right
+        local btn_nav = "button[5,4;2,1;submit_nav;Make it so]"
+        local dest = ""
+        local busy = ""
+
+        if loc == "1" then
+            img_hole_1 = "image_button[2,1;1,1;space_wormhole2.png;btn_hole_1;;true;false]"
+            dest = "Forward"
+        elseif loc == "2" then
+            img_hole_2 = "image_button[2,3;1,1;space_wormhole2.png;btn_hole_2;;true;false]"
+            dest = "Backward"
+        elseif loc == "3" then
+            img_hole_3 = "image_button[1,2;1,1;space_wormhole2.png;btn_hole_3;;true;false]"
+            dest = "Left"
+        elseif loc == "4" then
+            img_hole_4 = "image_button[3,2;1,1;space_wormhole2.png;btn_hole_4;;true;false]"
+            dest = "Right"
+        else
+            dest = "None"
+        end
+        local nav_label = "label[5.07,3.2;Destination:]" .. "label[5.07,3.5;" .. dest .. "]"
+        local busy_bg = "image[0.42,4.15;5.0,0.6;bg2.png]"
+
+        if message ~= nil and message and string.len(message) > 0 then
+            busy = busy_bg .. "label[0.5,4.2;" .. minetest.colorize('#f0ce37', message) .. "]"
+        end
+
+        if ready and ready > 0 then
+            img_hole_1 = ""
+            img_hole_2 = ""
+            img_hole_3 = ""
+            img_hole_4 = ""
+            btn_nav = "label[5,4;" .. minetest.colorize('#8c8c8c', "Interace Locked") .. "]"
+            local lbl = minetest.colorize('#ffa600', "Preparing for FTL jump...")
+            busy = busy_bg .. "label[0.5,4.2;" .. lbl .. "]"
+        end
+
+        formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
+                       machine_desc:format(tier) .. "]" .. btn_nav .. img_ship .. img_hole_1 .. img_hole_2 .. img_hole_3 ..
+                       img_hole_4 .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit .. busy .. message
+    end
+
+    return formspec
+end
