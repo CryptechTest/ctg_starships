@@ -17,12 +17,14 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
     local tier = data.tier
     local ltier = string.lower(tier)
     local formspec = nil
-    percent = round(percent, 2)
+    if percent then
+        percent = round(percent, 100)
+    end
 
     if typename == 'engine' then
         local charge_percent = 0
         if charge and charge > 0 and charge_max then
-            charge_percent = (math.floor(charge / (charge_max) * 100 * 100) / 100)
+            charge_percent = round(math.floor(charge / (charge_max) * 100 * 100) / 100, 100)
         end
         local btnName = "State: "
         if enabled then
