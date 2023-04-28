@@ -44,7 +44,6 @@ function ship_machine.update_formspec(data, running, enabled, has_mese, percent,
         else
             btnName = btnName .. "<Disabled>"
         end
-
         local image = "image[4,1;1,1;" .. "lv_gravity_drive.png" .. "]"
         if running then
             image = "image[4,1;1,1;" .. "lv_gravity_drive_active_icon.png" .. "]"
@@ -53,11 +52,19 @@ function ship_machine.update_formspec(data, running, enabled, has_mese, percent,
         if has_mese or running then
             meseimg = "animated_image[5,1;1,1;;" .. "engine_mese_anim.png" .. ";4;400;]"
         end
-        formspec = "size[8,5;]" .. "label[0,0;" .. machine_desc:format(tier) .. "]" .. image .. meseimg ..
+        local act_msg = ""
+        if running and charge_percent >= 100 then
+            act_msg = "image[2,4;4.75,1;gravity_active.png]"
+        elseif running then
+            act_msg = "image[2,4;4.75,1;gravity_offline.png]"
+        end
+        formspec = "formspec_version[3]" .. "size[8,5;]" .. "real_coordinates[false]" .. "label[0,0;" ..
+                       machine_desc:format(tier) .. "]" .. image .. meseimg ..
                        "image[3,1;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
                        ":gui_furnace_arrow_fg.png^[transformR270]" .. "image[2,1;1,1;" .. ship_machine.mese_image_mask ..
                        "]" .. "button[2,3;4,1;toggle;" .. btnName .. "]" .. "label[2,2;Charge " .. tostring(charge) ..
-                       " of " .. tostring(charge_max) .. "]" .. "label[5,2;" .. tostring(charge_percent) .. "%" .. "]"
+                       " of " .. tostring(charge_max) .. "]" .. "label[5,2;" .. tostring(charge_percent) .. "%" .. "]" ..
+                       act_msg
     end
 
     if data.upgrade then
@@ -111,7 +118,7 @@ ship_machine.apply_gravity = function(_pos, grav)
                         z = _pos.z
                     }
                     -- check if beyond lessor y
-                    if not (pos.y - 1 < _pos.y and get_distance(_pos, pos_center) >= 1) then
+                    if not (pos.y - 1 < _pos.y and get_distance(_pos, pos_center) > 5) then
                         -- get node below
                         local pos_below_1 = {
                             x = pos.x,

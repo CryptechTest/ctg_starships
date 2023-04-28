@@ -1,6 +1,6 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
-local time_scl = 10
+local time_scl = 25
 
 local function round(v)
     return math.floor(v + 0.5)
@@ -19,6 +19,7 @@ function ship_machine.register_engine(data)
     local machine_name = data.machine_name
     local machine_desc = data.machine_desc
     local tmachine_name = string.lower(machine_name)
+    local gen_reset_tick = 0
 
     local groups = {
         cracky = 2,
@@ -73,6 +74,9 @@ function ship_machine.register_engine(data)
         tube.insert_object = data.insert_object
     end
 
+    -------------------------------------------------------
+
+    -- technic run
     local run = function(pos, node)
         local meta = minetest.get_meta(pos)
         local inv = meta:get_inventory()
@@ -80,14 +84,15 @@ function ship_machine.register_engine(data)
 
         local machine_desc_tier = machine_desc:format(tier)
         local machine_node = data.modname .. ":" .. ltier .. "_" .. machine_name
-        local machine_demand = data.demand
+        local machine_demand_active = data.demand
+        local machine_demand_idle = data.demand[1] * 0.6
 
         local charge_max = meta:get_int("charge_max")
         local charge = meta:get_int("charge")
 
         -- Setup meta data if it does not exist.
         if not eu_input then
-            meta:set_int(tier .. "_EU_demand", machine_demand[1])
+            meta:set_int(tier .. "_EU_demand", machine_demand_active[1])
             meta:set_int(tier .. "_EU_input", 0)
             return
         end
@@ -105,7 +110,7 @@ function ship_machine.register_engine(data)
             technic.handle_machine_pipeworks(pos, tube_upgrade)
         end
 
-        local powered = eu_input >= machine_demand[EU_upgrade + 1]
+        local powered = eu_input >= machine_demand_active[EU_upgrade + 1]
         if powered then
             meta:set_int("src_time", meta:get_int("src_time") + round(data.speed * 10 * 1.0))
         end
@@ -119,18 +124,22 @@ function ship_machine.register_engine(data)
                 meta:set_int("src_time", 0)
                 local formspec = ship_machine.update_formspec(data, false, enabled, false, 0, charge, charge_max)
                 meta:set_string("formspec", formspec)
-                ship_machine.reset_generator(meta)
+                gen_reset_tick = gen_reset_tick + 1
+                if gen_reset_tick >= 3 then
+                    ship_machine.reset_generator(meta)
+                    gen_reset_tick = 0
+                end
                 return
             end
 
             local has_mese = true
             technic.swap_node(pos, machine_node .. "_active")
-            meta:set_int(tier .. "_EU_demand", machine_demand[EU_upgrade + 1])
+            meta:set_int(tier .. "_EU_demand", machine_demand_active[EU_upgrade + 1])
 
             if not needs_charge(pos) then
                 technic.swap_node(pos, machine_node .. "_active")
-                meta:set_string("infotext", S("%s Operational - Charged!"):format(machine_desc_tier))
-                meta:set_int(tier .. "_EU_demand", 0)
+                meta:set_string("infotext", S("%s Operational - Charged"):format(machine_desc_tier))
+                meta:set_int(tier .. "_EU_demand", machine_demand_idle)
                 meta:set_int("src_time", 0)
                 local formspec = ship_machine.update_formspec(data, true, enabled, has_mese, 0, charge, charge_max)
                 meta:set_string("formspec", formspec)
@@ -171,10 +180,13 @@ function ship_machine.register_engine(data)
         end
     end
 
+    -------------------------------------------------------
+    -- register machine node
+
     local node_name = data.modname .. ":" .. ltier .. "_" .. machine_name
     minetest.register_node(node_name .. "", {
         description = machine_desc,
-        tiles = {ltier .. "_" .. tmachine_name .. ".png", ltier .. "_" .. tmachine_name .. "_bottom.png",
+        tiles = {ltier .. "_" .. tmachine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_bottom.png",
                  ltier .. "_" .. tmachine_name .. ".png", ltier .. "_" .. tmachine_name .. ".png",
                  ltier .. "_" .. tmachine_name .. ".png", ltier .. "_" .. tmachine_name .. ".png"},
         paramtype2 = "facedir",
@@ -256,22 +268,31 @@ function ship_machine.register_engine(data)
         }
     })
 
+    local texture_active_top = {
+        image = ltier .. "_" .. machine_name .. "_top_active.png",
+        animation = {
+            type = "vertical_frames",
+            aspect_w = 32,
+            aspect_h = 32,
+            length = 3
+        }
+    }
     local texture_active = {
         image = ltier .. "_" .. machine_name .. "_active.png",
         animation = {
             type = "vertical_frames",
             aspect_w = 32,
             aspect_h = 32,
-            length = 4
+            length = 3
         }
     }
 
     minetest.register_node(node_name .. "_active", {
         description = machine_desc,
-        tiles = {texture_active, ltier .. "_" .. tmachine_name .. "_bottom.png", texture_active, texture_active,
+        tiles = {texture_active_top, ltier .. "_" .. tmachine_name .. "_bottom.png", texture_active, texture_active,
                  texture_active, texture_active},
         param = "light",
-        --paramtype2 = "facedir",
+        -- paramtype2 = "facedir",
         light_source = 8,
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = active_groups,
@@ -339,28 +360,4 @@ function ship_machine.register_engine(data)
     technic.register_machine(tier, node_name .. "_active", technic.receiver)
 
 end
-
-local function register_lv_drive(data)
-    data.modname = "ship_machine"
-    data.charge_max = 16
-    data.speed = 2
-    data.tier = "LV"
-    data.typename = "gravity_drive"
-    ship_machine.register_engine(data)
-end
-
-register_lv_drive({
-    machine_name = "gravity_drive_lite",
-    machine_desc = "Gravity Generator Lite",
-    demand = {1000},
-    gravity = 0.7,
-    engine_digiline_effector = ship_machine.gravity_drive_digiline_effector
-})
-register_lv_drive({
-    machine_name = "gravity_drive",
-    machine_desc = "Gravity Generator",
-    demand = {2000},
-    gravity = 0.92,
-    engine_digiline_effector = ship_machine.gravity_drive_digiline_effector
-})
 
