@@ -317,7 +317,7 @@ function ship_machine.load_jumpship(pos, player, ship_name)
             y = pos.y,
             z = pos.z
         },
-        moveObj = true
+        moveObj = false
     })
 
     minetest.chat_send_player(player:get_player_name(), "Loading Jumpship...")
