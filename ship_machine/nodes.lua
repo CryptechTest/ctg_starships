@@ -26,3 +26,5 @@ register_lv_drive({
     speed = 5,
     engine_digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
 })
+
+ship_machine.register_jumpship({})
