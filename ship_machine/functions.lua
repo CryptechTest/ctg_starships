@@ -260,11 +260,12 @@ function ship_machine.transport_jumpship(pos, dest, size, player)
     if save then
         -- load the schematic from file..
         local lmeta = schemlib.load_emitted({
-            filename = ship_name
+            filename = ship_name,
+            moveObj = true
         })
     else
         -- load the schematic from cache..
-        local count, ver, lmeta = schemlib.process_emitted(nil, nil, sdata)
+        local count, ver, lmeta = schemlib.process_emitted(nil, nil, sdata, true)
     end
 
     minetest.chat_send_player(player:get_player_name(), "Jumping in... 3")
@@ -315,7 +316,8 @@ function ship_machine.load_jumpship(pos, player, ship_name)
             x = pos.x,
             y = pos.y,
             z = pos.z
-        }
+        },
+        moveObj = true
     })
 
     minetest.chat_send_player(player:get_player_name(), "Loading Jumpship...")
