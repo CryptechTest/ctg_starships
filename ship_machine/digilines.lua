@@ -111,6 +111,28 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
         return
     end
 
+    minetest.log(dump(msg))
+    if msg.command == 'jump' then
+        if (not msg.dest) then
+            return
+        end
+        minetest.log(dump(msg.dest))
+        local meta = minetest.get_meta(pos)
+        local owner = meta:get_string("owner")
+        local size = {
+            w = 20,
+            h = 18,
+            l = 34
+        }
+        if ship_machine.check_engines_charged(pos) then
+            digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', {
+                command = 'jumping'
+            })
+            ship_machine.engines_charged_spend(pos)
+            ship_machine.transport_jumpship(pos, msg.dest, size, owner)
+        end
+    end
+
     if msg.command == "enable" then
         local meta = minetest.get_meta(pos)
         meta:set_int("enabled", 1)

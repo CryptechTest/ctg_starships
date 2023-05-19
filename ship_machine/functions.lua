@@ -227,7 +227,97 @@ minetest.register_globalstep(function(dtime)
 
 end)
 
-function ship_machine.transport_jumpship(pos, dest, size, player)
+local function do_particles(pos)
+    local prt = {
+        texture = "ctg_jetpack_vapor_cloud.png",
+        texture_r180 = "ctg_jetpack_vapor_cloud.png" .. "^[transformR180",
+        vel = 0.6,
+        time = 7,
+        size = 6,
+        glow = 3,
+        cols = false
+    }
+    local exm = pos
+    exm.y = exm.y + 1.5
+    local rx = math.random(-0.01, 0.01) * 0.5
+    local rz = math.random(-0.01, 0.01) * 0.5
+    local texture = prt.texture
+    if (math.random() >= 0.6) then
+        texture = prt.texture_r180
+    end
+    local v = vector.new()
+    minetest.add_particle({
+        pos = exm,
+        velocity = {
+            x = rx,
+            y = prt.vel * -math.random(0.2 * 100, 0.7 * 100) / 100,
+            z = rz
+        },
+        minacc = {
+            x = -0.02,
+            y = -0.05,
+            z = -0.02
+        },
+        maxacc = {
+            x = 0.02,
+            y = -0.03,
+            z = 0.02
+        },
+        expirationtime = ((math.random() / 5) + 0.25) * prt.time,
+        size = ((math.random()) * 7 + 0.1) * prt.size,
+        collisiondetection = prt.cols,
+        vertical = false,
+        texture = texture,
+        glow = prt.glow
+    })
+end
+
+local function do_particle_tele(pos)
+    local prt = {
+        texture = "teleport_effect01.png",
+        texture_r180 = "teleport_effect01.png" .. "^[transformR180",
+        vel = 13,
+        time = 4,
+        size = 5,
+        glow = 7,
+        cols = false
+    }
+    local exm = pos
+    exm.y = exm.y - 2.5
+    local rx = math.random(-0.01, 0.01) * 0.1
+    local rz = math.random(-0.01, 0.01) * 0.1
+    local texture = prt.texture
+    if (math.random() >= 0.6) then
+        texture = prt.texture_r180
+    end
+    local v = vector.new()
+    minetest.add_particle({
+        pos = exm,
+        velocity = {
+            x = rx,
+            y = prt.vel * math.random(0.2 * 100, 0.7 * 100) / 100,
+            z = rz
+        },
+        minacc = {
+            x = -0.02,
+            y = 0.05,
+            z = -0.02
+        },
+        maxacc = {
+            x = 0.02,
+            y = 0.03,
+            z = 0.02
+        },
+        expirationtime = ((math.random() / 5) + 0.25) * prt.time,
+        size = ((math.random()) * 7 + 0.1) * prt.size,
+        collisiondetection = prt.cols,
+        vertical = false,
+        texture = texture,
+        glow = prt.glow
+    })
+end
+
+function ship_machine.transport_jumpship(pos, dest, size, owner)
     local save = false
     local flags = {
         file_cache = save,
@@ -235,8 +325,7 @@ function ship_machine.transport_jumpship(pos, dest, size, player)
         keep_meta = true,
         origin_clear = false
     }
-    local ship_name = "test"
-    local owner = player:get_player_name()
+    local ship_name = "jumpship_1_" .. owner
     -- save to cache
     local sdata = schemlib.emit({
         filename = ship_name,
@@ -268,7 +357,38 @@ function ship_machine.transport_jumpship(pos, dest, size, player)
         local count, ver, lmeta = schemlib.process_emitted(nil, nil, sdata, true)
     end
 
-    minetest.chat_send_player(player:get_player_name(), "Jumping in... 3")
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+
+    -- get cube of area nearby
+    local objects = minetest.get_objects_in_area(pos1, pos2) or {}
+    for _, obj in pairs(objects) do
+        if (obj) then
+            for i = 1, 5 do
+                minetest.after(i, function()
+                    for i = 1, 20 do
+                        local p = {
+                            x = obj:get_pos().x + math.random(-6, 6),
+                            y = obj:get_pos().y + math.random(-2, 4),
+                            z = obj:get_pos().z + math.random(-6, 6)
+                        }
+                        -- do_particles(p)
+                        do_particle_tele(p)
+                    end
+                end)
+            end
+        end
+    end
+
+    --[[minetest.chat_send_player(player:get_player_name(), "Jumping in... 3")
     minetest.after(1, function()
         minetest.chat_send_player(player:get_player_name(), "Jumping in... 2")
     end)
@@ -277,7 +397,7 @@ function ship_machine.transport_jumpship(pos, dest, size, player)
     end)
     minetest.after(3, function()
         minetest.chat_send_player(player:get_player_name(), "Jumping...")
-    end)
+    end)--]]
 end
 
 -- save to file
@@ -321,4 +441,95 @@ function ship_machine.load_jumpship(pos, player, ship_name)
     })
 
     minetest.chat_send_player(player:get_player_name(), "Loading Jumpship...")
+end
+
+function ship_machine.check_engines_charged(pos)
+    local sz = 28
+    local pos1 = vector.subtract(pos, {
+        x = sz,
+        y = sz,
+        z = sz
+    })
+    local pos2 = vector.add(pos, {
+        x = sz,
+        y = sz,
+        z = sz
+    })
+
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:ship_engine")
+
+    if #nodes == 2 then
+
+        local eng1 = minetest.get_meta(nodes[1])
+        local eng2 = minetest.get_meta(nodes[2])
+
+        local charge1 = eng1:get_int('charge')
+        local charge2 = eng2:get_int('charge')
+
+        local charge_max1 = eng1:get_int('charge_max')
+        local charge_max2 = eng2:get_int('charge_max')
+
+        local charged1 = false
+        local charged2 = false
+        if (charge1 >= charge_max1) then
+            charged1 = true
+        end
+        if (charge2 >= charge_max2) then
+            charged2 = true
+        end
+
+        if charged1 and charged2 then
+            return true
+        end
+    end
+    return false
+end
+
+function ship_machine.engines_charged_spend(pos)
+    local sz = 28
+    local pos1 = vector.subtract(pos, {
+        x = sz,
+        y = sz,
+        z = sz
+    })
+    local pos2 = vector.add(pos, {
+        x = sz,
+        y = sz,
+        z = sz
+    })
+
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:ship_engine")
+
+    if #nodes == 2 then
+
+        ship_engine.ship_jump(nodes[1])
+        ship_engine.ship_jump(nodes[2])
+
+        return true
+    end
+    return false
+end
+
+function ship_machine.perform_jump(pos)
+    local meta = minetest.get_meta(pos)
+    local owner = meta:get_string("owner")
+    local size = {
+        w = 18,
+        h = 10,
+        l = 30
+    }
+    local dest = {
+        x = pos.x + 500,
+        y = pos.y,
+        z = pos.z
+    }
+    if ship_machine.check_engines_charged(pos) == true then
+        digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', {
+            command = 'jumping'
+        })
+        ship_machine.engines_charged_spend(pos)
+        ship_machine.transport_jumpship(pos, dest, size, owner)
+        return true
+    end
+    return false
 end

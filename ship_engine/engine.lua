@@ -1,6 +1,7 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
-local time_scl = 20
+local time_tick = 50
+local time_scl = 50
 
 ship_engine.mese_image_mask = "default_mese_crystal.png^[colorize:#75757555"
 
@@ -8,75 +9,13 @@ local function round(v)
     return math.floor(v + 0.5)
 end
 
-local function get_mese(items, take)
-    if not items then
-        return nil
-    end
-    local new_input = nil
-    local input_type = ""
-    local c = 0;
-    for i, stack in ipairs(items) do
-        if stack:get_name() == 'default:mese_crystal_fragment' and stack:get_count() >= 9 then
-            new_input = ItemStack(stack)
-            if take then
-                new_input:take_item(9)
-            end
-            input_type = 9
-            c = c + 1
-            break
-        end
-        if stack:get_name() == 'default:mese_crystal_fragment' and stack:get_count() >= 1 then
-            new_input = ItemStack(stack)
-            if take then
-                new_input:take_item(1)
-            end
-            input_type = 1
-            c = c + 1
-            break
-        end
-        if stack:get_name() == 'default:mese_crystal' and stack:get_count() >= 1 then
-            new_input = ItemStack(stack)
-            if take then
-                new_input:take_item(1)
-            end
-            input_type = 9
-            c = c + 1
-            break
-        end
-        if stack:get_name() == 'default:mese' and stack:get_count() >= 1 then
-            new_input = ItemStack(stack)
-            if take then
-                new_input:take_item(1)
-            end
-            input_type = 81
-            c = c + 1
-            break
-        end
-    end
-    if (c > 0) then
-        return {
-            new_input = new_input,
-            input_type = input_type
-        }
-    else
-        return nil
-    end
-end
-
-local function needs_charge(pos)
-    local meta = minetest.get_meta(pos)
-    local charge = meta:get_int("charge")
-    local charge_max = meta:get_int("charge_max")
-    return charge < charge_max
-end
-
 local function out_result(pos, ninput, machine_node, machine_desc_tier, tier)
     local output = {}
     local meta = minetest.get_meta(pos)
     local inv = meta:get_inventory()
-    if ninput[1] and ninput[1].new_input then
-        inv:set_list("src", {ninput[1].new_input})
-        meta:set_int("last_input_type", ninput[1].input_type)
+    if ninput and ninput.new_input then
+        inv:set_list("src", {ninput.new_input})
+        meta:set_int("last_input_type", ninput.input_type)
         return true
     end
     return false
@@ -85,16 +24,17 @@ end
 local function out_results(pos, machine_node, machine_desc_tier, tier, do_use)
     local meta = minetest.get_meta(pos)
     local inv = meta:get_inventory()
-    local input1 = get_mese(inv:get_list("src"), do_use)
-    if needs_charge(pos) then
-        if (do_use) then
-            out_result(pos, {input1}, machine_node, machine_desc_tier, tier)
-        end
-        if input1 and input1.input_type then
-            return input1.input_type
+    local ninput = ship_engine.get_mese(inv:get_list("src"), do_use)
+    local result = -1
+    if (do_use) then
+        if out_result(pos, ninput, machine_node, machine_desc_tier, tier) then
+            result = 0
         end
     end
-    return 0
+    if ninput and ninput.input_type then
+        return ninput.input_type
+    end
+    return result
 end
 
 function ship_engine.register_engine(data)
@@ -143,7 +83,7 @@ function ship_engine.register_engine(data)
         }
     }
     data.tube = tube
-    
+
     if data.tube then
         groups.tubedevice = 1
         groups.tubedevice_receiver = 1
@@ -160,6 +100,11 @@ function ship_engine.register_engine(data)
         local meta = minetest.get_meta(pos)
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
+        local eu_supply = meta:get_int(tier .. "_EU_supply")
+
+        if not eu_supply then
+            meta:set_int(tier .. "_EU_supply", data.supply)
+        end
 
         local machine_desc_tier = machine_desc:format(tier)
         local machine_node = data.modname .. ":" .. ltier .. "_" .. machine_name
@@ -190,68 +135,98 @@ function ship_engine.register_engine(data)
 
         local powered = eu_input >= machine_demand[EU_upgrade + 1]
         if powered then
-            meta:set_int("src_time", meta:get_int("src_time") + round(data.speed * 10 * 1.0))
+            meta:set_int("src_time", meta:get_int("src_time") + round(data.speed * 10))
+        end
+        if meta:get_int('last_input_type') > 0 then
+            meta:set_int("src_time", meta:get_int("src_time") + round(data.speed * 10))
         end
         while true do
             local enabled = meta:get_int("enabled") == 1
+            local has_mese = ship_engine.get_mese(inv:get_list("src"), false) ~= nil
+            local chrg = meta:get_int('last_input_type')
 
             if (not enabled) then
                 technic.swap_node(pos, machine_node)
                 meta:set_string("infotext", S("%s Disabled"):format(machine_desc_tier))
                 meta:set_int(tier .. "_EU_demand", 0)
-                meta:set_int("src_time", 0)
-                local formspec = ship_engine.update_formspec(data, false, enabled, false, 0, charge, charge_max)
+                meta:set_int(tier .. "_EU_supply", 0)
+                --meta:set_int("src_time", 0)
+                local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max,
+                    eu_input, eu_supply)
                 meta:set_string("formspec", formspec)
                 return
             end
 
-            local has_mese = get_mese(inv:get_list("src"), false) ~= nil
-            if powered and meta:get_int("src_time") <= round(data.speed * 10 * 1.0) then
+            if meta:get_int("src_time") <= round(data.speed * 10.0 * 1) then
+                time_scl = time_tick * 1
+                local out_res = out_results(pos, machine_node, machine_desc_tier, ltier, has_mese)
                 if not has_mese then
                     technic.swap_node(pos, machine_node)
                     meta:set_string("infotext", S("%s Idle - Missing Input"):format(machine_desc_tier))
-                    meta:set_int(tier .. "_EU_demand", 0)
-                    meta:set_int("src_time", 0)
-                    local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max)
+                    meta:set_int(tier .. "_EU_supply", 0)
+                    meta:set_int("src_time", round(data.speed * 10))
+                    local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, 0, charge,
+                        charge_max, eu_input, eu_supply)
                     meta:set_string("formspec", formspec)
-                    return
-                end
-                if not out_results(pos, machine_node, machine_desc_tier, ltier, has_mese) then
+                elseif out_res then
                     technic.swap_node(pos, machine_node)
-                    meta:set_int("src_time", round(time_scl * 10))
-                    -- return
+                    meta:set_string("infotext", S("%s Energizing - Active Pending"):format(machine_desc_tier))
+                    meta:set_int("src_time", round(data.speed * 10))
+                    meta:set_int(tier .. "_EU_supply", data.supply)
+                    time_scl = time_tick * (out_res * 0.1)
                 end
+                -- return
             end
 
-            if not needs_charge(pos) then
-                technic.swap_node(pos, machine_node .. "_active")
-                meta:set_string("infotext", S("%s Idle - Charged!"):format(machine_desc_tier))
-                meta:set_int(tier .. "_EU_demand", 0)
-                meta:set_int("src_time", 0)
-                local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max)
-                meta:set_string("formspec", formspec)
-                return
-            end
+            local item_percent = (math.floor(meta:get_int("src_time") / round(time_scl * 10) * 100))
+            local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, item_percent, charge,
+                charge_max, eu_input, eu_supply)
+            meta:set_string("formspec", formspec)
 
             technic.swap_node(pos, machine_node .. "_active")
-            meta:set_int(tier .. "_EU_demand", machine_demand[EU_upgrade + 1])
-            meta:set_string("infotext", S("%s Active"):format(machine_desc_tier))
-            if meta:get_int("src_time") < round(time_scl * 10) then
-                local item_percent = (math.floor(meta:get_int("src_time") / round(time_scl * 10) * 100))
-                if not powered then
-                    technic.swap_node(pos, machine_node)
-                    meta:set_string("infotext", S("%s Unpowered"):format(machine_desc_tier))
-                    local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, item_percent, charge,
-                        charge_max)
+            if meta:get_int('last_input_type') > 0 or has_mese then
+                meta:set_int(tier .. "_EU_supply", data.supply)
+            elseif not has_mese then
+                meta:set_int(tier .. "_EU_supply", 0)
+            end
+
+            if not ship_engine.needs_charge(pos) then
+                meta:set_int(tier .. "_EU_demand", 0)
+                if meta:get_int("src_time") < round(data.speed * 10.0 * 2) then
+                    technic.swap_node(pos, machine_node .. "_active")
+                    meta:set_string("infotext", S("%s Charged & Active"):format(machine_desc_tier))
+                    -- meta:set_int(tier .. "_EU_supply", data.supply)
+                    meta:set_int("src_time", round(data.speed * 10))
+                    local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, 0, charge,
+                        charge_max, eu_input, eu_supply)
                     meta:set_string("formspec", formspec)
-                    return
+                    -- return
+                elseif meta:get_int("src_time") >= round((time_scl * 10) - (data.speed * 10.0)) then
+                    meta:set_int("last_input_type", 0)
+                    meta:set_int("src_time", 0)
                 end
-                local formspec = ship_engine.update_formspec(data, true, enabled, has_mese, item_percent, charge,
-                    charge_max)
-                meta:set_string("formspec", formspec)
                 return
             end
 
+            meta:set_int(tier .. "_EU_demand", machine_demand[EU_upgrade + 1])
+            meta:set_string("infotext", S("%s Active - Charging"):format(machine_desc_tier))
+
+            if not powered then
+                meta:set_string("infotext", S("%s Not Powered"):format(machine_desc_tier))
+                return
+            end
+
+            if meta:get_int("src_time") < round(time_scl * 10) then
+                if not powered then
+                    technic.swap_node(pos, machine_node)
+                    meta:set_int(tier .. "_EU_supply", 0)
+                    meta:set_string("infotext", S("%s Unpowered"):format(machine_desc_tier))
+                    return
+                end
+                return
+            end
+
+            --[[
             local command = ""
             if machine_name == "lv_engine_r" then
                 command = "pos_eng1"
@@ -261,14 +236,23 @@ function ship_engine.register_engine(data)
             digilines.receptor_send(pos, digilines.rules.default, "ship_scout", {
                 command = command,
                 pos_nav = {pos.x, pos.y, pos.z}
-            })
+            })--]]
 
-            local chrg = meta:get_int('last_input_type')
-            out_results(pos, machine_node, machine_desc_tier, ltier, false)
-            meta:set_int("charge", charge + chrg)
+            if powered and chrg > 0 then
+                out_results(pos, machine_node, machine_desc_tier, ltier, false)
+                meta:set_int("charge", charge + chrg + math.random(0, 1))
+            elseif powered then
+                meta:set_int("charge", charge + math.random(1, 2))
+            end
 
-            meta:set_int("src_time", meta:get_int("src_time") - round(time_scl * 10))
-            -- return
+            -- if meta:get_int("charge") > meta:get_int("charge_max") then
+            --    meta:set_int("charge", meta:get_int("charge_max") )
+            -- end
+
+            -- reset timer tick
+            meta:set_int("last_input_type", 0)
+            meta:set_int("src_time", 0)
+            return
         end
     end
 
@@ -318,7 +302,12 @@ function ship_engine.register_engine(data)
             meta:set_int("charge", 0)
             meta:set_int("charge_max", data.charge_max)
             meta:set_int("demand", data.demand[1])
-            local formspec = ship_engine.update_formspec(data, false, false)
+            local charge_max = meta:get_int("charge_max")
+            local charge = meta:get_int("charge")
+            local eu_input = meta:get_int(tier .. "_EU_input")
+            local eu_supply = meta:get_int(tier .. "_EU_supply")
+            local formspec = ship_engine.update_formspec(data, false, true, false, 0, charge, charge_max, eu_input,
+                eu_supply)
             meta:set_string("formspec", formspec)
         end,
 
@@ -333,6 +322,10 @@ function ship_engine.register_engine(data)
             end
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
+            local charge_max = meta:get_int("charge_max")
+            local charge = meta:get_int("charge")
+            local eu_input = meta:get_int(tier .. "_EU_input")
+            local eu_supply = meta:get_int(tier .. "_EU_supply")
             local enabled = false
             if fields.toggle then
                 if meta:get_int("enabled") == 1 then
@@ -342,7 +335,8 @@ function ship_engine.register_engine(data)
                     enabled = true
                 end
             end
-            local formspec = ship_engine.update_formspec(data, false, enabled)
+            local formspec = ship_engine.update_formspec(data, false, enabled, false, 0, charge, charge_max, eu_input,
+                eu_supply)
             meta:set_string("formspec", formspec)
         end,
 
@@ -404,6 +398,10 @@ function ship_engine.register_engine(data)
             end
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
+            local charge_max = meta:get_int("charge_max")
+            local charge = meta:get_int("charge")
+            local eu_input = meta:get_int(tier .. "_EU_input")
+            local eu_supply = meta:get_int(tier .. "_EU_supply")
             local enabled = false
             if fields.toggle then
                 if meta:get_int("enabled") == 1 then
@@ -413,7 +411,8 @@ function ship_engine.register_engine(data)
                     enabled = true
                 end
             end
-            local formspec = ship_engine.update_formspec(data, false, enabled)
+            local formspec = ship_engine.update_formspec(data, false, enabled, false, 0, charge, charge_max, eu_input,
+                eu_supply)
             meta:set_string("formspec", formspec)
         end,
 
@@ -428,12 +427,38 @@ function ship_engine.register_engine(data)
         }
     })
 
-    technic.register_machine(tier, node_name, technic.receiver)
-    technic.register_machine(tier, node_name .. "_active", technic.receiver)
+    technic.register_machine(tier, node_name, technic.producer_receiver)
+    technic.register_machine(tier, node_name .. "_active", technic.producer_receiver)
 
 end
 
------------------------------------------------
+local function register_lv_engine(data)
+    data.modname = "ship_engine"
+    data.charge_max = 160
+    data.demand = {5000}
+    data.supply = 6600
+    data.speed = 2
+    data.tier = "LV"
+    data.typename = "engine"
+    -- data.machine_name = "engine"
+    -- data.machine_desc = "Starship Engine"
+
+    ship_engine.register_engine(data)
+end
+
+register_lv_engine({
+    machine_name = "engine_l",
+    machine_desc = "Port Engine",
+    engine_digiline_effector = ship_engine.engine_digiline_effector_l
+})
+register_lv_engine({
+    machine_name = "engine_r",
+    machine_desc = "Starboard Engine",
+    engine_digiline_effector = ship_engine.engine_digiline_effector_r
+})
+
+----------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------
 
 function ship_engine.register_engine_core(data)
     data.typename = "engine_core"
@@ -441,7 +466,7 @@ function ship_engine.register_engine_core(data)
     data.tier = "LV"
     data.demand = {500}
     data.charge_max = 2000
-    data.speed = 20
+    data.speed = 25
     data.machine_name = "surveyor"
     data.machine_desc = "Spacial Conjuction Surveyor"
 
@@ -531,7 +556,7 @@ function ship_engine.register_engine_core(data)
                 end
             end
 
-            if not needs_charge(pos) then
+            if not ship_engine.needs_charge(pos) then
                 technic.swap_node(pos, machine_node .. "_active")
                 meta:set_string("infotext", S("%s Idle - Charged!"):format(machine_desc_tier))
                 meta:set_int(tier .. "_EU_demand", 0)
@@ -721,29 +746,5 @@ function ship_engine.register_engine_core(data)
     technic.register_machine(tier, node_name .. "_active", technic.receiver)
 
 end
-
-local function register_lv_engine(data)
-    data.modname = "ship_engine"
-    data.charge_max = 256
-    data.demand = {1000}
-    data.speed = 2
-    data.tier = "LV"
-    data.typename = "engine"
-    -- data.machine_name = "engine"
-    -- data.machine_desc = "Starship Engine"
-
-    ship_engine.register_engine(data)
-end
-
-register_lv_engine({
-    machine_name = "engine_l",
-    machine_desc = "Port Engine",
-    engine_digiline_effector = ship_engine.engine_digiline_effector_l
-})
-register_lv_engine({
-    machine_name = "engine_r",
-    machine_desc = "Starboard Engine",
-    engine_digiline_effector = ship_engine.engine_digiline_effector_r
-})
 
 ship_engine.register_engine_core({})

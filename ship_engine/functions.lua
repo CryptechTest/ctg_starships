@@ -10,7 +10,7 @@ local function round(number, steps)
     return math.floor(number * steps + 0.5) / steps
 end
 
-function ship_engine.update_formspec(data, running, enabled, has_mese, percent, charge, charge_max)
+function ship_engine.update_formspec(data, running, enabled, has_mese, percent, charge, charge_max, eu_input, eu_supply)
     local machine_name = data.machine_name
     local machine_desc = "Starship " .. data.machine_desc
     local typename = data.typename
@@ -41,6 +41,9 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
         if has_mese or running then
             meseimg = "animated_image[5,1;1,1;;" .. "engine_mese_anim.png" .. ";4;400;]"
         end
+        local power_field = "label[0.5,2.5;"..minetest.colorize('#21daff',"Energy Stats").."]"
+        local input_field = "label[0.5,3.6;Drawing]label[0.5,3.9;" .. minetest.colorize('#fca903', "-" .. eu_input) .. "]"
+        local output_field = "label[0.5,2.9;Generating]label[0.5,3.2;" .. minetest.colorize('#03fc56', "+" .. eu_supply)  .. "]"
         formspec = "size[8,9;]" .. "list[current_name;src;2,1;1,1;]" .. "list[current_name;dst;5,1;1,1;]" ..
                        "list[current_player;main;0,5;8,4;]" .. "label[0,0;" .. machine_desc:format(tier) .. "]" .. image ..
                        meseimg .. "image[3,1;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
@@ -48,7 +51,8 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
                        "listring[current_player;main]" .. "listring[current_name;src]" ..
                        "listring[current_player;main]" .. "image[2,1;1,1;" .. ship_engine.mese_image_mask .. "]" ..
                        "button[3,3;4,1;toggle;" .. btnName .. "]" .. "label[2,2;Charge " .. tostring(charge) .. " of " ..
-                       tostring(charge_max) .. "]" .. "label[5,2;" .. tostring(charge_percent) .. "%" .. "]"
+                       tostring(charge_max) .. "]" .. "label[5,2;" .. tostring(charge_percent) .. "%" .. "]" ..
+                       power_field .. input_field .. output_field
     end
 
     if typename == 'engine_core' then
@@ -91,4 +95,77 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
                        "listring[current_player;main]"
     end
     return formspec
+end
+
+function ship_engine.get_mese(items, take)
+    if not items then
+        return nil
+    end
+    local new_input = nil
+    local input_type = 0
+    local c = 0;
+    for i, stack in ipairs(items) do
+        if stack:get_name() == 'default:mese_crystal_fragment' and stack:get_count() >= 9 then
+            new_input = ItemStack(stack)
+            if take then
+                new_input:take_item(9)
+            end
+            input_type = 9
+            c = c + 1
+            break
+        end
+        if stack:get_name() == 'default:mese_crystal_fragment' and stack:get_count() >= 1 then
+            new_input = ItemStack(stack)
+            if take then
+                new_input:take_item(1)
+            end
+            input_type = 1
+            c = c + 1
+            break
+        end
+        if stack:get_name() == 'default:mese_crystal' and stack:get_count() >= 1 then
+            new_input = ItemStack(stack)
+            if take then
+                new_input:take_item(1)
+            end
+            input_type = 9
+            c = c + 1
+            break
+        end
+        if stack:get_name() == 'default:mese' and stack:get_count() >= 1 then
+            new_input = ItemStack(stack)
+            if take then
+                new_input:take_item(1)
+            end
+            input_type = 81
+            c = c + 1
+            break
+        end
+    end
+    if (c > 0) then
+        return {
+            new_input = new_input,
+            input_type = input_type
+        }
+    else
+        return nil
+    end
+end
+
+function ship_engine.needs_charge(pos)
+    local meta = minetest.get_meta(pos)
+    local charge = meta:get_int("charge")
+    local charge_max = meta:get_int("charge_max")
+    return charge < charge_max
+end
+
+local function reset_charge(pos)
+    local meta = minetest.get_meta(pos)
+    local charge = meta:get_int("charge")
+    local charge_max = meta:get_int("charge_max")
+    meta:set_int("charge", charge - charge_max)
+end
+
+function ship_engine.ship_jump(pos) 
+    reset_charge(pos)
 end

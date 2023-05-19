@@ -166,11 +166,11 @@ function ship_machine.register_engine(data)
                 return
             end
 
-            local command = "pos_grav_gen"
+            --[[local command = "pos_grav_gen"
             digilines.receptor_send(pos, digilines.rules.default, "ship_scout", {
                 command = command,
                 pos_nav = {pos.x, pos.y, pos.z}
-            })
+            })--]]
 
             local chrg = 1
             meta:set_int("charge", charge + chrg)
@@ -263,7 +263,7 @@ function ship_machine.register_engine(data)
                 end
             },
             effector = {
-                action = data.engine_digiline_effector
+                action = data.digiline_effector
             }
         }
     })
@@ -351,7 +351,7 @@ function ship_machine.register_engine(data)
                 end
             },
             effector = {
-                action = data.engine_digiline_effector
+                action = data.digiline_effector
             }
         }
     })

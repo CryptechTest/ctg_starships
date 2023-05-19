@@ -14,7 +14,7 @@ register_lv_drive({
     charge_max = 6,
     gravity = 0.6,
     speed = 4,
-    engine_digiline_effector = ship_machine.gravity_drive_digiline_effector
+    digiline_effector = ship_machine.gravity_drive_digiline_effector
 })
 
 register_lv_drive({
@@ -24,7 +24,7 @@ register_lv_drive({
     charge_max = 8,
     gravity = 0.92,
     speed = 5,
-    engine_digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
+    digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
 })
 
 ship_machine.register_jumpship({})

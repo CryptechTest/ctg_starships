@@ -21,8 +21,6 @@ function ship_machine.register_jumpship(data)
     data.jump_distance = 1
     data.speed = 1
     data.tier = "LV"
-    data.digiline_effector = ship_machine.jumpdrive_digiline_effector
-
 
     local texture_active = {
         image = data.machine_name .. "_active.png",
@@ -37,9 +35,9 @@ function ship_machine.register_jumpship(data)
     local nodename = data.modname .. ":" .. data.machine_name
     minetest.register_node(nodename, {
         description = S(data.machine_desc),
-        tiles = {texture_active, data.machine_name .. "_bottom.png", texture_active, texture_active,
-                 texture_active, texture_active},
-                 
+        tiles = {texture_active, data.machine_name .. "_bottom.png", texture_active, texture_active, texture_active,
+                 texture_active},
+
         paramtype = "light",
         paramtype2 = "facedir",
         light_source = 3,
@@ -53,7 +51,8 @@ function ship_machine.register_jumpship(data)
         sounds = default.node_sound_metal_defaults(),
 
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-
+            local meta = minetest.get_meta(pos)
+            meta:set_string("owner", placer:get_player_name())
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
 
@@ -75,7 +74,7 @@ function ship_machine.register_jumpship(data)
         allow_metadata_inventory_put = technic.machine_inventory_put,
         allow_metadata_inventory_take = technic.machine_inventory_take,
         allow_metadata_inventory_move = technic.machine_inventory_move,
-        technic_run = run,
+        -- technic_run = run,
 
         on_receive_fields = function(pos, formname, fields, sender)
             if fields.quit then
@@ -104,7 +103,7 @@ function ship_machine.register_jumpship(data)
             if fields.inp_z then
                 move_z = fields.inp_z
             end
-            local file_name =""
+            local file_name = ""
             if fields.file_name then
                 file_name = fields.file_name
             end
@@ -130,12 +129,14 @@ function ship_machine.register_jumpship(data)
                     z = pos.z + move_z
                 }
                 local size = {
-                    w = 15,
-                    h = 15,
-                    l = 30
+                    w = 16,
+                    h = 16,
+                    l = 32
                 }
                 minetest.after(0, function()
-                    ship_machine.transport_jumpship(pos, dest, size, sender)
+                    if ship_machine.check_engines_charged(pos) then
+                        ship_machine.transport_jumpship(pos, dest, size, sender)
+                    end
                 end)
             end
             local formspec = ship_machine.update_jumpdrive_formspec(data, false, enabled)
@@ -148,7 +149,7 @@ function ship_machine.register_jumpship(data)
                 end
             },
             effector = {
-                action = data.jumpdrive_digiline_effector
+                action = ship_machine.jumpdrive_digiline_effector
             }
         }
     })

@@ -23,7 +23,8 @@ function ship_scout.register_scout()
         metal = 1,
         level = 1,
         starship = 1,
-        ship_scout = 1
+        ship_scout = 1,
+        ship_jumps = 1
     }
 
     local formspec = ship_scout.update_formspec(data, "", false, "")
@@ -44,18 +45,10 @@ function ship_scout.register_scout()
             end
         end
 
-        --local pos_nav = meta:get_string("pos_nav")
-        --local nav = minetest.get_meta(pos_nav)
-        --local nav_ready = nav:get_string("jump_ready")
+        -- local pos_nav = meta:get_string("pos_nav")
+        -- local nav = minetest.get_meta(pos_nav)
+        -- local nav_ready = nav:get_string("jump_ready")
         local nav_ready = 1
-
-        local pos_eng1 = meta:get_string("pos_eng1")
-        local eng1 = minetest.get_meta(pos_eng1)
-        local eng1_ready = eng1:get_int("charge") >= eng1:get_int("charge_max")
-
-        local pos_eng2 = meta:get_string("pos_eng2")
-        local eng2 = minetest.get_meta(pos_eng2)
-        local eng2_ready = eng2:get_int("charge") >= eng2:get_int("charge_max")
 
         local changed = false
         local loc = tostring(meta:get_int("dest_dir"))
@@ -74,10 +67,16 @@ function ship_scout.register_scout()
         end
         local message = ""
         meta:set_int("dest_dir", tonumber(loc, 10))
-        if fields.submit_nav and loc ~= "0" and nav_ready and nav_ready == 1 and eng1_ready and eng1_ready == 1 and
-            eng2_ready and eng2_ready == 1 then
+        if fields.submit_nav and loc ~= "0" then
             meta:set_int("travel_ready", 1)
-        elseif (eng1_ready ~= 1 or eng2_ready ~= 1) and  not changed then
+            if ship_scout.engine_jump_activate(pos) then
+                message = "FTL Engines preparing for jump..."
+                meta:set_int("travel_ready", 0)
+            else 
+                meta:set_int("travel_ready", 0)
+                message = "FTL Engines require more charge.."
+            end
+        elseif not changed then
             message = "FTL Engines require more charge.."
         elseif nav_ready ~= 1 and not changed then
             message = "Survey Navigator requires more charge.."

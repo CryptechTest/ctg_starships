@@ -21,14 +21,14 @@ ship_scout.scout_digiline_effector = function(pos, node, channel, msg)
         meta:set_int("enabled", 0)
     end
     
-    if msg.command == "dest" then
+    --[[if msg.command == "dest" then
         local meta = minetest.get_meta(pos)
         local dest_dir = meta:get_int("dest_dir")
         digilines.receptor_send(pos, digilines.rules.default, channel, {
             command = msg.command,
             dest_dir = dest_dir
         })
-    end
+    end--]]
     
     if msg.command == "status" then
         local meta = minetest.get_meta(pos)
@@ -38,7 +38,7 @@ ship_scout.scout_digiline_effector = function(pos, node, channel, msg)
         })
     end
     
-    if msg.command == "pos_nav" then
+    --[[if msg.command == "pos_nav" then
         local meta = minetest.get_meta(pos)
         meta:set_string("pos_nav", dump(msg.pos_nav))
     end
@@ -49,6 +49,6 @@ ship_scout.scout_digiline_effector = function(pos, node, channel, msg)
     if msg.command == "pos_eng2" then
         local meta = minetest.get_meta(pos)
         meta:set_string("pos_eng2", dump(msg.pos_eng2))
-    end
+    end--]]
 
 end
