@@ -374,14 +374,16 @@ function ship_machine.transport_jumpship(pos, dest, size, owner)
         if (obj) then
             for i = 1, 5 do
                 minetest.after(i, function()
-                    for i = 1, 20 do
-                        local p = {
-                            x = obj:get_pos().x + math.random(-6, 6),
-                            y = obj:get_pos().y + math.random(-2, 4),
-                            z = obj:get_pos().z + math.random(-6, 6)
-                        }
-                        -- do_particles(p)
-                        do_particle_tele(p)
+                    if (obj) then
+                        for i = 1, 20 do
+                            local p = {
+                                x = obj:get_pos().x + math.random(-6, 6),
+                                y = obj:get_pos().y + math.random(-2, 4),
+                                z = obj:get_pos().z + math.random(-6, 6)
+                            }
+                            -- do_particles(p)
+                            do_particle_tele(p)
+                        end
                     end
                 end)
             end
