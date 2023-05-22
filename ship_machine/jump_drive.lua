@@ -109,8 +109,8 @@ function ship_machine.register_jumpship(data)
             end
             if fields.save then
                 local size = {
-                    w = 15,
-                    h = 15,
+                    w = 20,
+                    h = 12,
                     l = 30
                 }
                 minetest.after(0, function()

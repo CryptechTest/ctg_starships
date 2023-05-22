@@ -516,8 +516,8 @@ function ship_machine.perform_jump(pos)
     local meta = minetest.get_meta(pos)
     local owner = meta:get_string("owner")
     local size = {
-        w = 18,
-        h = 10,
+        w = 20,
+        h = 12,
         l = 30
     }
     local dest = {
