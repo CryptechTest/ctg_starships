@@ -157,7 +157,7 @@ function ship_engine.register_engine(data)
                 return
             end
 
-            if meta:get_int("src_time") <= round(data.speed * 10.0 * 1) then
+            if meta:get_int("src_time") <= round(data.speed * 10.0 * 1.5) then
                 time_scl = time_tick * 1
                 local out_res = out_results(pos, machine_node, machine_desc_tier, ltier, has_mese)
                 if not has_mese then
@@ -168,10 +168,7 @@ function ship_engine.register_engine(data)
                     local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, 0, charge,
                         charge_max, eu_input, eu_supply)
                     meta:set_string("formspec", formspec)
-                    digilines.receptor_send(pos, digilines.rules.default, "ship_engine", {
-                        command = "request_mese",
-                        pos_nav = {pos.x, pos.y, pos.z}
-                    })
+                    digilines.receptor_send(pos, digilines.rules.default, "ship_engine", "request_mese")
                 elseif out_res then
                     technic.swap_node(pos, machine_node)
                     meta:set_string("infotext", S("%s Energizing - Active Pending"):format(machine_desc_tier))
@@ -188,7 +185,7 @@ function ship_engine.register_engine(data)
             meta:set_string("formspec", formspec)
 
             technic.swap_node(pos, machine_node .. "_active")
-            if meta:get_int('last_input_type') > 0 or has_mese then
+            if meta:get_int('last_input_type') > 0 then
                 meta:set_int(tier .. "_EU_supply", data.supply)
             elseif not has_mese then
                 meta:set_int(tier .. "_EU_supply", 0)
