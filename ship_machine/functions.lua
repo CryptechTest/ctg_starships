@@ -525,6 +525,12 @@ function ship_machine.perform_jump(pos)
         y = pos.y,
         z = pos.z
     }
+    
+    if not schemlib.check_dest_clear(pos, dest, size) then
+
+        return false
+    end
+
     if ship_machine.check_engines_charged(pos) == true then
         digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', {
             command = 'jumping'

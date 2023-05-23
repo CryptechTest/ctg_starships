@@ -168,6 +168,10 @@ function ship_engine.register_engine(data)
                     local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, 0, charge,
                         charge_max, eu_input, eu_supply)
                     meta:set_string("formspec", formspec)
+                    digilines.receptor_send(pos, digilines.rules.default, "ship_engine", {
+                        command = "request_mese",
+                        pos_nav = {pos.x, pos.y, pos.z}
+                    })
                 elseif out_res then
                     technic.swap_node(pos, machine_node)
                     meta:set_string("infotext", S("%s Energizing - Active Pending"):format(machine_desc_tier))
