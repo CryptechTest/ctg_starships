@@ -64,7 +64,7 @@ ship_machine.gravity_drive_lite_digiline_effector = function(pos, node, channel,
     if msg.command == "status" then
         local meta = minetest.get_meta(pos)
         digilines.receptor_send(pos, digilines.rules.default, channel, {
-            command = msg.command,
+            command = msg.command .. "_ack",
             charge = meta:get_int("charge"),
             demand = meta:get_int("demand"),
             enable = meta:get_int("enabled"),
@@ -81,7 +81,7 @@ ship_machine.gravity_drive_lite_digiline_effector = function(pos, node, channel,
             ready = "READY!"
         end
         digilines.receptor_send(pos, digilines.rules.default, channel, {
-            command = msg.command,
+            command = msg.command .. "_ack",
             ready = ready
         })
     end
