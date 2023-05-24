@@ -229,7 +229,7 @@ function ship_machine.register_engine(data)
             meta:set_int("charge", 0)
             meta:set_int("charge_max", data.charge_max)
             meta:set_int("demand", data.demand[1])
-            local formspec = ship_machine.update_formspec(data, false, false)
+            local formspec = ship_machine.update_formspec(data, false, true)
             meta:set_string("formspec", formspec)
         end,
 
