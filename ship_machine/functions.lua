@@ -528,7 +528,7 @@ function ship_machine.perform_jump(pos)
     
     if not schemlib.check_dest_clear(pos, dest, size) then
 
-        return false
+        --return false
     end
 
     if ship_machine.check_engines_charged(pos) == true then
