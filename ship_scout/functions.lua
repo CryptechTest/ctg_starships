@@ -23,7 +23,8 @@ function ship_scout.update_formspec(data, loc, ready, message)
 
         local img_ship = "image[2,2;1,1;starship_icon.png]"
         local img_hole_1 = "image_button[2,1;1,1;space_wormhole1.png;btn_hole_1;;true;false;space_wormhole2.png]" -- top
-        local img_hole_2 = "image_button[2,3;1,1;space_wormhole1.png;btn_hole_2;;true;false;space_wormhole2.png]" -- bottom
+        --local img_hole_2 = "image_button[2,3;1,1;space_wormhole1.png;btn_hole_2;;true;false;space_wormhole2.png]" -- bottom
+        local img_hole_2 = ""
         local img_hole_3 = "image_button[1,2;1,1;space_wormhole1.png;btn_hole_3;;true;false;space_wormhole2.png]" -- left
         local img_hole_4 = "image_button[3,2;1,1;space_wormhole1.png;btn_hole_4;;true;false;space_wormhole2.png]" -- right
         local btn_nav = "button[5,4;2,1;submit_nav;Make it so]"
@@ -62,9 +63,13 @@ function ship_scout.update_formspec(data, loc, ready, message)
             busy = busy_bg .. "label[0.5,4.2;" .. lbl .. "]"
         end
 
+        local input_field =
+            "field[1,3.5;1.4,1;inp_x;Move X;0]field[2.3,3.5;1.4,1;inp_y;Move Y;0]field[3.6,3.5;1.4,1;inp_z;Move Z;0]"
+
         formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                        machine_desc:format(tier) .. "]" .. btn_nav .. img_ship .. img_hole_1 .. img_hole_2 .. img_hole_3 ..
-                       img_hole_4 .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit .. busy .. message
+                       img_hole_4  ..
+                       input_field .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit .. busy .. message
     end
 
     return formspec

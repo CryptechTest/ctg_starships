@@ -66,10 +66,26 @@ function ship_scout.register_scout()
             changed = true
         end
         local message = ""
+
+        local move_x = 0
+        local move_y = 0
+        local move_z = 0
+        if fields.inp_x then
+            move_x = fields.inp_x
+        end
+        if fields.inp_y then
+            move_y = fields.inp_y
+        end
+        if fields.inp_z then
+            move_z = fields.inp_z
+        end
+
+        local dest = vector.add(pos, {x = move_x, y = move_y, z = move_z})
         meta:set_int("dest_dir", tonumber(loc, 10))
+
         if fields.submit_nav and loc ~= "0" then
             meta:set_int("travel_ready", 1)
-            if ship_scout.engine_jump_activate(pos) then
+            if ship_scout.engine_jump_activate(pos, dest) then
                 message = "FTL Engines preparing for jump..."
                 meta:set_int("travel_ready", 0)
             else 

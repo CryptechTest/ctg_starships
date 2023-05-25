@@ -371,10 +371,10 @@ function ship_machine.transport_jumpship(pos, dest, size, owner)
     -- get cube of area nearby
     local objects = minetest.get_objects_in_area(pos1, pos2) or {}
     for _, obj in pairs(objects) do
-        if (obj) then
+        if (obj ~= nil) then
             for i = 1, 5 do
                 minetest.after(i, function()
-                    if (obj) then
+                    if (obj ~= nil) then
                         for i = 1, 20 do
                             local p = {
                                 x = obj:get_pos().x + math.random(-6, 6),
@@ -512,18 +512,13 @@ function ship_machine.engines_charged_spend(pos)
     return false
 end
 
-function ship_machine.perform_jump(pos)
+function ship_machine.perform_jump(pos, dest)
     local meta = minetest.get_meta(pos)
     local owner = meta:get_string("owner")
     local size = {
         w = 20,
         h = 12,
         l = 30
-    }
-    local dest = {
-        x = pos.x + 500,
-        y = pos.y,
-        z = pos.z
     }
     
     if not schemlib.check_dest_clear(pos, dest, size) then
