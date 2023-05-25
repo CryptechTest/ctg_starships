@@ -23,7 +23,7 @@ function ship_scout.update_formspec(data, loc, ready, message)
 
         local img_ship = "image[2,2;1,1;starship_icon.png]"
         local img_hole_1 = "image_button[2,1;1,1;space_wormhole1.png;btn_hole_1;;true;false;space_wormhole2.png]" -- top
-        --local img_hole_2 = "image_button[2,3;1,1;space_wormhole1.png;btn_hole_2;;true;false;space_wormhole2.png]" -- bottom
+        -- local img_hole_2 = "image_button[2,3;1,1;space_wormhole1.png;btn_hole_2;;true;false;space_wormhole2.png]" -- bottom
         local img_hole_2 = ""
         local img_hole_3 = "image_button[1,2;1,1;space_wormhole1.png;btn_hole_3;;true;false;space_wormhole2.png]" -- left
         local img_hole_4 = "image_button[3,2;1,1;space_wormhole1.png;btn_hole_4;;true;false;space_wormhole2.png]" -- right
@@ -68,14 +68,14 @@ function ship_scout.update_formspec(data, loc, ready, message)
 
         formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                        machine_desc:format(tier) .. "]" .. btn_nav .. img_ship .. img_hole_1 .. img_hole_2 .. img_hole_3 ..
-                       img_hole_4  ..
-                       input_field .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit .. busy .. message
+                       img_hole_4 .. input_field .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit .. busy ..
+                       message
     end
 
     return formspec
 end
 
-function ship_scout.engine_jump_activate(pos)
+function ship_scout.engine_jump_activate(pos, dest)
     local sz = 32
     local pos1 = vector.subtract(pos, {
         x = sz,
@@ -91,7 +91,7 @@ function ship_scout.engine_jump_activate(pos)
     local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
 
     if #nodes == 1 then
-        return ship_machine.perform_jump(nodes[1])
+        return ship_machine.perform_jump(nodes[1], dest)
     end
     return false
 end
