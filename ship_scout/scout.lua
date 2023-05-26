@@ -1,5 +1,9 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
+local function isInteger(str)
+    return tonumber(str) ~= nil
+end
+
 function ship_scout.register_scout()
 
     local data = {}
@@ -8,6 +12,7 @@ function ship_scout.register_scout()
     data.modname = "ship_scout"
     data.tier = "LV"
     data.machine_name = "scout"
+    data.jump_dist = 2000
 
     local modname = "ship_scout"
     local ltier = string.lower(data.tier)
@@ -27,8 +32,6 @@ function ship_scout.register_scout()
         ship_jumps = 1
     }
 
-    local formspec = ship_scout.update_formspec(data, "", false, "")
-
     local on_receive_fields = function(pos, formname, fields, sender)
         if fields.quit then
             return
@@ -44,6 +47,9 @@ function ship_scout.register_scout()
                 enabled = true
             end
         end
+
+        local jump_dis = meta:get_int("jump_dist")
+        local is_deepspace = pos.y > 22000;
 
         -- local pos_nav = meta:get_string("pos_nav")
         -- local nav = minetest.get_meta(pos_nav)
@@ -65,41 +71,75 @@ function ship_scout.register_scout()
             loc = "4"
             changed = true
         end
-        local message = ""
+        meta:set_int("dest_dir", tonumber(loc, 10))
 
         local move_x = 0
         local move_y = 0
         local move_z = 0
         if fields.inp_x then
-            move_x = fields.inp_x
+            if isInteger(fields.inp_x) then
+                move_x = tonumber(fields.inp_x, 10)
+            end
         end
         if fields.inp_y then
-            move_y = fields.inp_y
+            if isInteger(fields.inp_y) then
+                move_y = tonumber(fields.inp_y, 10)
+            end
         end
         if fields.inp_z then
-            move_z = fields.inp_z
+            if isInteger(fields.inp_z) then
+                move_z = tonumber(fields.inp_z, 10)
+            end
         end
 
-        local dest = vector.add(pos, {x = move_x, y = move_y, z = move_z})
-        meta:set_int("dest_dir", tonumber(loc, 10))
+        local message = ""
+        local dest = vector.add(pos, {
+            x = move_x,
+            y = move_y,
+            z = move_z
+        })
 
-        if fields.submit_nav and loc ~= "0" then
+        if fields.submit_nav and not is_deepspace and vector.distance(pos, dest) > jump_dis then
+            meta:set_int("travel_ready", 0)
+            message = "Jump distance beyond engine range.."
+        elseif fields.submit_nav and not is_deepspace and dest.y > 22000 then
+            meta:set_int("travel_ready", 0)
+            message = "Jump destination beyond engine abilities.."
+        elseif fields.submit_nav and not is_deepspace and dest.y < 4000 then
+            meta:set_int("travel_ready", 0)
+            message = "Jump destination beyond engine abilities.."
+        elseif fields.submit_nav and ((is_deepspace and loc ~= "0") or (not is_deepspace)) then
             meta:set_int("travel_ready", 1)
-            if ship_scout.engine_jump_activate(pos, dest) then
+            local j = ship_scout.engine_jump_activate(pos, dest)
+            if j == 1 then
+                -- meta:set_int("travel_ready", 0)
                 message = "FTL Engines preparing for jump..."
-                meta:set_int("travel_ready", 0)
-            else 
+                minetest.after(3, function()
+                    local ready = meta:get_int("travel_ready")
+                    local formspec = ship_scout.update_formspec(dest, data, loc, ready, "Jump Complete!")
+                    meta:set_string("formspec", formspec)
+                end)
+            elseif j == 0 then
                 meta:set_int("travel_ready", 0)
                 message = "FTL Engines require more charge.."
+            elseif j == -1 then
+                meta:set_int("travel_ready", 0)
+                message = "Travel Obstructed at Destination.."
+            elseif j == -3 then
+                meta:set_int("travel_ready", 0)
+                message = "FTL Jump Drive not found..."
+            else
+                meta:set_int("travel_ready", 0)
+                message = "FTL Engines Failed to Start.."
             end
-        elseif not changed then
+        elseif fields.submit_nav and not changed then
             message = "FTL Engines require more charge.."
-        elseif nav_ready ~= 1 and not changed then
+        elseif fields.submit_nav and nav_ready ~= 1 and not changed then
             message = "Survey Navigator requires more charge.."
         end
 
         local ready = meta:get_int("travel_ready")
-        local formspec = ship_scout.update_formspec(data, loc, ready, message)
+        local formspec = ship_scout.update_formspec(pos, data, loc, ready, message)
         meta:set_string("formspec", formspec)
     end
 
@@ -141,8 +181,9 @@ function ship_scout.register_scout()
             local inv = meta:get_inventory()
             meta:set_int("enabled", 1)
             meta:set_int("dest_dir", 0)
+            meta:set_int("jump_dist", data.jump_dist)
             meta:set_int("travel_ready", 0)
-            meta:set_string("formspec", formspec)
+            meta:set_string("formspec", ship_scout.update_formspec(pos, data, "0", false, ''))
             meta:set_string("pos_nav", "{}")
             meta:set_string("pos_eng1", "{}")
             meta:set_string("pos_eng2", "{}")

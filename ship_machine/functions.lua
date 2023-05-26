@@ -323,14 +323,14 @@ function ship_machine.transport_jumpship(pos, dest, size, owner)
         file_cache = save,
         keep_inv = true,
         keep_meta = true,
-        origin_clear = false
+        origin_clear = true
     }
     local ship_name = "jumpship_1_" .. owner
     -- save to cache
     local sdata = schemlib.emit({
         filename = ship_name,
         owner = owner,
-        ttl = 300,
+        ttl = 300, -- ???
         w = size.w,
         h = size.h,
         l = size.l,
@@ -487,7 +487,7 @@ function ship_machine.check_engines_charged(pos)
     return false
 end
 
-function ship_machine.engines_charged_spend(pos)
+function ship_machine.engines_charged_spend(pos, dist)
     local sz = 28
     local pos1 = vector.subtract(pos, {
         x = sz,
@@ -504,8 +504,12 @@ function ship_machine.engines_charged_spend(pos)
 
     if #nodes == 2 then
 
-        ship_engine.ship_jump(nodes[1])
-        ship_engine.ship_jump(nodes[2])
+        local max = 2000
+        local c_max = 160
+        local chrg = (c_max / max) * dist
+
+        ship_engine.ship_jump(nodes[1], chrg)
+        ship_engine.ship_jump(nodes[2], chrg)
 
         return true
     end
@@ -522,17 +526,21 @@ function ship_machine.perform_jump(pos, dest)
     }
     
     if not schemlib.check_dest_clear(pos, dest, size) then
-
-        --return false
+        return -1
     end
 
     if ship_machine.check_engines_charged(pos) == true then
         digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', {
             command = 'jumping'
         })
-        ship_machine.engines_charged_spend(pos)
+        local dist = vector.distance(pos, dest)
+        ship_machine.engines_charged_spend(pos, dist)
         ship_machine.transport_jumpship(pos, dest, size, owner)
-        return true
+        minetest.after(3, function()
+            local metad = minetest.get_meta(dest)
+            metad:set_int("travel_ready", 0)
+        end)
+        return 1
     end
-    return false
+    return 0
 end
