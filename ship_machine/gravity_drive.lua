@@ -1,6 +1,6 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
-local time_scl = 25
+local time_scl = 20
 
 local function round(v)
     return math.floor(v + 0.5)

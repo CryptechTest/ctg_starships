@@ -524,7 +524,7 @@ function ship_machine.perform_jump(pos, dest)
         h = 12,
         l = 30
     }
-    
+
     if not schemlib.check_dest_clear(pos, dest, size) then
         return -1
     end

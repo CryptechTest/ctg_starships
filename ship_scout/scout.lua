@@ -76,19 +76,26 @@ function ship_scout.register_scout()
         local move_x = 0
         local move_y = 0
         local move_z = 0
+        local isNumError = false
         if fields.inp_x then
             if isInteger(fields.inp_x) then
                 move_x = tonumber(fields.inp_x, 10)
+            else
+                isNumError = true
             end
         end
         if fields.inp_y then
             if isInteger(fields.inp_y) then
                 move_y = tonumber(fields.inp_y, 10)
+            else
+                isNumError = true
             end
         end
         if fields.inp_z then
             if isInteger(fields.inp_z) then
                 move_z = tonumber(fields.inp_z, 10)
+            else
+                isNumError = true
             end
         end
 
@@ -99,7 +106,10 @@ function ship_scout.register_scout()
             z = move_z
         })
 
-        if fields.submit_nav and not is_deepspace and vector.distance(pos, dest) > jump_dis then
+        if isNumError then
+            meta:set_int("travel_ready", 0)
+            message = "Must input a valid number..."
+        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) > jump_dis then
             meta:set_int("travel_ready", 0)
             message = "Jump distance beyond engine range.."
         elseif fields.submit_nav and not is_deepspace and dest.y > 22000 then
@@ -158,7 +168,7 @@ function ship_scout.register_scout()
         mesh = "moreblocks_slope_half_raised.obj",
         selection_box = {
             type = "fixed",
-            fixed = {{-0.5000, -0.5000, -0.5000, 0.5000, 0.000, 0.5000}}
+            fixed = {{-0.5000, -0.5000, -0.5000, 0.5000, 0.5000, 0.5000}}
         },
         collision_box = {
             type = "fixed",
