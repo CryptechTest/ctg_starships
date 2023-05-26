@@ -15,9 +15,9 @@ end
 
 function ship_machine.register_jumpship(data)
     data.modname = "ship_machine"
-    data.machine_name = "jump_drive"
-    data.machine_desc = "Jump Drive Allocator"
-    data.typename = "jump_drive"
+    --data.machine_name = "jump_drive"
+    --data.machine_desc = "Jump Drive Allocator"
+    --data.typename = "jump_drive"
     data.jump_distance = 1
     data.speed = 1
     data.tier = "LV"
@@ -113,6 +113,13 @@ function ship_machine.register_jumpship(data)
                     h = 12,
                     l = 30
                 }
+                if data.typename == 'jump_drive_spawn' then
+                    size = {
+                        w = 171,
+                        h = 50,
+                        l = 219
+                    }
+                end
                 minetest.after(0, function()
                     ship_machine.save_jumpship(pos, size, sender, file_name)
                 end)

@@ -37,4 +37,14 @@ register_lv_drive({
     digiline_effector = ship_machine.gravity_drive_digiline_effector
 })
 
-ship_machine.register_jumpship({})
+ship_machine.register_jumpship({
+    machine_name = "jump_drive",
+    machine_desc = "Jump Drive Allocator",
+    typename = "jump_drive"
+})
+
+ship_machine.register_jumpship({
+    machine_name = "jump_drive_spawn",
+    machine_desc = "Jump Drive - Orbital Station",
+    typename = "jump_drive_spawn"
+})
