@@ -22,7 +22,7 @@ register_lv_drive({
     machine_desc = "Gravity Generator",
     demand = {2500},
     charge_max = 8,
-    gravity = 0.92,
+    gravity = 0.95,
     speed = 5,
     digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
 })
@@ -32,7 +32,7 @@ register_lv_drive({
     machine_desc = "Gravity Generator Admin",
     demand = {0},
     charge_max = 0,
-    gravity = 0.95,
+    gravity = 0.96,
     speed = 5,
     digiline_effector = ship_machine.gravity_drive_digiline_effector
 })

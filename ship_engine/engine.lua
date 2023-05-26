@@ -44,23 +44,6 @@ function ship_engine.register_engine(data)
     local machine_desc = data.machine_desc
     local tmachine_name = string.lower(machine_name):gsub("_r", ""):gsub("_l", "")
 
-    local groups = {
-        cracky = 2,
-        technic_machine = 1,
-        ["technic_" .. ltier] = 1,
-        ctg_machine = 1,
-        metal = 1,
-        level = 2,
-        ship_engine = 1
-    }
-
-    local active_groups = {
-        not_in_creative_inventory = 1
-    }
-    for k, v in pairs(groups) do
-        active_groups[k] = v
-    end
-
     local tube = {
         insert_object = function(pos, node, stack, direction)
             local meta = minetest.get_meta(pos)
@@ -83,17 +66,33 @@ function ship_engine.register_engine(data)
         }
     }
     data.tube = tube
+    if data.can_insert then
+        tube.can_insert = data.can_insert
+    end
+    if data.insert_object then
+        tube.insert_object = data.insert_object
+    end
+
+    local groups = {
+        cracky = 2,
+        technic_machine = 1,
+        ["technic_" .. ltier] = 1,
+        ctg_machine = 1,
+        metal = 1,
+        level = 2,
+        ship_engine = 1
+    }
 
     if data.tube then
         groups.tubedevice = 1
         groups.tubedevice_receiver = 1
     end
 
-    if data.can_insert then
-        tube.can_insert = data.can_insert
-    end
-    if data.insert_object then
-        tube.insert_object = data.insert_object
+    local active_groups = {
+        not_in_creative_inventory = 1
+    }
+    for k, v in pairs(groups) do
+        active_groups[k] = v
     end
 
     local run = function(pos, node)
@@ -150,7 +149,7 @@ function ship_engine.register_engine(data)
                 meta:set_string("infotext", S("%s Disabled"):format(machine_desc_tier))
                 meta:set_int(tier .. "_EU_demand", 0)
                 meta:set_int(tier .. "_EU_supply", 0)
-                --meta:set_int("src_time", 0)
+                -- meta:set_int("src_time", 0)
                 local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max,
                     eu_input, eu_supply)
                 meta:set_string("formspec", formspec)
@@ -377,9 +376,6 @@ function ship_engine.register_engine(data)
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
             return technic.machine_after_dig_node
         end,
-        on_rotate = screwdriver.disallow,
-        can_dig = technic.machine_can_dig,
-
         on_push_item = function(pos, dir, item)
             local tube_dir = minetest.get_meta(pos):get_int("tube_dir")
             if dir == tubelib2.Turn180Deg[tube_dir] then
@@ -391,6 +387,31 @@ function ship_engine.register_engine(data)
             end
         end,
 
+        on_construct = function(pos)
+            local node = minetest.get_node(pos)
+            local meta = minetest.get_meta(pos)
+            meta:set_string("infotext", "Starship Engine")
+            meta:set_int("tube_time", 0)
+            local inv = meta:get_inventory()
+            inv:set_size("src", 1)
+            inv:set_size("dst", 1)
+            inv:set_size("upgrade1", 1)
+            inv:set_size("upgrade2", 1)
+            meta:set_int("enabled", 1)
+            meta:set_int("charge", 0)
+            meta:set_int("charge_max", data.charge_max)
+            meta:set_int("demand", data.demand[1])
+            local charge_max = meta:get_int("charge_max")
+            local charge = meta:get_int("charge")
+            local eu_input = meta:get_int(tier .. "_EU_input")
+            local eu_supply = meta:get_int(tier .. "_EU_supply")
+            local formspec = ship_engine.update_formspec(data, false, true, false, 0, charge, charge_max, eu_input,
+                eu_supply)
+            meta:set_string("formspec", formspec)
+        end,
+
+        on_rotate = screwdriver.disallow,
+        can_dig = technic.machine_can_dig,
         allow_metadata_inventory_put = technic.machine_inventory_put,
         allow_metadata_inventory_take = technic.machine_inventory_take,
         allow_metadata_inventory_move = technic.machine_inventory_move,
@@ -696,7 +717,7 @@ function ship_engine.register_engine_core(data)
         paramtype2 = "facedir",
         light_source = 6,
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
-        groups = active_groups,
+        groups = groups,
         tube = data.tube and tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_glass_defaults(),

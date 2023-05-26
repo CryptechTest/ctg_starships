@@ -111,7 +111,7 @@ local get_distance = function(a, b)
 end
 
 local gen_grav = 0.92
-local gen_dist = 28
+local gen_dist = 46
 local players_near_gen = {}
 
 ship_machine.apply_gravity = function(_pos, grav)
@@ -146,7 +146,7 @@ ship_machine.apply_gravity = function(_pos, grav)
                         z = _pos.z
                     }
                     -- check if beyond lessor y
-                    if not (pos.y - 1 < _pos.y and get_distance(_pos, pos_center) > 5) then
+                    if not (pos.y - 1 < _pos.y and get_distance(_pos, pos_center) >= 13) then
                         -- get node below
                         local pos_below_1 = {
                             x = pos.x,
@@ -278,7 +278,7 @@ local function do_particle_tele(pos)
         texture_r180 = "teleport_effect01.png" .. "^[transformR180",
         vel = 13,
         time = 4,
-        size = 5,
+        size = 4,
         glow = 7,
         cols = false
     }
@@ -371,18 +371,22 @@ function ship_machine.transport_jumpship(pos, dest, size, owner)
     -- get cube of area nearby
     local objects = minetest.get_objects_in_area(pos1, pos2) or {}
     for _, obj in pairs(objects) do
-        if (obj ~= nil) then
-            for i = 1, 5 do
+        if (obj ~= nil and obj:is_player()) then
+            for i = 0, 3 do
                 minetest.after(i, function()
                     if (obj ~= nil) then
-                        for i = 1, 20 do
-                            local p = {
-                                x = obj:get_pos().x + math.random(-6, 6),
-                                y = obj:get_pos().y + math.random(-2, 4),
-                                z = obj:get_pos().z + math.random(-6, 6)
-                            }
-                            -- do_particles(p)
-                            do_particle_tele(p)
+                        for i = 1, 200 do
+                            if (obj ~= nil and obj:get_pos() ~= nil) then
+                                local p = {
+                                    x = obj:get_pos().x + math.random(-6, 6),
+                                    y = obj:get_pos().y + math.random(-3, 4),
+                                    z = obj:get_pos().z + math.random(-6, 6)
+                                }
+                                if math.random(0,1) == 1 then
+                                    do_particles(p)
+                                end
+                                do_particle_tele(p)
+                            end
                         end
                     end
                 end)

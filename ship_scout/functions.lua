@@ -6,7 +6,7 @@ end
 
 function ship_scout.update_formspec(pos, data, loc, ready, message)
     local machine_name = data.machine_name
-    local machine_desc = "Starship Nav Interface"
+    local machine_desc = "Starship Navigation Interface"
     local typename = data.typename
     local tier = data.tier
     local ltier = string.lower(tier)
@@ -65,6 +65,9 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
             busy = busy_bg .. "label[0.5,4.2;" .. lbl .. "]"
         end
 
+        local coord_tag = "image[0.7,1.2;4.7,0.9;bg2.png]" .. "label[0.8,1.2;Current Coordinates]"
+        local coords_label =
+            coord_tag .. "label[0.8,1.5;X: " .. pos.x .. "]label[2,1.5;Y: " .. pos.y .. "]label[3.2,1.5;Z: " .. pos.z .. "]"
         local input_field =
             "field[1,3.5;1.4,1;inp_x;Move X;0]field[2.3,3.5;1.4,1;inp_y;Move Y;0]field[3.6,3.5;1.4,1;inp_z;Move Z;0]"
 
@@ -75,8 +78,8 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
                            message
         else
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
-                           machine_desc:format(tier) .. "]" .. btn_nav .. img_ship .. input_field .. nav_label ..
-                           icon_fan .. icon_env .. icon_eng .. icon_lit .. busy .. message
+                           machine_desc:format(tier) .. "]" .. btn_nav .. img_ship .. coords_label .. input_field ..
+                           nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit .. busy .. message
         end
     end
 
@@ -102,4 +105,25 @@ function ship_scout.engine_jump_activate(pos, dest)
         return ship_machine.perform_jump(nodes[1], dest)
     end
     return -3
+end
+
+function ship_scout.get_jump_dest(pos, offset)
+    local sz = 32
+    local pos1 = vector.subtract(pos, {
+        x = sz,
+        y = sz,
+        z = sz
+    })
+    local pos2 = vector.add(pos, {
+        x = sz,
+        y = sz,
+        z = sz
+    })
+
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
+
+    if #nodes == 1 then
+        return vector.add(nodes[1], offset)
+    end
+    return nil
 end

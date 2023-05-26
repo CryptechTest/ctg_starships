@@ -33,7 +33,7 @@ ship_scout.scout_digiline_effector = function(pos, node, channel, msg)
     if msg.command == "status" then
         local meta = minetest.get_meta(pos)
         digilines.receptor_send(pos, digilines.rules.default, channel, {
-            command = msg.command,
+            command = msg.command .. "_ack",
             ready = meta:get_int("ready")
         })
     end
