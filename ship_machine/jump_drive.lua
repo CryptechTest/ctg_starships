@@ -116,7 +116,7 @@ function ship_machine.register_jumpship(data)
                 if data.typename == 'jump_drive_spawn' then
                     size = {
                         w = 171,
-                        h = 51,
+                        h = 56,
                         l = 219
                     }
                 end
