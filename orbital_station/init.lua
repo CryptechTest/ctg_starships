@@ -46,11 +46,11 @@ end
 minetest.register_on_joinplayer(function()
     -- minetest.register_on_mods_loaded(function()
 
-    local spawn_spoint = player:set_pos(minetest.setting_get_pos("static_spawnpoint") or {
+    local spawn_spoint = minetest.setting_get_pos("static_spawnpoint") or {
         x = 0,
         y = 4500,
         z = 0
-    })
+    }
 
     minetest.after(3, function()
         local pos = vector.add(spawn_spoint, {
