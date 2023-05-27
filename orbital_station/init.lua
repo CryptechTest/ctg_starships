@@ -42,14 +42,22 @@ local function find_spawn_drive(pos)
     return nil
 end
 
-minetest.register_on_mods_loaded(function()
+-- minetest.register_on_newplayer(function()
+minetest.register_on_joinplayer(function()
+    -- minetest.register_on_mods_loaded(function()
 
-    minetest.after(0, function()
-        local pos = {
+    local spawn_spoint = player:set_pos(minetest.setting_get_pos("static_spawnpoint") or {
+        x = 0,
+        y = 4500,
+        z = 0
+    })
+
+    minetest.after(3, function()
+        local pos = vector.add(spawn_spoint, {
             x = 0,
-            y = 4508,
+            y = 8,
             z = 0
-        }
+        })
         if find_spawn_drive(pos) == nil then
             load_orbital(pos)
         end
