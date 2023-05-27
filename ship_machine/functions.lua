@@ -31,6 +31,8 @@ function ship_machine.update_formspec(data, running, enabled, has_mese, percent,
         local charge_percent = 0
         if charge and charge > 0 and charge_max then
             charge_percent = round(math.floor(charge / (charge_max) * 100 * 100) / 100, 2)
+        elseif charge == 0 and charge_max == 0 then
+            charge_percent = 100
         end
         if charge == nil then
             charge = 0
