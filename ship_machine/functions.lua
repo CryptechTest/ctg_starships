@@ -83,7 +83,7 @@ function ship_machine.update_jumpdrive_formspec(data)
     local ltier = string.lower(tier)
     local formspec = nil
 
-    if typename == 'jump_drive' and typename == 'jump_drive_spawn'  then
+    if typename == 'jump_drive' or typename == 'jump_drive_spawn'  then
         local btnName = "State: "
         if enabled then
             btnName = btnName .. "<Enabled>"
