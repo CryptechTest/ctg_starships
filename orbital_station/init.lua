@@ -17,7 +17,7 @@ local function load_orbital(pos)
             z = pos.z
         },
         moveObj = false,
-        filepath = default_path .. "\\schematics\\"
+        filepath = default_path .. "/schematics/"
     })
 end
 
