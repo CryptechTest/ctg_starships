@@ -85,22 +85,14 @@ function ship_machine.update_jumpdrive_formspec(data)
     local ltier = string.lower(tier)
     local formspec = nil
 
-    if typename == 'jump_drive' or typename == 'jump_drive_spawn'  then
-        local btnName = "State: "
-        if enabled then
-            btnName = btnName .. "<Enabled>"
-        else
-            btnName = btnName .. "<Disabled>"
-        end
-
+    if typename == 'jump_drive' or typename == 'jump_drive_spawn' then
         local input_name = "field[1,1.45;4,1;file_name;File Name;]"
         local input_save_load = "button[5,1;1,1;save;Save]button[6,1;1,1;load;Load]"
         local input_test =
             "field[1,2;2,1;inp_x;Move X;0]field[3,2;2,1;inp_y;Move Y;0]field[5,2;2,1;inp_z;Move Z;0]button[3,4;2,1;jump;Test]"
 
         formspec = "formspec_version[3]" .. "size[8,5;]" .. "real_coordinates[false]" .. "label[0,0;" ..
-                       machine_desc:format(tier) .. "]" .. "button[2,3;4,1;toggle;" .. btnName .. "]" .. "" ..
-                       input_name .. input_save_load
+                       machine_desc:format(tier) .. "]" .. input_name .. input_save_load
     end
 
     return formspec
@@ -384,7 +376,7 @@ function ship_machine.transport_jumpship(pos, dest, size, owner)
                                     y = obj:get_pos().y + math.random(-3, 4),
                                     z = obj:get_pos().z + math.random(-6, 6)
                                 }
-                                if math.random(0,1) == 1 then
+                                if math.random(0, 1) == 1 then
                                     do_particles(p)
                                 end
                                 do_particle_tele(p)
