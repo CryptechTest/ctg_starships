@@ -6,4 +6,5 @@ ship_parts = {}
 local default_path = minetest.get_modpath("ship_parts")
 
 dofile(default_path .. DIR_DELIM .. "nodes.lua")
+dofile(default_path .. DIR_DELIM .. "items.lua")
 dofile(default_path .. DIR_DELIM .. "crafts.lua")

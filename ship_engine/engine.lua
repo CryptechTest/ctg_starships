@@ -717,7 +717,7 @@ function ship_engine.register_engine_core(data)
         paramtype2 = "facedir",
         light_source = 6,
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
-        groups = groups,
+        groups = active_groups,
         tube = data.tube and tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_glass_defaults(),
