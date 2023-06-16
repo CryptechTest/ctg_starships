@@ -16,15 +16,15 @@ minetest.register_craftitem("ship_parts:system_capsule", {
 -- Advanced Circuit
 minetest.register_craftitem("ship_parts:circuit_standard", {
 	description = S("Standard Circuit Element"),
-	inventory_image = "ship_circuit_0.png",
-    wield_scale = {x = 0.8, y = 0.88, z = 0.8},
+	inventory_image = "ship_circuit_green.png",
+    wield_scale = {x = 0.8, y = 0.8, z = 0.8},
 })
 
 -- Advanced Circuit
 minetest.register_craftitem("ship_parts:circuit_advanced", {
 	description = S("Advanced Circuit Element"),
-	inventory_image = "ship_circuit_1.png",
-    wield_scale = {x = 0.6, y = 0.67, z = 0.6},
+	inventory_image = "ship_circuit_red.png",
+    wield_scale = {x = 0.7, y = 0.7, z = 0.7},
 })
 
 -- Telemetry Capsule
