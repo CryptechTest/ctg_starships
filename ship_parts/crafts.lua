@@ -47,6 +47,7 @@ if true then
     local fb = "mesecons_materials:fiber"
     local si = "basic_materials:silicon"
     local mc = "default:mese_crystal"
+    local me = "default:mese"
     local gl = "mesecons_materials:glue"
     local fb = "mesecons_materials:fiber"
     local so = "mesecons_solarpanel:solar_panel_off"
@@ -61,15 +62,16 @@ if true then
 
     local cs = "ship_parts:circuit_standard"
     local ca = "ship_parts:circuit_advanced"
+    local rc = "ship_parts:reactor_cell"
 
     minetest.register_craft({
         output = "ship_parts:circuit_standard",
-        recipe = {{ic, ps, ""}, {cw, sw, nw}, {cl, ps, fb}}
+        recipe = {{ic, ps, ""}, {cw, dw, nw}, {cl, ps, fb}}
     })
 
     minetest.register_craft({
         output = "ship_parts:circuit_advanced",
-        recipe = {{ic, ps, gw}, {cw, dw, nw}, {cl, ps, fb}}
+        recipe = {{ic, ps, gw}, {cw, cs, nw}, {cl, ps, fb}}
     })
 
     minetest.register_craft({
@@ -83,13 +85,28 @@ if true then
     })
     
     minetest.register_craft({
-        output = "ship_parts:hull_plating",
+        output = "ship_parts:hull_plating 2",
         recipe = {{alb, zib, alb}, {nib, cp, nib}, {alb, ms, alb}}
     })
     
     minetest.register_craft({
         output = "ship_parts:eviromental_sys",
         recipe = {{fb, mt, ti}, {cm, mo, gdb}, {fn, bm, fn}}
+    })
+    
+    minetest.register_craft({
+        output = "ship_parts:command_capsule",
+        recipe = {{ca, ca, ca}, {cm, me, cm}, {"", "", ""}}
+    })
+
+    minetest.register_craft({
+        output = "ship_parts:system_capsule",
+        recipe = {{"", "", ""}, {cs, mc, cs}, {cl, cm, cl}}
+    })
+
+    minetest.register_craft({
+        output = "ship_parts:telemetry_capsule",
+        recipe = {{"", "", ""}, {rc, rc, rc}, {cm, gl, cl}}
     })
 
 end

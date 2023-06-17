@@ -1,15 +1,36 @@
 
 -- Comamnd Capsule
-minetest.register_craftitem("ship_parts:command_capsule", {
+--[[minetest.register_craftitem("ship_parts:command_capsule", {
 	description = S("Spacecraft Command Capsule"),
 	inventory_image = "ship_command_module.png",
     wield_scale = {x = 1.5, y = 1.4, z = 1.5},
+})--]]
+
+-- Comamnd Capsule
+minetest.register_node("ship_parts:command_capsule", {
+	description = S("Spacecraft Command Capsule"),
+    stack_max = 3,
+	inventory_image = "ship_command_module.png",
+	tiles = {
+		"ship_panel_back.png",
+		"ship_panel_back.png",
+		"ship_panel_back.png",
+		"ship_panel_back.png",
+		"ship_panel_back.png",
+		"ship_panel_front.png"
+	},
+	--drawtype = "nodebox",
+	paramtype = "light",
+	paramtype2 = "facedir",
+	groups = {cracky=1, oddly_breakable_by_hand=1},
+    sounds = default.node_sound_metal_defaults(),
 })
 
 -- System Capsule
 minetest.register_craftitem("ship_parts:system_capsule", {
 	description = S("Spacecraft Systems Capsule"),
 	inventory_image = "ship_systems_module.png",
+    stack_max = 3,
     wield_scale = {x = 0.8, y = 0.8, z = 0.8},
 })
 
@@ -65,14 +86,35 @@ minetest.register_craftitem("ship_parts:eviromental_sys", {
 })
 
 -- Starship Hull
-minetest.register_craftitem("ship_parts:hull_plating", {
+--[[minetest.register_craftitem("ship_parts:hull_plating", {
 	description = S("Chassis Hull Platings"),
 	inventory_image = "ship_hull_plating_sq.png",
     wield_image = "ship_hull_plating.png",
     wield_scale = {x = 2, y = 1.8, z = 2},
 	--wield_offset = {x = 0, y = 20, z = 0}, -- does nothing
     --place_offset_y = 2, -- does nothing
+})--]]
+
+-- Starship Hull
+minetest.register_node("ship_parts:hull_plating", {
+	description = S("Chassis Hull Platings"),
+    stack_max = 50,
+	inventory_image = "ship_hull_plating_sq.png",
+    --wield_image = "ship_hull_plating.png",
+	tiles = {
+		"ship_metal_part_top.png",
+		"ship_metal_part_top.png",
+		"ship_metal_part_side.png",
+		"ship_metal_part_side.png",
+		"ship_metal_part_front.png",
+		"ship_metal_part_front.png"
+	},
+	paramtype = "light",
+	paramtype2 = "facedir",
+	groups = {cracky=1, level=3, metal=1},
+    sounds = default.node_sound_metal_defaults(),
 })
+
 
 -- Gravity Drive..
 minetest.register_craftitem("ship_parts:mass_aggregator", {
