@@ -9,7 +9,7 @@
 -- Comamnd Capsule
 minetest.register_node("ship_parts:command_capsule", {
 	description = S("Spacecraft Command Capsule"),
-    stack_max = 3,
+    stack_max = 32,
 	inventory_image = "ship_command_module.png",
 	tiles = {
 		"ship_panel_back.png",
@@ -30,7 +30,7 @@ minetest.register_node("ship_parts:command_capsule", {
 minetest.register_craftitem("ship_parts:system_capsule", {
 	description = S("Spacecraft Systems Capsule"),
 	inventory_image = "ship_systems_module.png",
-    stack_max = 3,
+    stack_max = 64,
     wield_scale = {x = 0.8, y = 0.8, z = 0.8},
 })
 
@@ -117,10 +117,27 @@ minetest.register_node("ship_parts:hull_plating", {
 
 
 -- Gravity Drive..
-minetest.register_craftitem("ship_parts:mass_aggregator", {
+--[[minetest.register_craftitem("ship_parts:mass_aggregator", {
 	description = S("Higg Mass Aggregation Apparatus"),
 	inventory_image = "ship_mass_aggregator.png",
     light_source = 2,
+})--]]
+
+minetest.register_node("ship_parts:mass_aggregator", {
+	description = S("Higg Mass Aggregation Apparatus"),
+    stack_max = 8,
+    inventory_image = "ship_mass_aggregator.png",
+    tiles = {"ship_mass_aggregator_top.png", "ship_mass_aggregator_top.png", "ship_mass_aggregator_left.png",
+             "ship_mass_aggregator_right.png", "ship_mass_aggregator_back.png", "ship_mass_aggregator_front.png"},
+    drawtype = "nodebox",
+    paramtype = "light",
+    light_source = 3,
+    paramtype2 = "facedir",
+    groups = {
+        cracky = 1,
+        oddly_breakable_by_hand = 1,
+    },
+    sounds = default.node_sound_metal_defaults()
 })
 
 -- Spatial Stabilzier
