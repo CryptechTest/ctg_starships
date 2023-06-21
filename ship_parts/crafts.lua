@@ -23,6 +23,8 @@ if true then
     local zib = "technic:zinc_block"
     local tnb = "default:tinblock"
     local gdb = "default:goldblock"
+    local mes = "default:mese"
+    local urb = "lumpblocks:uranium_block"
 
     local al = "ctg_world:aluminum_ingot"
     local ni = "ctg_world:nickel_ingot"
@@ -32,8 +34,11 @@ if true then
     local ch = "technic:chromium_ingot"
     local tn = "default:tin_ingot"    
     local zi = "technic:zinc_ingot"
+    local li = "technic:lead_ingot"
     local cp = "technic:composite_plate"
     local ms = "ship_parts:metal_support"
+    local ms = "ship_parts:metal_support"
+    local mi = "moreores:mithril_ingot"
 
     local ic = "basic_materials:ic"
     local cw = "basic_materials:copper_wire"
@@ -63,6 +68,19 @@ if true then
     local cs = "ship_parts:circuit_standard"
     local ca = "ship_parts:circuit_advanced"
     local rc = "ship_parts:reactor_cell"
+    local sym = "ship_parts:engine_part4"
+    local cam = "ship_parts:engine_part5"
+    local flx = "ship_parts:flux_tube"
+    local auc = "ship_parts:reactor_cell"
+
+    local col = "technic:copper_coil"
+    local enc = "technic:green_energy_crystal"
+    local pm = "technic:power_monitor"
+
+    local tub = "pipeworks:tube_1"
+    local dgt = "pipeworks:digiline_conductor_tube_1"
+    local met = "pipeworks:conductor_tube_off_1"
+    local lcd = "digilines:lcd"
 
     minetest.register_craft({
         output = "ship_parts:circuit_standard",
@@ -107,6 +125,31 @@ if true then
     minetest.register_craft({
         output = "ship_parts:telemetry_capsule",
         recipe = {{"", "", ""}, {rc, rc, rc}, {cm, gl, cl}}
+    })
+
+    minetest.register_craft({
+        output = "ship_parts:mass_aggregator",
+        recipe = {{col, sym, col}, {flx, cs, flx}, {gw, enc, gw}}
+    })
+
+    minetest.register_craft({
+        output = "ship_parts:engine_part4",
+        recipe = {{cs, cs, cs}, {mo, cam, mo}, {mes, col, mes}}
+    })
+
+    minetest.register_craft({
+        output = "ship_parts:flux_tube",
+        recipe = {{dgt, auc, met}, {dgt, ca, met}, {dgt, ab, met}}
+    })
+
+    minetest.register_craft({
+        output = "ship_parts:reactor_cell",
+        recipe = {{tub, ic, tub}, {li, urb, li}, {tub, mi, tub}}
+    })
+
+    minetest.register_craft({
+        output = "ship_parts:engine_part5",
+        recipe = {{lcd, ps, lcd}, {ps, dw, ps}, {"", pm, ""}}
     })
 
 end
