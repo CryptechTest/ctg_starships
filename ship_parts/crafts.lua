@@ -32,13 +32,14 @@ if true then
     local ct = "technic:carbon_steel_ingot"
     local ss = "technic:stainless_steel_ingot"
     local ch = "technic:chromium_ingot"
-    local tn = "default:tin_ingot"    
+    local tn = "default:tin_ingot"
     local zi = "technic:zinc_ingot"
     local li = "technic:lead_ingot"
     local cp = "technic:composite_plate"
     local ms = "ship_parts:metal_support"
     local ms = "ship_parts:metal_support"
     local mi = "moreores:mithril_ingot"
+    local sul = "technic:sulfur_lump"
 
     local ic = "basic_materials:ic"
     local cw = "basic_materials:copper_wire"
@@ -72,6 +73,8 @@ if true then
     local cam = "ship_parts:engine_part5"
     local flx = "ship_parts:flux_tube"
     local auc = "ship_parts:reactor_cell"
+    local jtp = "ctg_jetpack:jetpack_titanium"
+    local hy = "ctg_jetpack:jetpack_fuel_hydrogen"
 
     local col = "technic:copper_coil"
     local enc = "technic:green_energy_crystal"
@@ -81,6 +84,11 @@ if true then
     local dgt = "pipeworks:digiline_conductor_tube_1"
     local met = "pipeworks:conductor_tube_off_1"
     local lcd = "digilines:lcd"
+
+    minetest.register_craft({
+        output = "ship_parts:assembler",
+        recipe = {{al, hy, al}, {ni, jtp, ni}, {al, hy, al}}
+    })
 
     minetest.register_craft({
         output = "ship_parts:circuit_standard",

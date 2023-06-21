@@ -37,6 +37,69 @@ minetest.register_node("ship_parts:aluminum_support", {
     paramtype = "light"
 })
 
+local function machine_can_dig(pos, player)
+	local meta = minetest.get_meta(pos)
+	local inv = meta:get_inventory()
+	if not inv:is_empty("hull1") or not inv:is_empty("hull2")
+            or not inv:is_empty("ship1") or not inv:is_empty("ship2")
+            or not inv:is_empty("command") or not inv:is_empty("systems")
+            or not inv:is_empty("env") or not inv:is_empty("enabled") 
+            or not inv:is_empty("eng1") or not inv:is_empty("eng2") then
+		if player then
+			minetest.chat_send_player(player:get_player_name(),
+				S("Assembler cannot be removed because it is not empty"))
+		end
+		return false
+	end
+
+	return true
+end
+
+local function get_count(inv, name, itm)
+    local balance = 0
+    local items = inv:get_list(name)
+    if #items > 0 then
+        for _, item in ipairs(items) do
+            if item ~= nil and not item:is_empty() and item:get_name() == itm then
+                balance = balance + item:get_count()
+            end
+        end
+    end
+    return balance
+end
+
+local function assembler_is_full(pos)
+	local meta = minetest.get_meta(pos)
+	local inv = meta:get_inventory()
+	if not inv:is_empty("hull1") and not inv:is_empty("hull2")
+            and not inv:is_empty("ship1") and not inv:is_empty("ship2")
+            and not inv:is_empty("command") and not inv:is_empty("systems")
+            and not inv:is_empty("env") and not inv:is_empty("eng1") and not inv:is_empty("eng2") then
+        local chull1 = get_count(inv, "hull1", "ship_parts:hull_plating")
+        local chull2 = get_count(inv, "hull2", "ship_parts:hull_plating")
+        local cship1 = get_count(inv, "cship1", "scifi_nodes:white2")
+        local cship2 = get_count(inv, "cship2", "scifi_nodes:white2")
+        local ccommand1 = get_count(inv, "command", "ship_parts:command_capsule")
+        local ccommand2 = get_count(inv, "command", 'ship_parts:system_capsule')
+        local csystems1 = get_count(inv, "systems", "ship_parts:solar_collimator")
+        local csystems2 = get_count(inv, "systems", "ship_parts:eviromental_sys")
+        local cenv = get_count(inv, "env", "ctg_airs:air_duct_S")
+        local ceng1 = get_count(inv, "eng1", "ship_parts:mass_aggregator")
+        local ceng2 = get_count(inv, "eng2", "ship_parts:mass_aggregator")
+
+        local ready = true
+        if chull1 == 100 and chull2 == 100 and cship1 == 198 and cship2 == 198 and
+                ccommand1 == 10 and ccommand2 == 20 and csystems1== 50 and csystems2 == 42 and
+                cenv == 198 and ceng1 == 10 and ceng2 == 10 then
+            ready = true
+        end
+		return ready
+	end
+
+	return false
+end
+
+
 local function register_assembler(data)
 
     local machine_name = string.lower(data.name)
@@ -62,7 +125,7 @@ local function register_assembler(data)
             -- topbar
             "button[4,0;2,0.5;crew;Crew]",
             "button[6,0;3,0.5;launch;Launch]",
-            "button[9,0;1,0.5;exit;Exit]",
+            "button_exit[9,0;1,0.5;exit;Exit]",
 
             -- hull 1
             "image[1,1;1,1;ship_hull_plating_sq.png]",
@@ -148,7 +211,7 @@ local function register_assembler(data)
     end
 
     local on_receive_fields = function(pos, formname, fields, sender)
-        if fields.quit then
+        if fields.quit or fields.exit then
             return
         end
         local node = minetest.get_node(pos)
@@ -160,6 +223,23 @@ local function register_assembler(data)
             else
                 meta:set_int("enabled", 1)
                 enabled = true
+            end
+        end
+
+        if fields.crew then
+            if sender then
+                minetest.chat_send_player(sender:get_player_name(),
+                    S("Crew Control not implemented yet.."))
+            end
+        end
+        if fields.launch then
+            local rdy = assembler_is_full(pos)
+            if sender and not rdy then
+                minetest.chat_send_player(sender:get_player_name(),
+                    S("Launch is not yet ready. You require additional materials.."))
+            elseif sender then
+                minetest.chat_send_player(sender:get_player_name(),
+                    S("Launch is pending..."))
             end
         end
 
@@ -184,6 +264,7 @@ local function register_assembler(data)
         -- sunlight_propagates = true,
         paramtype = "light",
 
+        on_receive_fields = on_receive_fields,
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             local meta = minetest.get_meta(pos)
             meta:set_string("infotext", "Starship Assembler " .. "-" .. " " .. machine_desc)
@@ -192,7 +273,7 @@ local function register_assembler(data)
             return technic.machine_after_dig_node
         end,
         on_rotate = screwdriver.disallow,
-        can_dig = technic.machine_can_dig,
+        can_dig = machine_can_dig,
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
@@ -208,7 +289,7 @@ local function register_assembler(data)
             inv:set_size("eng2", 1)
             meta:set_int("enabled", 1)
             meta:set_string("formspec", update_formspec(pos, data))
-        end
+        end,
     })
 
 end
