@@ -87,7 +87,7 @@ local function assembler_is_full(pos)
         local ceng1 = get_count(inv, "eng1", "ship_parts:mass_aggregator")
         local ceng2 = get_count(inv, "eng2", "ship_parts:mass_aggregator")
 
-        local ready = true
+        local ready = false
         if chull1 == 100 and chull2 == 100 and cship1 == 198 and cship2 == 198 and
                 ccommand1 == 10 and ccommand2 == 20 and csystems1== 50 and csystems2 == 42 and
                 cenv == 198 and ceng1 == 10 and ceng2 == 10 then
