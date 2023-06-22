@@ -38,21 +38,21 @@ minetest.register_node("ship_parts:aluminum_support", {
 })
 
 local function machine_can_dig(pos, player)
-	local meta = minetest.get_meta(pos)
-	local inv = meta:get_inventory()
-	if not inv:is_empty("hull1") or not inv:is_empty("hull2")
+    local meta = minetest.get_meta(pos)
+    local inv = meta:get_inventory()
+    if not inv:is_empty("hull1") or not inv:is_empty("hull2")
             or not inv:is_empty("ship1") or not inv:is_empty("ship2")
             or not inv:is_empty("command") or not inv:is_empty("systems")
             or not inv:is_empty("env") or not inv:is_empty("enabled") 
             or not inv:is_empty("eng1") or not inv:is_empty("eng2") then
-		if player then
-			minetest.chat_send_player(player:get_player_name(),
-				S("Assembler cannot be removed because it is not empty"))
-		end
-		return false
-	end
+        if player then
+            minetest.chat_send_player(player:get_player_name(),
+                S("Assembler cannot be removed because it is not empty"))
+        end
+        return false
+    end
 
-	return true
+    return true
 end
 
 local function get_count(inv, name, itm)
@@ -69,9 +69,9 @@ local function get_count(inv, name, itm)
 end
 
 local function assembler_is_full(pos)
-	local meta = minetest.get_meta(pos)
-	local inv = meta:get_inventory()
-	if not inv:is_empty("hull1") and not inv:is_empty("hull2")
+    local meta = minetest.get_meta(pos)
+    local inv = meta:get_inventory()
+    if not inv:is_empty("hull1") and not inv:is_empty("hull2")
             and not inv:is_empty("ship1") and not inv:is_empty("ship2")
             and not inv:is_empty("command") and not inv:is_empty("systems")
             and not inv:is_empty("env") and not inv:is_empty("eng1") and not inv:is_empty("eng2") then
@@ -93,10 +93,10 @@ local function assembler_is_full(pos)
                 cenv == 198 and ceng1 == 10 and ceng2 == 10 then
             ready = true
         end
-		return ready
-	end
+        return ready
+    end
 
-	return false
+    return false
 end
 
 
