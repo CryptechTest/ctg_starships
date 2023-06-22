@@ -58,7 +58,7 @@ end
 local function get_count(inv, name, itm)
     local balance = 0
     local items = inv:get_list(name)
-    if #items > 0 then
+    if items and #items > 0 then
         for _, item in ipairs(items) do
             if item ~= nil and not item:is_empty() and item:get_name() == itm then
                 balance = balance + item:get_count()
