@@ -232,6 +232,10 @@ if true then
                 if #objs > 0 then
                     particle_effect(pos, 0)
                     particle_effect(exit, 1)
+                    if clicker:is_player() then
+                        local name = clicker:get_player_name()
+                        minetest.sound_play("tele_drone", { to_player = name, gain = 1.0 })
+                    end
                     minetest.after(1, function()
                         local ppos = clicker:getpos()
                         if minetest.get_node({
@@ -240,6 +244,8 @@ if true then
                             z = ppos.z
                         }).name == "orbital_teleport:" .. data.node then
                             clicker:setpos(exit)
+                            local name = clicker:get_player_name()
+                            minetest.sound_play("tele_zap", { to_player = name, gain = 1.2, pitch = 0.6 })
                         end
                         particle_effect_teleport(exit, 1)
                         particle_effect_teleport(exit, 2)
@@ -253,6 +259,8 @@ if true then
                                     obj:remove()
                                 end
                             elseif obj:is_player() then
+                                local name = obj:get_player_name()
+		                        minetest.sound_play("tele_zap", { to_player = name, gain = 1.2, pitch = 0.6 })
                                 obj:setpos(exit)
                             end
                         end
