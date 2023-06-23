@@ -527,8 +527,8 @@ function spatial_tubes.register_machine(data)
 
     minetest.register_node(node_name, {
         description = machine_desc,
-        tiles = {"local_telepad_top_dark.png", "local_telepad_bottom.png", "local_telepad_top_dark.png",
-                 "local_telepad_top_dark.png", "local_telepad_top_dark.png", "local_telepad_top_dark.png"},
+        tiles = {"local_telepad_top_dark.png", "local_telepad_bottom.png", "local_telepad_side.png",
+                 "local_telepad_side.png", "local_telepad_side.png", "local_telepad_side.png"},
         drawtype = "nodebox",
         paramtype = "light",
         drop = node_name,
