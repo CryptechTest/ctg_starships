@@ -119,7 +119,7 @@ function ship_machine.register_engine(data)
 
             if (not enabled) then
                 technic.swap_node(pos, machine_node)
-                meta:set_string("infotext", S("%s Disabled"):format(machine_desc_tier))
+                meta:set_string("infotext", machine_desc_tier .. S(" Disabled"))
                 meta:set_int(tier .. "_EU_demand", 0)
                 meta:set_int("src_time", 0)
                 local formspec = ship_machine.update_formspec(data, false, enabled, false, 0, charge, charge_max)
@@ -138,7 +138,7 @@ function ship_machine.register_engine(data)
 
             if not needs_charge(pos) then
                 technic.swap_node(pos, machine_node .. "_active")
-                meta:set_string("infotext", S("%s Operational - Charged"):format(machine_desc_tier))
+                meta:set_string("infotext", machine_desc_tier .. S(" Operational - Charged"))
                 meta:set_int(tier .. "_EU_demand", machine_demand_idle)
                 meta:set_int("src_time", 0)
                 local formspec = ship_machine.update_formspec(data, true, enabled, has_mese, 0, charge, charge_max)
@@ -148,12 +148,12 @@ function ship_machine.register_engine(data)
                 return
             end
 
-            meta:set_string("infotext", S("%s Active - Charging"):format(machine_desc_tier))
+            meta:set_string("infotext", machine_desc_tier .. S(" Active - Charging"))
             if meta:get_int("src_time") < round(time_scl * 10) then
                 local item_percent = (math.floor(meta:get_int("src_time") / round(time_scl * 10) * 100))
                 if not powered then
                     technic.swap_node(pos, machine_node)
-                    meta:set_string("infotext", S("%s Unpowered"):format(machine_desc_tier))
+                    meta:set_string("infotext", machine_desc_tier .. S(" Unpowered"))
                     local formspec = ship_machine.update_formspec(data, false, enabled, has_mese, item_percent, charge,
                         charge_max)
                     meta:set_string("formspec", formspec)

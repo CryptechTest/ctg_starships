@@ -146,7 +146,7 @@ function ship_engine.register_engine(data)
 
             if (not enabled) then
                 technic.swap_node(pos, machine_node)
-                meta:set_string("infotext", S("%s Disabled"):format(machine_desc_tier))
+                meta:set_string("infotext", machine_desc_tier .. S(" Disabled"):format())
                 meta:set_int(tier .. "_EU_demand", 0)
                 meta:set_int(tier .. "_EU_supply", 0)
                 -- meta:set_int("src_time", 0)
@@ -165,7 +165,7 @@ function ship_engine.register_engine(data)
                 local out_res = out_results(pos, machine_node, machine_desc_tier, ltier, has_mese)
                 if not has_mese then
                     technic.swap_node(pos, machine_node)
-                    meta:set_string("infotext", S("%s Idle - Missing Input"):format(machine_desc_tier))
+                    meta:set_string("infotext", machine_desc_tier .. S(" Idle - Missing Input"))
                     meta:set_int(tier .. "_EU_supply", 0)
                     meta:set_int("src_time", round(data.speed * 10))
                     local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, 0, charge,
@@ -173,7 +173,7 @@ function ship_engine.register_engine(data)
                     meta:set_string("formspec", formspec)
                 elseif out_res then
                     technic.swap_node(pos, machine_node)
-                    meta:set_string("infotext", S("%s Energizing - Active Pending"):format(machine_desc_tier))
+                    meta:set_string("infotext", machine_desc_tier .. S(" Energizing - Active Pending"))
                     meta:set_int("src_time", round(data.speed * 10))
                     meta:set_int(tier .. "_EU_supply", data.supply)
                     time_scl = time_tick * (out_res * 0.1)
@@ -197,7 +197,7 @@ function ship_engine.register_engine(data)
                 meta:set_int(tier .. "_EU_demand", 0)
                 if meta:get_int("src_time") < round(data.speed * 10.0 * 2) then
                     technic.swap_node(pos, machine_node .. "_active")
-                    meta:set_string("infotext", S("%s Charged & Active"):format(machine_desc_tier))
+                    meta:set_string("infotext", machine_desc_tier .. S(" Charged & Active"))
                     -- meta:set_int(tier .. "_EU_supply", data.supply)
                     meta:set_int("src_time", round(data.speed * 10))
                     local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, 0, charge,
@@ -212,10 +212,10 @@ function ship_engine.register_engine(data)
             end
 
             meta:set_int(tier .. "_EU_demand", machine_demand[EU_upgrade + 1])
-            meta:set_string("infotext", S("%s Active - Charging"):format(machine_desc_tier))
+            meta:set_string("infotext", machine_desc_tier .. S(" Active - Charging"))
 
             if not powered then
-                meta:set_string("infotext", S("%s Not Powered"):format(machine_desc_tier))
+                meta:set_string("infotext", machine_desc_tier .. S(" Not Powered"))
                 return
             end
 
@@ -223,7 +223,7 @@ function ship_engine.register_engine(data)
                 if not powered then
                     technic.swap_node(pos, machine_node)
                     meta:set_int(tier .. "_EU_supply", 0)
-                    meta:set_string("infotext", S("%s Unpowered"):format(machine_desc_tier))
+                    meta:set_string("infotext", machine_desc_tier .. S(" Unpowered"))
                     return
                 end
                 return
@@ -560,7 +560,7 @@ function ship_engine.register_engine_core(data)
 
             if (not enabled) then
                 technic.swap_node(pos, machine_node)
-                meta:set_string("infotext", S("%s Disabled"):format(machine_desc_tier))
+                meta:set_string("infotext", machine_desc_tier .. S(" Disabled"))
                 meta:set_int(tier .. "_EU_demand", 0)
                 meta:set_int("src_time", 0)
                 local formspec = ship_engine.update_formspec(data, false, enabled, false, 0, charge, charge_max)
@@ -572,7 +572,7 @@ function ship_engine.register_engine_core(data)
             if powered and meta:get_int("src_time") <= round(data.speed * 10 * 1.0) then
                 if not has_mese then
                     technic.swap_node(pos, machine_node)
-                    meta:set_string("infotext", S("%s Idle - Missing Engines"):format(machine_desc_tier))
+                    meta:set_string("infotext", machine_desc_tier .. S(" Idle - Missing Engines"))
                     meta:set_int(tier .. "_EU_demand", 0)
                     meta:set_int("src_time", 0)
                     local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max)
@@ -583,7 +583,7 @@ function ship_engine.register_engine_core(data)
 
             if not ship_engine.needs_charge(pos) then
                 technic.swap_node(pos, machine_node .. "_active")
-                meta:set_string("infotext", S("%s Idle - Charged!"):format(machine_desc_tier))
+                meta:set_string("infotext", machine_desc_tier .. S(" Idle - Charged!"))
                 meta:set_int(tier .. "_EU_demand", 0)
                 meta:set_int("src_time", 0)
                 local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max)
@@ -593,12 +593,12 @@ function ship_engine.register_engine_core(data)
 
             technic.swap_node(pos, machine_node .. "_active")
             meta:set_int(tier .. "_EU_demand", machine_demand[EU_upgrade + 1])
-            meta:set_string("infotext", S("%s Active"):format(machine_desc_tier))
+            meta:set_string("infotext", machine_desc_tier .. S(" Active"))
             if meta:get_int("src_time") < round(time_scl * 10) then
                 local item_percent = (math.floor(meta:get_int("src_time") / round(time_scl * 10) * 100))
                 if not powered then
                     technic.swap_node(pos, machine_node)
-                    meta:set_string("infotext", S("%s Unpowered"):format(machine_desc_tier))
+                    meta:set_string("infotext", machine_desc_tier .. S(" Unpowered"))
                     local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, item_percent, charge,
                         charge_max)
                     meta:set_string("formspec", formspec)
