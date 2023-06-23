@@ -37,7 +37,6 @@ if true then
     local li = "technic:lead_ingot"
     local cp = "technic:composite_plate"
     local ms = "ship_parts:metal_support"
-    local ms = "ship_parts:metal_support"
     local mi = "moreores:mithril_ingot"
     local sul = "technic:sulfur_lump"
 

@@ -237,13 +237,13 @@ if true then
                         minetest.sound_play("tele_drone", { to_player = name, gain = 1.0 })
                     end
                     minetest.after(1, function()
-                        local ppos = clicker:getpos()
+                        local ppos = clicker:get_pos()
                         if minetest.get_node({
                             x = ppos.x,
                             y = ppos.y,
                             z = ppos.z
                         }).name == "orbital_teleport:" .. data.node then
-                            clicker:setpos(exit)
+                            clicker:set_pos(exit)
                             local name = clicker:get_player_name()
                             minetest.sound_play("tele_zap", { to_player = name, gain = 1.2, pitch = 0.6 })
                         end
@@ -261,7 +261,7 @@ if true then
                             elseif obj:is_player() then
                                 local name = obj:get_player_name()
 		                        minetest.sound_play("tele_zap", { to_player = name, gain = 1.2, pitch = 0.6 })
-                                obj:setpos(exit)
+                                obj:set_pos(exit)
                             end
                         end
                     end)
