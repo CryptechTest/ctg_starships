@@ -28,19 +28,19 @@ register_lv_drive({
     machine_name = "gravity_drive_lite",
     machine_desc = "Gravity Generator Lite",
     demand = {2100},
-    charge_max = 8,
-    gravity = 0.6,
+    charge_max = 10,
+    gravity = 0.62,
     speed = 4,
     digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
 })
 
--- low voltage
-register_lv_drive({
-    machine_name = "gravity_drive",
-    machine_desc = "Gravity Generator",
-    demand = {2500},
+-- medium voltage
+register_mv_drive({
+    machine_name = "gravity_generator",
+    machine_desc = S("Gravity Generator"),
+    demand = {2750, 2500, 2200},
     charge_max = 8,
-    gravity = 0.95,
+    gravity = 0.776,
     speed = 5,
     digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
 })
@@ -53,6 +53,17 @@ register_hv_drive({
     charge_max = 5,
     gravity = 0.957,
     speed = 6,
+    digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
+})
+
+-- low voltage for ship
+register_lv_drive({
+    machine_name = "gravity_drive",
+    machine_desc = "Gravity Generator",
+    demand = {2500},
+    charge_max = 8,
+    gravity = 0.95,
+    speed = 5,
     digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
 })
 
