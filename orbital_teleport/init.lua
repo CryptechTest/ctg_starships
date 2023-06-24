@@ -67,19 +67,32 @@ local function particle_effect(pos, type)
         maxsize = 2.5, -- maxsize
         collisiondetection = false, -- collisiondetection
         collision_removal = false, -- collision_removal
-        texture = "scifi_nodes_tp_part.png", -- texture
+        object_collision = false,
+        vertical = true,
+        texture = {
+            name = "scifi_nodes_tp_part.png",
+            fade = "out"
+        }, -- texture
         glow = 11 -- glow
     })
 end
 
 local function particle_effect_teleport(pos, amount)
-    local texture = "tele_effect2.png"
-    if math.random(0, 2) > 1 then
-        texture = "tele_effect2.png^[transformR180"
+    local texture = "orbital_tele_effect.png"
+    local r = math.random(0, 4)
+    if r == 1 then
+        texture = "orbital_tele_effect.png^[transformR90"
+    elseif r == 2 then
+        texture = "orbital_tele_effect.png^[transformR180"
+    elseif r == 3 then
+        texture = "orbital_tele_effect.png^[transformR270"
+    elseif r == 4 then
+        texture = "orbital_tele_effect.png^[transformFX"
     end
+
     minetest.add_particlespawner({
         amount = amount,
-        time = 0.8,
+        time = 0.72,
         minpos = {
             x = pos.x - 0.02,
             y = pos.y + 0.15,
@@ -110,14 +123,14 @@ local function particle_effect_teleport(pos, amount)
             y = 0.2,
             z = 0
         },
-        minexptime = 0.1,
-        maxexptime = 0.3,
+        minexptime = 0.25,
+        maxexptime = 0.4,
         minsize = 11,
         maxsize = 25,
         collisiondetection = false,
         collision_removal = false,
         object_collision = false,
-        -- vertical = false,
+        vertical = false,
         texture = texture,
         glow = 15
     })
@@ -201,8 +214,8 @@ if true then
 
     minetest.register_node("orbital_teleport:" .. data.node, {
         description = data.desc,
-        tiles = {"scifi_nodes_pad.png", "scifi_nodes_pad.png", "scifi_nodes_pad.png", "scifi_nodes_pad.png",
-                 "scifi_nodes_pad.png", "scifi_nodes_pad.png"},
+        tiles = {"orbital_telepad_top.png", "orbital_telepad_bottom.png", "orbital_telepad_side.png", 
+                "orbital_telepad_side.png", "orbital_telepad_side.png", "orbital_telepad_side.png"},
         drawtype = "nodebox",
         paramtype = "light",
         groups = {
@@ -248,7 +261,6 @@ if true then
                             minetest.sound_play("tele_zap", { to_player = name, gain = 1.2, pitch = 0.6 })
                         end
                         particle_effect_teleport(exit, 1)
-                        particle_effect_teleport(exit, 2)
                         local objs = minetest.get_objects_inside_radius(pos, 2.25)
                         for _, obj in pairs(objs) do
                             if obj:get_luaentity() and not obj:is_player() then
@@ -257,11 +269,16 @@ if true then
                                     local obj2 = minetest.add_entity(exit, "__builtin:item")
                                     obj2:get_luaentity():set_item(item1)
                                     obj:remove()
+                                    particle_effect_teleport(exit, 1)
+                                else
+                                    obj:set_pos(exit)
+                                    particle_effect_teleport(exit, 1)
                                 end
                             elseif obj:is_player() then
                                 local name = obj:get_player_name()
 		                        minetest.sound_play("tele_zap", { to_player = name, gain = 1.2, pitch = 0.6 })
                                 obj:set_pos(exit)
+                                particle_effect_teleport(exit, 1)
                             end
                         end
                     end)
