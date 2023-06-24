@@ -17,12 +17,16 @@ local function round(number, steps)
 end
 
 function ship_machine.update_formspec(data, running, enabled, has_mese, percent, charge, charge_max)
-    local machine_name = data.machine_name
-    local machine_desc = "Starship " .. data.machine_desc
-    local typename = data.typename
     local tier = data.tier
     local ltier = string.lower(tier)
+    local machine_name = data.machine_name
+    local machine_desc = tier .. " " .. data.machine_desc
+    local typename = data.typename
     local formspec = nil
+
+    if (machine_name == "lv_gravity_drive") then
+        machine_desc = "Starship " .. data.machine_desc
+    end
     if percent then
         percent = round(percent, 100)
     end
@@ -46,31 +50,32 @@ function ship_machine.update_formspec(data, running, enabled, has_mese, percent,
         else
             btnName = btnName .. "<Disabled>"
         end
-        local image = "image[4,1;1,1;" .. "lv_gravity_drive.png" .. "]"
+        local image = "image[5,1;1,1;" .. "lv_gravity_drive.png" .. "]"
         if running then
-            image = "image[4,1;1,1;" .. "lv_gravity_drive_active_icon.png" .. "]"
+            image = "image[5,1;1,1;" .. "lv_gravity_drive_active_icon.png" .. "]"
         end
         local meseimg = ""
         if has_mese or running then
-            meseimg = "animated_image[5,1;1,1;;" .. "engine_mese_anim.png" .. ";4;400;]"
+            meseimg = "animated_image[6,1;1,1;;" .. "engine_mese_anim.png" .. ";4;400;]"
         end
         local act_msg = ""
         if running and charge_percent >= 100 then
-            act_msg = "image[2,4;4.75,1;gravity_active.png]"
+            act_msg = "image[3,4;4.75,1;gravity_active.png]"
         elseif running then
-            act_msg = "image[2,4;4.75,1;gravity_offline.png]"
+            act_msg = "image[3,4;4.75,1;gravity_offline.png]"
         end
-        formspec = "formspec_version[3]" .. "size[8,5;]" .. "real_coordinates[false]" .. "label[0,0;" ..
+        formspec = "formspec_version[3]" .. "size[8,9;]" .. "real_coordinates[false]" ..
+                       "list[current_player;main;0,5;8,4;]" .. "listring[current_player;main]" .. "label[0,0;" ..
                        machine_desc:format(tier) .. "]" .. image .. meseimg ..
-                       "image[3,1;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
-                       ":gui_furnace_arrow_fg.png^[transformR270]" .. "image[2,1;1,1;" .. ship_machine.mese_image_mask ..
-                       "]" .. "button[2,3;4,1;toggle;" .. btnName .. "]" .. "label[2,2;Charge " .. tostring(charge) ..
-                       " of " .. tostring(charge_max) .. "]" .. "label[5,2;" .. tostring(charge_percent) .. "%" .. "]" ..
+                       "image[4,1;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
+                       ":gui_furnace_arrow_fg.png^[transformR270]" .. "image[3,1;1,1;" .. ship_machine.mese_image_mask ..
+                       "]" .. "button[3,3;4,1;toggle;" .. btnName .. "]" .. "label[3,2;Charge " .. tostring(charge) ..
+                       " of " .. tostring(charge_max) .. "]" .. "label[6,2;" .. tostring(charge_percent) .. "%" .. "]" ..
                        act_msg
     end
     if data.upgrade then
-        formspec = formspec .. "list[current_name;upgrade1;1,3;1,1;]" .. "list[current_name;upgrade2;2,3;1,1;]" ..
-                       "label[1,4;" .. S("Upgrade Slots") .. "]" .. "listring[current_name;upgrade1]" ..
+        formspec = formspec .. "list[current_name;upgrade1;0.5,3;1,1;]" .. "list[current_name;upgrade2;1.5,3;1,1;]" ..
+                       "label[0.5,4;" .. S("Upgrade Slots") .. "]" .. "listring[current_name;upgrade1]" ..
                        "listring[current_player;main]" .. "listring[current_name;upgrade2]" ..
                        "listring[current_player;main]"
     end

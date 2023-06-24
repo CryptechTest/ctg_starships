@@ -17,7 +17,7 @@ function ship_machine.register_engine(data)
     local tier = data.tier
     local ltier = string.lower(tier)
     local machine_name = data.machine_name
-    local machine_desc = data.machine_desc
+    local machine_desc = tier .. " " .. data.machine_desc
     local tmachine_name = string.lower(machine_name)
     local gen_reset_tick = 0
 
@@ -31,6 +31,10 @@ function ship_machine.register_engine(data)
         ship_machine = 1,
         gravity_gen = 1
     }
+
+    if data.machine_name == "gravity_drive_admin" or data.machine_name == "gravity_drive" then
+        groups["not_in_creative_inventory"] = 1
+    end
 
     local active_groups = {
         not_in_creative_inventory = 1
@@ -157,7 +161,7 @@ function ship_machine.register_engine(data)
                     local formspec = ship_machine.update_formspec(data, false, enabled, has_mese, item_percent, charge,
                         charge_max)
                     meta:set_string("formspec", formspec)
-                    ship_machine.reset_generator(meta)
+                    -- ship_machine.reset_generator(meta)
                     return
                 end
                 local formspec = ship_machine.update_formspec(data, true, enabled, has_mese, item_percent, charge,
