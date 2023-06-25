@@ -198,7 +198,7 @@ function spatial_tubes.register_machine(data)
         if exit == nil then
             local desc = "label[0.15,0.3;" .. machine_desc .. "]"
             local input_pos =
-                "field[1,1.5;2,1;inp_x;Dest X;0]field[3,1.5;2,1;inp_y;Dest Y;0]field[5,1.5;2,1;inp_z;Dest Z;0]"
+                "field[1,1.5;2,1;inp_x;Dest X;]field[3,1.5;2,1;inp_y;Dest Y;]field[5,1.5;2,1;inp_z;Dest Z;]"
             local input_save = "button[3,2.5;2,1;save;Lock Link]"
 
             formspec = {"formspec_version[6]", "size[8,4]", desc, input_pos, input_save}
@@ -321,9 +321,12 @@ function spatial_tubes.register_machine(data)
                 return
             end
 
-            -- increment charge ticker
-            local chrg = math.random(1, 3)
-            meta:set_int("charge", charge + chrg)
+            local locked = meta:get_int("locked") == 1
+            if locked then
+                -- increment charge ticker
+                local chrg = math.random(1, 3)
+                meta:set_int("charge", charge + chrg)
+            end
 
             -- reset run time
             meta:set_int("src_time", 0)
@@ -368,29 +371,44 @@ function spatial_tubes.register_machine(data)
 
         if fields.save and not isNumError then
             if (dest_y > -11000 and dest_y < 22000) then
-                local dest = {
-                    x = dest_x,
-                    y = dest_y,
-                    z = dest_z
-                }
-                local dnode = minetest.get_node(dest)
-                if string.match(dnode.name, node_name) then
-                    local dmeta = minetest.get_meta(dest)
-                    if dmeta:get_int("locked") ~= nil and dmeta:get_int("locked") == 0 then
-                        -- save exit destination
-                        meta:set_string("exit", minetest.serialize(dest))
-                        -- lock receiver
-                        dmeta:set_int("locked", 1)
-                        minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked!")
-                    elseif dmeta:get_int("locked") == 1 then
-                        minetest.chat_send_player(sender:get_player_name(), "This Telepad already has a receiver!")
+                local tfound = false
+                for i = -1, 1 do
+                    local dest = {
+                        x = dest_x,
+                        y = dest_y + i,
+                        z = dest_z
+                    }
+                    local dnode = minetest.get_node(dest)
+                    if string.match(dnode.name, node_name) then
+                        local dmeta = minetest.get_meta(dest)
+                        if minetest.is_protected(dest, sender:get_player_name()) and
+                            not minetest.check_player_privs(sender:get_player_name(), "protection_bypass") then
+                            minetest.chat_send_player(sender:get_player_name(),
+                                "Destination is within a protected area!")
+                            minetest.record_protection_violation(dest, sender:get_player_name())
+                            tfound = true
+                            break
+                        elseif dmeta:get_int("locked") ~= nil and dmeta:get_int("locked") == 0 then
+                            -- save exit destination
+                            meta:set_string("exit", minetest.serialize(dest))
+                            -- lock receiver
+                            dmeta:set_int("locked", 1)
+                            minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked!")
+                            tfound = true
+                            break
+                        elseif dmeta:get_int("locked") == 1 then
+                            minetest.chat_send_player(sender:get_player_name(), "This Telepad already has a receiver!")
+                            tfound = true
+                            break
+                        end
                     end
-                else
+                end
+                if not tfound then
                     minetest.chat_send_player(sender:get_player_name(), "No Telepad found at destination location!")
                 end
             elseif sender:is_player() then
                 minetest.chat_send_player(sender:get_player_name(),
-                    "Invalid Location Entered for Telepad!  Destination must be within spatial bounds..")
+                    "Invalid Location Entered for Telepad!  Destination must be within spatial bounds.")
             end
         end
 
@@ -404,6 +422,13 @@ function spatial_tubes.register_machine(data)
     local on_rightclick = function(pos, node, clicker)
         local clicker_name = clicker:get_player_name()
         local meta = minetest.get_meta(pos)
+        -- check protection at this location
+        if minetest.is_protected(pos, clicker_name) and
+            not minetest.check_player_privs(clicker_name, "protection_bypass") then
+            technic.swap_node(pos, node_name .. "_error")
+            minetest.record_protection_violation(pos, clicker_name)
+            return
+        end
         local exit = nil
         -- get destination pos
         if meta:get_string("exit") then
@@ -411,20 +436,30 @@ function spatial_tubes.register_machine(data)
         end
         -- is our exit destination setup?
         if exit ~= nil then
+            -- check protection at destination location
+            if minetest.is_protected(exit, clicker_name) and
+                not minetest.check_player_privs(clicker_name, "protection_bypass") then
+                technic.swap_node(pos, node_name .. "_error")
+                minetest.chat_send_player(clicker_name, "Destination is within a protected area!")
+                minetest.record_protection_violation(exit, clicker_name)
+                return
+            end
             local dnode = minetest.get_node(exit)
             -- check if destination pad exists..
             if not string.match(dnode.name, node_name) then
-                minetest.chat_send_player(clicker_name, "Destination must be to another Telepad..")
+                technic.swap_node(pos, node_name .. "_error")
+                minetest.chat_send_player(clicker_name, "Destination must be to another Telepad.")
                 return
             end
             -- check if this pad is ready
-            if meta:get_int("ready") == 0 then
-                minetest.chat_send_player(clicker_name, "This Teleport Pad requires more charge..")
+            if not meta:get_int("ready") then
+                minetest.chat_send_player(clicker_name, "This Teleport Pad requires more charge.")
                 return
             end
             local dmeta = minetest.get_meta(exit)
             if not dmeta:get_int("locked") then
-                minetest.chat_send_player(clicker_name, "Teleport Pad destination must be locked..")
+                technic.swap_node(pos, node_name .. "_error")
+                minetest.chat_send_player(clicker_name, "Teleport Pad destination must be locked.")
                 return
             end
             -- get destination node
@@ -435,11 +470,12 @@ function spatial_tubes.register_machine(data)
             }).name
             -- check if destination node is active..
             if nname == node_name then
-                minetest.chat_send_player(clicker_name, "Teleport Pad at destination is not powered..")
+                technic.swap_node(pos, node_name .. "_error")
+                minetest.chat_send_player(clicker_name, "Teleport Pad at destination is not powered.")
                 return
             elseif nname == node_name .. "_error" then
-                minetest.chat_send_player(clicker_name, "A Teleport Pad was not found at the destination!")
                 technic.swap_node(pos, node_name .. "_error")
+                minetest.chat_send_player(clicker_name, "A Teleport Pad was not found at the destination!")
                 return
             end
             -- get objects within radius..
@@ -488,10 +524,13 @@ function spatial_tubes.register_machine(data)
                             pitch = math.random(0.57, 0.64)
                         })
                     end
-                    -- summon effects at dest
-                    particle_effect_teleport(exit, 2)
-                    -- teleport objects within.. summon effects
+                    -- get objects within...
                     local objs = minetest.get_objects_inside_radius(pos, 2.25)
+                    if #objs > 0 then
+                        -- summon effects at dest
+                        particle_effect_teleport(exit, 2)
+                    end
+                    -- teleport objects within.. summon effects
                     for _, obj in pairs(objs) do
                         if obj and obj:get_luaentity() and not obj:is_player() then
                             if obj:get_luaentity().name == "__builtin:item" then
