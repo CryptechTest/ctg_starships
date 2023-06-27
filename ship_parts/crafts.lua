@@ -40,6 +40,7 @@ if true then
     local mi = "moreores:mithril_ingot"
     local sul = "technic:sulfur_lump"
 
+    local es = "basic_materials:empty_spool"
     local ic = "basic_materials:ic"
     local cw = "basic_materials:copper_wire"
     local gw = "basic_materials:gold_wire"
@@ -91,22 +92,26 @@ if true then
 
     minetest.register_craft({
         output = "ship_parts:circuit_standard",
-        recipe = {{ic, ps, ""}, {cw, dw, nw}, {cl, ps, fb}}
+        recipe = {{ic, ps, ""}, {cw, dw, nw}, {cl, ps, fb}},
+        replacements = {{ cw, es }, { nw, es }}
     })
 
     minetest.register_craft({
         output = "ship_parts:circuit_advanced",
-        recipe = {{ic, ps, gw}, {cw, cs, nw}, {cl, ps, fb}}
+        recipe = {{ic, ps, gw}, {cw, cs, nw}, {cl, ps, fb}},
+        replacements = {{ cw, es }, { gw, es }, { nw, es }}
     })
 
     minetest.register_craft({
         output = "ship_parts:solar_array",
-        recipe = {{so, nw, so}, {so, sp, so}, {so, ps, so}}
+        recipe = {{so, nw, so}, {so, sp, so}, {so, ps, so}},
+        replacements = {{ nw, es }}
     })
 
     minetest.register_craft({
         output = "ship_parts:solar_collimator",
-        recipe = {{so, gl, so}, {ni, cs, sp}, {"", gw, ""}}
+        recipe = {{so, gl, so}, {ni, cs, sp}, {"", gw, ""}},
+        replacements = {{ gw, es }}
     })
     
     minetest.register_craft({
@@ -136,7 +141,8 @@ if true then
 
     minetest.register_craft({
         output = "ship_parts:mass_aggregator",
-        recipe = {{col, sym, col}, {flx, cs, flx}, {gw, enc, gw}}
+        recipe = {{col, sym, col}, {flx, cs, flx}, {gw, enc, gw}},
+        replacements = {{ gw, es .. " 2" }}
     })
 
     minetest.register_craft({

@@ -1,4 +1,5 @@
 if true then
+    local es = "basic_materials:empty_spool"
     local gw = "basic_materials:gold_wire"
     local sw = "basic_materials:silver_wire"
     local nw = "ctg_world:nickel_wire"
@@ -24,18 +25,21 @@ if true then
     -- mv
     minetest.register_craft({
         output = "ship_machine:mv_gravity_generator",
-        recipe = {{nw, gw, nw}, {cc, gdl, cc}, {aw, mvt, aw}}
+        recipe = {{nw, gw, nw}, {cc, gdl, cc}, {aw, mvt, aw}},
+        replacements = {{ nw, es .. " 2" }, {aw, es .. " 2"}}
     })
 
     -- hv
     minetest.register_craft({
         output = "ship_machine:hv_gravity_generator",
-        recipe = {{gw, cam, gw}, {hvt, gdmv, hvt}, {gw, sw, gw}}
+        recipe = {{gw, cam, gw}, {hvt, gdmv, hvt}, {gw, sw, gw}},
+        replacements = {{ gw, es .. " 4"}, {sw, es}}
     })
 
     -- hv
     minetest.register_craft({
         output = "ship_machine:hv_gravity_generator",
-        recipe = {{gw, cam, gw}, {cc, gdmv, cc}, {sw, hvt, sw}}
+        recipe = {{gw, cam, gw}, {cc, gdmv, cc}, {sw, hvt, sw}},
+        replacements = {{ gw, es .. " 2" }, {sw, es .. " 2"}}
     })
 end

@@ -89,8 +89,8 @@ local function assembler_is_full(pos)
 
         local ready = false
         if chull1 == 100 and chull2 == 100 and cship1 == 198 and cship2 == 198 and
-                ccommand1 == 10 and ccommand2 == 20 and csystems1== 50 and csystems2 == 42 and
-                cenv == 198 and ceng1 == 10 and ceng2 == 10 then
+                ccommand1 == 10 and ccommand2 == 20 and csystems1== 40 and csystems2 == 30 and
+                cenv == 198 and ceng1 == 3 and ceng2 == 3 then
             ready = true
         end
         return ready
