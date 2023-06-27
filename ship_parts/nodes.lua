@@ -175,8 +175,8 @@ local function register_assembler(data)
             "image[5.15,3;1,1;ship_eviromental_comp.png]",
             "list[current_name;systems;3.9,3;2,1;0]",
             "listring[current_name;systems]",
-            "label[4.5,3.2;50]",
-            "label[5.7,3.2;42]",
+            "label[4.5,3.2;40]",
+            "label[5.7,3.2;30]",
             -- env
             "image[3.9,4.7;1,1;ship_parts_duct_icon.png]",
             "image[5.15,4.7;1,1;ship_parts_duct_icon.png]",
@@ -188,12 +188,12 @@ local function register_assembler(data)
             "image[2.5,4.7;1,1;ship_mass_aggregator.png]",
             "list[current_name;eng1;2.5,4.7;1,1;0]",
             "listring[current_name;eng1]",
-            "label[3,4.9;10]",
+            "label[3,4.9;3]",
             -- eng 2
             "image[6.5,4.7;1,1;ship_mass_aggregator.png]",
             "list[current_name;eng2;6.5,4.7;1,1;0]",
             "listring[current_name;eng2]",
-            "label[7,4.9;10]",
+            "label[7,4.9;3]",
             -- labels
             "label[1.2,0.8;Hull]",
             "label[8.2,0.8;Hull]",
