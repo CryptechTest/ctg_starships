@@ -264,13 +264,14 @@ if true then
                         local objs = minetest.get_objects_inside_radius(pos, 2.25)
                         for _, obj in pairs(objs) do
                             if obj:get_luaentity() and not obj:is_player() then
-                                if obj:get_luaentity().name == "__builtin:item" then
+                                local ent = obj:get_luaentity()
+                                if ent.name == "__builtin:item" then
                                     local item1 = obj:get_luaentity().itemstring
                                     local obj2 = minetest.add_entity(exit, "__builtin:item")
                                     obj2:get_luaentity():set_item(item1)
                                     obj:remove()
                                     particle_effect_teleport(exit, 1)
-                                else
+                                elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monseter") then
                                     obj:set_pos(exit)
                                     particle_effect_teleport(exit, 1)
                                 end
