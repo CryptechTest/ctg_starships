@@ -154,6 +154,24 @@ local function particle_effect_teleport(pos, amount)
     })
 end
 
+local function play_sound(pos, sound, distance, excluded_name)
+	if sound then
+		-- higher pitch for a child
+		local pitch = 0.6
+
+		-- a little random pitch to be different
+		pitch = pitch + math.random(-10, 10) * 0.005
+
+		minetest.sound_play(sound, {
+			pos = pos,
+			gain = 1.0,
+			max_hear_distance = distance,
+			pitch = pitch,
+            exclude_player = excluded_name
+		}, true)
+	end
+end
+
 local function needs_charge(pos)
     local meta = minetest.get_meta(pos)
     local charge = meta:get_int("charge")
@@ -528,7 +546,9 @@ function spatial_tubes.register_machine(data)
                     local objs = minetest.get_objects_inside_radius(pos, 2.25)
                     if #objs > 0 then
                         -- summon effects at dest
-                        particle_effect_teleport(exit, 2)
+                        particle_effect_teleport(exit, 1)
+                        local name = clicker:get_player_name()
+                        play_sound(exit, "local_tele_zap", 7, name)
                     end
                     -- teleport objects within.. summon effects
                     for _, obj in pairs(objs) do

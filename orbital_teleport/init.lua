@@ -136,6 +136,24 @@ local function particle_effect_teleport(pos, amount)
     })
 end
 
+local function play_sound(pos, sound, distance, excluded_name)
+	if sound then
+		-- higher pitch for a child
+		local pitch = 0.6
+
+		-- a little random pitch to be different
+		pitch = pitch + math.random(-10, 10) * 0.005
+
+		minetest.sound_play(sound, {
+			pos = pos,
+			gain = 1.0,
+			max_hear_distance = distance,
+			pitch = pitch,
+            exclude_player = excluded_name
+		}, true)
+	end
+end
+
 if true then
 
     local data = {
@@ -261,6 +279,8 @@ if true then
                             minetest.sound_play("tele_zap", { to_player = name, gain = 1.2, pitch = 0.6 })
                         end
                         particle_effect_teleport(exit, 1)
+                        local name = clicker:get_player_name()
+                        play_sound(exit, "local_tele_zap", 7, name)
                         local objs = minetest.get_objects_inside_radius(pos, 2.25)
                         for _, obj in pairs(objs) do
                             if obj:get_luaentity() and not obj:is_player() then
