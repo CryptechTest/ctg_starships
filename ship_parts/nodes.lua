@@ -81,7 +81,7 @@ local function assembler_is_full(pos)
         local cship2 = get_count(inv, "cship2", "scifi_nodes:white2")
         local ccommand1 = get_count(inv, "command", "ship_parts:command_capsule")
         local ccommand2 = get_count(inv, "command", 'ship_parts:system_capsule')
-        local csystems1 = get_count(inv, "systems", "ship_parts:solar_collimator")
+        local csystems1 = get_count(inv, "systems", "ship_parts:ship_solar_array")
         local csystems2 = get_count(inv, "systems", "ship_parts:eviromental_sys")
         local cenv = get_count(inv, "env", "ctg_airs:air_duct_S")
         local ceng1 = get_count(inv, "eng1", "ship_parts:mass_aggregator")
@@ -171,7 +171,7 @@ local function register_assembler(data)
             "label[7.1,1.2;99]",
             "label[7.1,2.4;99]",
             -- systems
-            "image[3.9,3;1,1;ship_solar_charger.png]",
+            "image[3.9,3;1,1;ship_solar_array.png]",
             "image[5.15,3;1,1;ship_eviromental_comp.png]",
             "list[current_name;systems;3.9,3;2,1;0]",
             "listring[current_name;systems]",
