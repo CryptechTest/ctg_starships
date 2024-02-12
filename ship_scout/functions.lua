@@ -86,7 +86,7 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
     return formspec
 end
 
-function ship_scout.engine_jump_activate(pos, dest)
+function ship_scout.engine_jump_activate(pos, dest, size)
     local sz = 32
     local pos1 = vector.subtract(pos, {
         x = sz,
@@ -102,7 +102,7 @@ function ship_scout.engine_jump_activate(pos, dest)
     local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
 
     if #nodes == 1 then
-        return ship_machine.perform_jump(nodes[1], dest)
+        return ship_machine.perform_jump(nodes[1], dest, size)
     end
     return -3
 end
