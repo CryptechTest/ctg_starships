@@ -66,8 +66,8 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
         end
 
         local coord_tag = "image[0.7,1.2;4.7,0.9;bg2.png]" .. "label[0.8,1.2;Current Coordinates]"
-        local coords_label =
-            coord_tag .. "label[0.8,1.5;X: " .. pos.x .. "]label[2,1.5;Y: " .. pos.y .. "]label[3.2,1.5;Z: " .. pos.z .. "]"
+        local coords_label = coord_tag .. "label[0.8,1.5;X: " .. pos.x .. "]label[2,1.5;Y: " .. pos.y ..
+                                 "]label[3.2,1.5;Z: " .. pos.z .. "]"
         local input_field =
             "field[1,3.5;1.4,1;inp_x;Move X;0]field[2.3,3.5;1.4,1;inp_y;Move Y;0]field[3.6,3.5;1.4,1;inp_z;Move Z;0]"
 

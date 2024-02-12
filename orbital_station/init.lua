@@ -22,7 +22,7 @@ local function load_orbital(pos)
 end
 
 local function find_spawn_drive(pos)
-    local sz = 16
+    local sz = 32
     local pos1 = vector.subtract(pos, {
         x = sz,
         y = sz,
@@ -36,8 +36,8 @@ local function find_spawn_drive(pos)
 
     local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
 
-    if nodes and #nodes == 1 then
-        return nodes[1]
+    if nodes and #nodes >= 1 then
+        return #nodes > 0
     end
     return nil
 end
@@ -52,14 +52,15 @@ minetest.register_on_joinplayer(function()
         z = 0
     }
 
-    minetest.after(3, function()
+    minetest.after(5, function()
         local pos = vector.add(spawn_spoint, {
             x = 0,
             y = 8,
             z = 0
         })
         if find_spawn_drive(pos) == nil then
-            load_orbital(pos)
+            minetest.log("orbital station not found!");
+            -- load_orbital(pos)
         end
     end)
 

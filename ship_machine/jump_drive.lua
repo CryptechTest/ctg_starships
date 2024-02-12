@@ -15,9 +15,9 @@ end
 
 function ship_machine.register_jumpship(data)
     data.modname = "ship_machine"
-    --data.machine_name = "jump_drive"
-    --data.machine_desc = "Jump Drive Allocator"
-    --data.typename = "jump_drive"
+    -- data.machine_name = "jump_drive"
+    -- data.machine_desc = "Jump Drive Allocator"
+    -- data.typename = "jump_drive"
     data.jump_distance = 1
     data.speed = 1
     data.tier = "LV"
@@ -135,16 +135,25 @@ function ship_machine.register_jumpship(data)
                     y = pos.y + move_y,
                     z = pos.z + move_z
                 }
+                local perform = true;
+                if vector.distance(pos, dest) < 32 then
+                    perform = false;
+                end
                 local size = {
                     w = 16,
                     h = 16,
                     l = 32
                 }
-                minetest.after(0, function()
-                    if ship_machine.check_engines_charged(pos) then
-                        ship_machine.transport_jumpship(pos, dest, size, sender)
-                    end
-                end)
+                if not schemlib.check_dest_clear(pos, dest, size) then
+                    perform = false;
+                end
+                if perform then
+                    minetest.after(0, function()
+                        if ship_machine.check_engines_charged(pos) then
+                            ship_machine.transport_jumpship(pos, dest, size, sender)
+                        end
+                    end)
+                end
             end
             local formspec = ship_machine.update_jumpdrive_formspec(data, false, enabled)
             meta:set_string("formspec", formspec)

@@ -8,11 +8,18 @@ function ship_scout.register_scout()
 
     local data = {}
 
+    local size = {
+        w = 12,
+        h = 12,
+        l = 15
+    }
+
     data.typename = "ship_scout"
     data.modname = "ship_scout"
     data.tier = "LV"
     data.machine_name = "scout"
     data.jump_dist = 2000
+    data.size = size;
 
     local modname = "ship_scout"
     local ltier = string.lower(data.tier)
@@ -107,22 +114,28 @@ function ship_scout.register_scout()
         }
         local dest = ship_scout.get_jump_dest(pos, offset)
 
-        if isNumError then
+        if dest == nil then
+            meta:set_int("travel_ready", 0)
+            message = "FTL Engines not found..."
+        elseif isNumError then
             meta:set_int("travel_ready", 0)
             message = "Must input a valid number..."
+        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < 100 then
+            meta:set_int("travel_ready", 0)
+            message = "Jump distance below engine range..."
         elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) > jump_dis then
             meta:set_int("travel_ready", 0)
-            message = "Jump distance beyond engine range.."
+            message = "Jump distance beyond engine range..."
         elseif fields.submit_nav and not is_deepspace and dest.y > 22000 then
             meta:set_int("travel_ready", 0)
-            message = "Jump destination beyond engine abilities.."
+            message = "Jump destination beyond engine abilities..."
         elseif fields.submit_nav and not is_deepspace and dest.y < 4000 then
             meta:set_int("travel_ready", 0)
-            message = "Jump destination beyond engine abilities.."
+            message = "Jump destination beyond engine abilities..."
         elseif fields.submit_nav and ((is_deepspace and loc ~= "0") or (not is_deepspace)) then
             local formspec = ship_scout.update_formspec(dest, data, loc, false, "Preparing Jump..")
             meta:set_string("formspec", formspec)
-            local j = ship_scout.engine_jump_activate(pos, dest)
+            local j = ship_scout.engine_jump_activate(pos, dest, data.size)
             if j == 1 then
                 meta:set_int("travel_ready", 1)
                 message = "FTL Engines preparing for jump..."
@@ -147,10 +160,10 @@ function ship_scout.register_scout()
                 message = "FTL Engines Failed to Start.."
             end
         elseif fields.submit_nav and not changed then
-            message = "FTL Engines require more charge.."
+            message = "FTL Engines require more charge..."
             meta:set_int("travel_ready", 0)
         elseif fields.submit_nav and nav_ready ~= 1 and not changed then
-            message = "Survey Navigator requires more charge.."
+            message = "Survey Navigator requires more charge..."
             meta:set_int("travel_ready", 0)
         end
 

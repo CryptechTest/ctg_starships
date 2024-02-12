@@ -519,18 +519,24 @@ function ship_machine.engines_charged_spend(pos, dist)
     return false
 end
 
-function ship_machine.perform_jump(pos, dest)
+function ship_machine.perform_jump(pos, dest, size)
     local meta = minetest.get_meta(pos)
     local owner = meta:get_string("owner")
-    local size = {
-        w = 20,
-        h = 12,
-        l = 30
-    }
 
     if not schemlib.check_dest_clear(pos, dest, size) then
         return -1
     end
+
+    local pos1 = vector.subtract(dest, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(dest, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
 
     if ship_machine.check_engines_charged(pos) == true then
         digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', {
@@ -542,6 +548,7 @@ function ship_machine.perform_jump(pos, dest)
         minetest.after(3, function()
             local metad = minetest.get_meta(dest)
             metad:set_int("travel_ready", 0)
+            schemlib.force_unload_area()
         end)
         return 1
     end
