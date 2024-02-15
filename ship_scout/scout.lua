@@ -113,6 +113,7 @@ function ship_scout.register_scout()
             z = move_z
         }
         local dest = ship_scout.get_jump_dest(pos, offset)
+        local panel_dest = vector.add(pos, offset)
 
         if dest == nil then
             meta:set_int("travel_ready", 0)
@@ -133,32 +134,47 @@ function ship_scout.register_scout()
             meta:set_int("travel_ready", 0)
             message = "Jump destination beyond engine abilities..."
         elseif fields.submit_nav and ((is_deepspace and loc ~= "0") or (not is_deepspace)) then
-            local formspec = ship_scout.update_formspec(dest, data, loc, false, "Preparing Jump..")
+            local formspec = ship_scout.update_formspec(pos, data, loc, false, "Preparing Jump..")
             meta:set_string("formspec", formspec)
-            local j = ship_scout.engine_jump_activate(pos, dest, data.size)
-            if j == 1 then
-                meta:set_int("travel_ready", 1)
-                message = "FTL Engines preparing for jump..."
-                minetest.after(1, function()
-                    local metad = minetest.get_meta(dest)
-                    local formspec = ship_scout.update_formspec(dest, data, loc, false, "Jump Complete!")
-                    metad:set_string("formspec", formspec)
-                    meta:set_string("formspec", formspec)
-                    metad:set_int("travel_ready", 0)
-                end)
-            elseif j == 0 then
-                meta:set_int("travel_ready", 0)
-                message = "FTL Engines require more charge.."
-            elseif j == -1 then
-                meta:set_int("travel_ready", 0)
-                message = "Travel Obstructed at " .. "(" .. dest.x .. "," .. dest.y .. "," .. dest.z .. ")"
-            elseif j == -3 then
-                meta:set_int("travel_ready", 0)
-                message = "FTL Jump Drive not found..."
-            else
-                meta:set_int("travel_ready", 0)
-                message = "FTL Engines Failed to Start.."
+
+            local function jump_callback(j)
+                if formspec == nil then
+                    return
+                end
+                if j == 1 then
+                    meta:set_int("travel_ready", 1)
+                    message = "FTL Engines preparing for jump..."
+                    minetest.after(2, function()
+                        local metad = minetest.get_meta(panel_dest)
+                        local formspec = ship_scout.update_formspec(panel_dest, data, loc, false, "Jump Complete!")
+                        metad:set_string("formspec", formspec)
+                        meta:set_string("formspec", formspec)
+                        metad:set_int("travel_ready", 0)
+                    end)
+                    return
+                elseif j == 0 then
+                    meta:set_int("travel_ready", 0)
+                    message = "FTL Engines require more charge.."
+                elseif j == -1 then
+                    meta:set_int("travel_ready", 0)
+                    message = "Travel Obstructed at " .. "(" .. dest.x .. "," .. dest.y .. "," .. dest.z .. ")"
+                elseif j == -3 then
+                    meta:set_int("travel_ready", 0)
+                    message = "FTL Jump Drive not found..."
+                else
+                    meta:set_int("travel_ready", 0)
+                    message = "FTL Engines Failed to Start.."
+                end
+
+                local ready = meta:get_int("travel_ready")
+                local formspec = ship_scout.update_formspec(pos, data, loc, ready, message)
+                meta:set_string("formspec", formspec)
             end
+
+            -- async jump with callback
+            ship_scout.engine_do_jump(pos, dest, data.size, jump_callback)
+
+            return
         elseif fields.submit_nav and not changed then
             message = "FTL Engines require more charge..."
             meta:set_int("travel_ready", 0)

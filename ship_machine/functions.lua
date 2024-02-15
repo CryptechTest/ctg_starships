@@ -519,13 +519,9 @@ function ship_machine.engines_charged_spend(pos, dist)
     return false
 end
 
-function ship_machine.perform_jump(pos, dest, size)
+local function do_jump(pos, dest, size, jcb)
     local meta = minetest.get_meta(pos)
     local owner = meta:get_string("owner")
-
-    if not schemlib.check_dest_clear(pos, dest, size) then
-        return -1
-    end
 
     local pos1 = vector.subtract(dest, {
         x = size.w,
@@ -548,9 +544,29 @@ function ship_machine.perform_jump(pos, dest, size)
         minetest.after(3, function()
             local metad = minetest.get_meta(dest)
             metad:set_int("travel_ready", 0)
-            schemlib.force_unload_area()
         end)
-        return 1
+        jcb(1)
+        return
     end
-    return 0
+    jcb(0)
+    return
+end
+
+function ship_machine.perform_jump(pos, dest, size, jcb)
+
+    local area_clear = true
+    if not schemlib.check_dest_clear(pos, dest, size) then
+        area_clear = false
+    end
+
+    minetest.after(1, function()
+        if not area_clear then
+            if not schemlib.check_dest_clear(pos, dest, size) then
+                jcb(-1)
+                return
+            end
+        end
+        do_jump(pos, dest, size, jcb)
+    end)
+
 end
