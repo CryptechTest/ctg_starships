@@ -83,7 +83,7 @@ local function particle_effect(pos, type)
     })
 end
 
-local function particle_effect_teleport(pos, amount)
+function spatial_tubes.particle_effect_teleport(pos, amount)
     local texture = {
         name = "local_tele_effect_anim.png",
         fade = "out"
@@ -155,21 +155,21 @@ local function particle_effect_teleport(pos, amount)
 end
 
 local function play_sound(pos, sound, distance, excluded_name)
-	if sound then
-		-- higher pitch for a child
-		local pitch = 0.6
+    if sound then
+        -- higher pitch for a child
+        local pitch = 0.6
 
-		-- a little random pitch to be different
-		pitch = pitch + math.random(-10, 10) * 0.005
+        -- a little random pitch to be different
+        pitch = pitch + math.random(-10, 10) * 0.005
 
-		minetest.sound_play(sound, {
-			pos = pos,
-			gain = 1.0,
-			max_hear_distance = distance,
-			pitch = pitch,
+        minetest.sound_play(sound, {
+            pos = pos,
+            gain = 1.0,
+            max_hear_distance = distance,
+            pitch = pitch,
             exclude_player = excluded_name
-		}, true)
-	end
+        }, true)
+    end
 end
 
 local function needs_charge(pos)

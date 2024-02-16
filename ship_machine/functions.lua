@@ -228,8 +228,11 @@ end)
 
 local function do_particles(pos)
     local prt = {
-        texture = "ctg_jetpack_vapor_cloud.png",
-        texture_r180 = "ctg_jetpack_vapor_cloud.png" .. "^[transformR180",
+        texture = {
+            name = "vacuum_air_particle_1.png",
+            fade = "out"
+        },
+        texture_r180 = "vacuum_air_particle_1.png" .. "^[transformR180",
         vel = 0.6,
         time = 7,
         size = 6,
@@ -282,7 +285,7 @@ local function do_particle_tele(pos)
         cols = false
     }
     local exm = pos
-    exm.y = exm.y - 2.5
+    exm.y = exm.y - 2.25
     local rx = math.random(-0.01, 0.01) * 0.1
     local rz = math.random(-0.01, 0.01) * 0.1
     local texture = prt.texture
@@ -316,7 +319,79 @@ local function do_particle_tele(pos)
     })
 end
 
-function ship_machine.transport_jumpship(pos, dest, size, owner)
+function ship_machine.move_bed(pos, pos_new, n)
+
+    local node = minetest.get_node(pos)
+    local other
+
+    if n == 2 then
+        local dir = minetest.facedir_to_dir(node.param2)
+        other = vector.subtract(pos, dir)
+    elseif n == 1 then
+        local dir = minetest.facedir_to_dir(node.param2)
+        other = vector.add(pos, dir)
+    end
+
+    -- try and fetch player from beds db...
+    local player_name = beds.player_bed[minetest.serialize(pos)]
+
+    if player_name == nil then
+        local node_meta = minetest.get_meta(pos)
+        if node_meta:get_string("owner") then
+            -- fetch player from node meta
+            player_name = node_meta:get_string("owner")
+        end
+    end
+
+    if player_name then
+        local old_spawn = beds.spawn[player_name]
+
+        beds.remove_spawns_at(pos)
+        beds.remove_spawns_at(other)
+        beds.remove_player_beds_at(pos)
+
+        if n == 2 then
+            pos = other
+        end
+
+        local player = minetest.get_player_by_name(player_name)
+        if player ~= nil then
+            for i = 1, 24 do
+                local inv = player:get_inventory()
+                local bed = inv:get_stack("beds", i)
+                if not bed:is_empty() then
+                    local meta = bed:get_meta()
+                    local ppos = meta:get_string("pos")
+                    if minetest.serialize(pos) == ppos then
+
+                        beds.player_bed[minetest.serialize(pos_new)] = player_name
+                        beds.bed_cooldown[minetest.serialize(pos_new)] = false
+
+                        if old_spawn == pos then
+                            beds.spawn[player_name] = {
+                                x = pos_new.x,
+                                y = pos_new.y + 1,
+                                z = pos_new.z
+                            }
+                        end
+
+                        meta:set_string("pos", minetest.serialize(pos_new))
+                        inv:set_stack("beds", i, bed)
+
+                        -- minetest.log("moved bed!")
+                        break
+                    end
+                end
+            end
+            beds.save_player_beds()
+            beds.save_spawns()
+            unified_inventory.set_inventory_formspec(player, unified_inventory.current_page[player_name])
+        end
+    end
+
+end
+
+function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
     local save = false
     local flags = {
         file_cache = save,
@@ -354,6 +429,32 @@ function ship_machine.transport_jumpship(pos, dest, size, owner)
     else
         -- load the schematic from cache..
         local count, ver, lmeta = schemlib.process_emitted(nil, nil, sdata, true)
+
+        minetest.after(5, function()
+            local pos1 = vector.subtract(pos, {
+                x = size.w,
+                y = size.h,
+                z = size.l
+            })
+            local pos2 = vector.add(pos, {
+                x = size.w,
+                y = size.h,
+                z = size.l
+            })
+
+            local beds = minetest.find_nodes_in_area(pos1, pos2, "group:bed")
+            for _, bedpos in pairs(beds) do
+                local bed = minetest.get_node(bedpos)
+                if bed ~= nil then
+                    local g = minetest.get_item_group(bed.name, "bed");
+                    if minetest.get_item_group(bed.name, "bed") >= 1 then
+                        local bed_dest = vector.add(bedpos, offset)
+                        ship_machine.move_bed(bedpos, bed_dest, g)
+                    end
+                end
+            end
+
+        end)
     end
 
     local pos1 = vector.subtract(pos, {
@@ -374,6 +475,12 @@ function ship_machine.transport_jumpship(pos, dest, size, owner)
             for i = 0, 3 do
                 minetest.after(i, function()
                     if (obj ~= nil) then
+                        local name = obj:get_player_name()
+                        minetest.sound_play("tele_drone", {
+                            to_player = name,
+                            gain = math.random(0.8, 1.1),
+                            pitch = math.random(0.8, 1)
+                        })
                         for i = 1, 200 do
                             if (obj ~= nil and obj:get_pos() ~= nil) then
                                 local p = {
@@ -519,7 +626,7 @@ function ship_machine.engines_charged_spend(pos, dist)
     return false
 end
 
-local function do_jump(pos, dest, size, jcb)
+local function do_jump(pos, dest, size, jcb, offset)
     local meta = minetest.get_meta(pos)
     local owner = meta:get_string("owner")
 
@@ -540,11 +647,7 @@ local function do_jump(pos, dest, size, jcb)
         })
         local dist = vector.distance(pos, dest)
         ship_machine.engines_charged_spend(pos, dist)
-        ship_machine.transport_jumpship(pos, dest, size, owner)
-        minetest.after(3, function()
-            local metad = minetest.get_meta(dest)
-            metad:set_int("travel_ready", 0)
-        end)
+        ship_machine.transport_jumpship(pos, dest, size, owner, offset)
         jcb(1)
         return
     end
@@ -552,21 +655,22 @@ local function do_jump(pos, dest, size, jcb)
     return
 end
 
-function ship_machine.perform_jump(pos, dest, size, jcb)
+function ship_machine.perform_jump(pos, dest, size, jcb, offset)
 
     local area_clear = true
     if not schemlib.check_dest_clear(pos, dest, size) then
         area_clear = false
     end
 
-    minetest.after(1, function()
+    minetest.after(2, function()
         if not area_clear then
-            if not schemlib.check_dest_clear(pos, dest, size) then
+            area_clear = schemlib.check_dest_clear(pos, dest, size)
+            if not area_clear then
                 jcb(-1)
                 return
             end
         end
-        do_jump(pos, dest, size, jcb)
+        do_jump(pos, dest, size, jcb, offset)
     end)
 
 end
