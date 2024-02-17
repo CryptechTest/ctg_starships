@@ -367,7 +367,7 @@ function ship_machine.move_bed(pos, pos_new, n)
                         beds.player_bed[minetest.serialize(pos_new)] = player_name
                         beds.bed_cooldown[minetest.serialize(pos_new)] = false
 
-                        if old_spawn == pos then
+                        if old_spawn.x == pos.x and old_spawn.y == pos.y and old_spawn.z == pos.z then
                             beds.spawn[player_name] = {
                                 x = pos_new.x,
                                 y = pos_new.y + 1,
