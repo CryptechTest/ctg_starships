@@ -285,14 +285,16 @@ ship_machine.protector.can_dig = function(r, pos, digger, onlyowner, infolevel)
         z = pos.z + (r + 3)
     }, {"ship_machine:protect2"}) -- "ship_machine:protect2",
 
-    local jumpdrive_pos = vector.add(pos, {
-        x = 0,
-        y = -2,
-        z = 0
-    })
-    local jumpdrive = minetest.get_node(jumpdrive_pos)
-    if jumpdrive.name ~= "ship_machine:jump_drive" then
-        return true
+    if pos ~= nil then
+        local jumpdrive_pos = vector.add(pos, {
+            x = 0,
+            y = -2,
+            z = 0
+        })
+        local jumpdrive = minetest.get_node(jumpdrive_pos)
+        if jumpdrive.name ~= "ship_machine:jump_drive" then
+            return true
+        end
     end
 
     local meta, owner, members
