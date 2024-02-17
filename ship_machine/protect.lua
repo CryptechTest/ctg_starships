@@ -385,7 +385,7 @@ end)
 local old_is_protected = minetest.is_protected
 
 -- check for protected area, return true if protected and digger isn't on list
-function ship_machine.is_protected(pos, digger)
+function minetest.is_protected(pos, digger)
 
     digger = digger or "" -- nil check
 
