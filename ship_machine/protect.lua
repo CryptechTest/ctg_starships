@@ -547,10 +547,9 @@ minetest.register_node("ship_machine:protect2", {
     end,
 
     can_dig = function(pos, player)
-        --return player and ship_machine.protector.can_dig(1, pos, player:get_player_name(), true, 1)
-        --return 
-        local is_admin = player:get_player_name() == "squidicuzz"
-        return player and is_admin
+        return player and ship_machine.protector.can_dig(1, pos, player:get_player_name(), true, 1)
+        --local is_admin = player:get_player_name() == "squidicuzz"
+        --return player and is_admin
     end,
 
     on_blast = function()

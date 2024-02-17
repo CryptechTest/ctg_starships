@@ -246,7 +246,7 @@ function ship_scout.register_scout()
             return technic.machine_after_dig_node
         end,
         on_rotate = screwdriver.disallow,
-        -- can_dig = technic.machine_can_dig,
+        can_dig = technic.machine_can_dig,
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
@@ -265,10 +265,10 @@ function ship_scout.register_scout()
             local drive_loc = ship_scout.get_jumpdrive(pos, size)
             ship_machine.punch(drive_loc, node, puncher)
         end,
-        can_dig = function(pos, player)
+        --[[can_dig = function(pos, player)
             local is_admin = player:get_player_name() == "squidicuzz"
             return player and is_admin
-        end,
+        end,]]--
 
         on_receive_fields = on_receive_fields,
         digiline = {

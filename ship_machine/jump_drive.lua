@@ -59,12 +59,12 @@ function ship_machine.register_jumpship(data)
             return technic.machine_after_dig_node
         end,
         on_rotate = screwdriver.disallow,
-        --can_dig = technic.machine_can_dig,
-        can_dig = function(pos, player)
+        can_dig = technic.machine_can_dig,
+        --[[can_dig = function(pos, player)
             local is_admin = player:get_player_name() == "squidicuzz"
             return player and is_admin
             --return false
-        end,
+        end,]]--
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
