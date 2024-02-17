@@ -546,7 +546,7 @@ function spatial_tubes.register_machine(data)
                     local objs = minetest.get_objects_inside_radius(pos, 2.25)
                     if #objs > 0 then
                         -- summon effects at dest
-                        particle_effect_teleport(exit, 1)
+                        spatial_tubes.particle_effect_teleport(exit, 1)
                         local name = clicker:get_player_name()
                         play_sound(exit, "local_tele_zap", 7, name)
                     end
@@ -559,10 +559,10 @@ function spatial_tubes.register_machine(data)
                                 local obj2 = minetest.add_entity(exit, "__builtin:item")
                                 obj2:get_luaentity():set_item(item1)
                                 obj:remove()
-                                particle_effect_teleport(exit, 1)
+                                spatial_tubes.particle_effect_teleport(exit, 1)
                             elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monseter") then
                                 obj:set_pos(exit)
-                                particle_effect_teleport(exit, 1)
+                                spatial_tubes.particle_effect_teleport(exit, 1)
                             end
                         elseif obj and obj:is_player() then
                             local name = obj:get_player_name()
@@ -572,7 +572,7 @@ function spatial_tubes.register_machine(data)
                                 pitch = 0.6
                             })
                             obj:set_pos(exit)
-                            particle_effect_teleport(exit, 1)
+                            spatial_tubes.particle_effect_teleport(exit, 1)
                         end
                     end
                 end)
