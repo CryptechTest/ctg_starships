@@ -10,7 +10,8 @@ local function round(number, steps)
     return math.floor(number * steps + 0.5) / steps
 end
 
-function ship_engine.update_formspec(data, running, enabled, has_mese, percent, charge, charge_max, eu_input, eu_supply)
+function ship_engine.update_formspec(data, running, enabled, has_mese, percent, charge, charge_max, eu_input, eu_supply,
+    tick, tick_max)
     local machine_name = data.machine_name
     local machine_desc = "Starship " .. data.machine_desc
     local typename = data.typename
@@ -22,6 +23,7 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
     end
 
     if typename == 'engine' then
+        local tick_percent = round((tick / tick_max) * 100, 100)
         local charge_percent = 0
         if charge and charge > 0 and charge_max then
             charge_percent = round(math.floor(charge / (charge_max) * 100 * 100) / 100, 100)
@@ -41,18 +43,23 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
         if has_mese or running then
             meseimg = "animated_image[5,1;1,1;;" .. "engine_mese_anim.png" .. ";4;400;]"
         end
-        local power_field = "label[0.5,2.5;"..minetest.colorize('#21daff',"Energy Stats").."]"
-        local input_field = "label[0.5,3.6;Drawing]label[0.5,3.9;" .. minetest.colorize('#fca903', "-" .. eu_input) .. "]"
-        local output_field = "label[0.5,2.9;Generating]label[0.5,3.2;" .. minetest.colorize('#03fc56', "+" .. eu_supply)  .. "]"
+        local power_field = "label[0.5,2.5;" .. minetest.colorize('#21daff', "Energy Stats") .. "]"
+        local input_field = "label[0.5,3.6;Drawing]label[0.5,3.9;" .. minetest.colorize('#fca903', "-" .. eu_input) ..
+                                "]"
+        local output_field =
+            "label[0.5,2.9;Generating]label[0.5,3.2;" .. minetest.colorize('#03fc56', "+" .. eu_supply) .. "]"
         formspec = "size[8,9;]" .. "list[current_name;src;2,1;1,1;]" .. "list[current_name;dst;5,1;1,1;]" ..
                        "list[current_player;main;0,5;8,4;]" .. "label[0,0;" .. machine_desc:format(tier) .. "]" .. image ..
-                       meseimg .. "image[3,1;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
+                       meseimg .. "image[3,0.65;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(tick_percent) ..
                        ":gui_furnace_arrow_fg.png^[transformR270]" .. "listring[current_name;dst]" ..
                        "listring[current_player;main]" .. "listring[current_name;src]" ..
                        "listring[current_player;main]" .. "image[2,1;1,1;" .. ship_engine.mese_image_mask .. "]" ..
                        "button[3,3;4,1;toggle;" .. btnName .. "]" .. "label[2,2;Charge " .. tostring(charge) .. " of " ..
                        tostring(charge_max) .. "]" .. "label[5,2;" .. tostring(charge_percent) .. "%" .. "]" ..
-                       power_field .. input_field .. output_field
+                       power_field .. input_field .. output_field ..
+                       "image[3,1.25;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
+                       ":gui_furnace_arrow_fg.png^[transformR270]" .. "label[4,0.6;" .. tostring(tick_percent) .. "%" ..
+                       "]" -- .. "label[2,0.6;" .. tostring(percent) .. "%" .. "]" ..
     end
 
     if typename == 'engine_core' then
@@ -169,10 +176,10 @@ end
 local function spend_charge(pos, amt)
     local meta = minetest.get_meta(pos)
     local charge = meta:get_int("charge")
-    --local charge_max = meta:get_int("charge_max")
+    -- local charge_max = meta:get_int("charge_max")
     meta:set_int("charge", charge - amt)
 end
 
-function ship_engine.ship_jump(pos, chrg) 
+function ship_engine.ship_jump(pos, chrg)
     spend_charge(pos, chrg)
 end
