@@ -285,8 +285,8 @@ ship_machine.protector.can_dig = function(r, pos, digger, onlyowner, infolevel)
         z = pos.z + (r + 3)
     }, {"ship_machine:protect2"}) -- "ship_machine:protect2",
 
-    if pos ~= nil then
-        local jumpdrive_pos = vector.add(pos, {
+    if pos and #pos > 0 and pos[1] ~= nil then
+        local jumpdrive_pos = vector.add(pos[1], {
             x = 0,
             y = -2,
             z = 0
