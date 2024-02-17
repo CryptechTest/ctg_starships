@@ -277,13 +277,13 @@ ship_machine.protector.can_dig = function(r, pos, digger, onlyowner, infolevel)
     -- find the protector nodes
     local pos = minetest.find_nodes_in_area({
         x = pos.x - r,
-        y = (pos.y - 2) - r,
+        y = pos.y - r,
         z = pos.z - (r + 3)
     }, {
         x = pos.x + r,
-        y = (pos.y - 2) + r,
+        y = pos.y + r,
         z = pos.z + (r + 3)
-    }, {"ship_machine:jump_drive"}) -- "ship_machine:protect2",
+    }, {"ship_machine:protect2"}) -- "ship_machine:protect2",
 
     local meta, owner, members
 
@@ -385,7 +385,7 @@ end)
 local old_is_protected = minetest.is_protected
 
 -- check for protected area, return true if protected and digger isn't on list
-function minetest.is_protected(pos, digger)
+function ship_machine.is_protected(pos, digger)
 
     digger = digger or "" -- nil check
 
@@ -466,7 +466,7 @@ function ship_machine.rightclick(pos, clicker)
 end
 
 function ship_machine.punch(pos, node, puncher)
-    if minetest.is_protected(pos, puncher:get_player_name()) then
+    if ship_machine.is_protected(pos, puncher:get_player_name()) then
         return
     end
     minetest.add_entity(pos, "ship_machine:display")
@@ -490,7 +490,8 @@ minetest.register_node("ship_machine:protect2", {
 
     node_box = {
         type = "fixed",
-        fixed = {{-0.5625, -0.5625, -0.5625, 0.5625, -0.46875, 0.5625}, {-0.5625, 0.5625, -0.5625, 0.5625, 0.46875, 0.5625},
+        fixed = {{-0.5625, -0.5625, -0.5625, 0.5625, -0.46875, 0.5625},
+                 {-0.5625, 0.5625, -0.5625, 0.5625, 0.46875, 0.5625},
                  {0.46875, 0.46875, 0.46875, 0.40625, -0.46875, 0.40625},
                  {-0.46875, 0.46875, 0.46875, -0.40625, -0.46875, 0.40625},
                  {0.46875, 0.46875, -0.46875, 0.40625, -0.46875, -0.40625},
@@ -533,7 +534,7 @@ minetest.register_node("ship_machine:protect2", {
 
     on_punch = function(pos, node, puncher)
 
-        if minetest.is_protected(pos, puncher:get_player_name()) then
+        if ship_machine.is_protected(pos, puncher:get_player_name()) then
             return
         end
 
@@ -547,9 +548,9 @@ minetest.register_node("ship_machine:protect2", {
     end,
 
     can_dig = function(pos, player)
-        return player and ship_machine.protector.can_dig(1, pos, player:get_player_name(), true, 1)
-        --local is_admin = player:get_player_name() == "squidicuzz"
-        --return player and is_admin
+        -- return player and ship_machine.protector.can_dig(1, pos, player:get_player_name(), true, 1)
+        local is_admin = player:get_player_name() == "squidicuzz"
+        return player and is_admin
     end,
 
     on_blast = function()
