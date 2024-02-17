@@ -478,7 +478,7 @@ function ship_machine.rightclick(pos, clicker)
 end
 
 function ship_machine.punch(pos, node, puncher)
-    if ship_machine.is_protected(pos, puncher:get_player_name()) then
+    if minetest.is_protected(pos, puncher:get_player_name()) then
         return
     end
     minetest.add_entity(pos, "ship_machine:display")
@@ -546,7 +546,7 @@ minetest.register_node("ship_machine:protect2", {
 
     on_punch = function(pos, node, puncher)
 
-        if ship_machine.is_protected(pos, puncher:get_player_name()) then
+        if minetest.is_protected(pos, puncher:get_player_name()) then
             return
         end
 
