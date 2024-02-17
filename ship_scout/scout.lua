@@ -46,6 +46,7 @@ function ship_scout.register_scout()
         end
         local node = minetest.get_node(pos)
         local meta = minetest.get_meta(pos)
+
         local enabled = false
         if fields.toggle then
             if meta:get_int("enabled") == 1 then
@@ -54,6 +55,12 @@ function ship_scout.register_scout()
                 meta:set_int("enabled", 1)
                 enabled = true
             end
+        end
+
+        if fields.protector then
+            local prot_loc = ship_machine.get_protector(pos, size)
+            ship_machine.rightclick(prot_loc, sender)
+            return
         end
 
         local jump_dis = meta:get_int("jump_dist")
@@ -121,7 +128,7 @@ function ship_scout.register_scout()
             y = move_y,
             z = move_z
         }
-        local ncount, dest = ship_scout.get_jump_dest(pos, offset)
+        local ncount, dest = ship_scout.get_jump_dest(pos, offset, data.size)
         local panel_dest = vector.add(pos, offset)
 
         if ncount == 0 and dest == nil then
@@ -133,10 +140,10 @@ function ship_scout.register_scout()
         elseif isNumError then
             meta:set_int("travel_ready", 0)
             message = "Must input a valid number..."
-        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < 100 then
+        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < 99 then
             meta:set_int("travel_ready", 0)
             message = "Jump distance below engine range..."
-        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) > jump_dis then
+        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) > jump_dis + 1 then
             meta:set_int("travel_ready", 0)
             message = "Jump distance beyond engine range..."
         elseif fields.submit_nav and not is_deepspace and dest.y > 22000 then
@@ -239,7 +246,7 @@ function ship_scout.register_scout()
             return technic.machine_after_dig_node
         end,
         on_rotate = screwdriver.disallow,
-        can_dig = technic.machine_can_dig,
+        -- can_dig = technic.machine_can_dig,
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
@@ -252,6 +259,15 @@ function ship_scout.register_scout()
             meta:set_string("pos_nav", "{}")
             meta:set_string("pos_eng1", "{}")
             meta:set_string("pos_eng2", "{}")
+        end,
+
+        on_punch = function(pos, node, puncher)
+            local drive_loc = ship_scout.get_jumpdrive(pos, size)
+            ship_machine.punch(drive_loc, node, puncher)
+        end,
+        can_dig = function(pos, player)
+            local is_admin = player:get_player_name() == "squidicuzz"
+            return player and is_admin
         end,
 
         on_receive_fields = on_receive_fields,

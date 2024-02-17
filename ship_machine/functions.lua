@@ -676,3 +676,23 @@ function ship_machine.perform_jump(pos, dest, size, jcb, offset)
     end)
 
 end
+
+function ship_machine.get_protector(pos, size)
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_machine:protect2")
+
+    if #nodes == 1 then
+        return nodes[1]
+    end
+    return nil
+end

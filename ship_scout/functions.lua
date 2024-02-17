@@ -29,6 +29,7 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
         local img_hole_3 = "image_button[1,2;1,1;space_wormhole1.png;btn_hole_3;;true;false;space_wormhole2.png]" -- left
         local img_hole_4 = "image_button[3,2;1,1;space_wormhole1.png;btn_hole_4;;true;false;space_wormhole2.png]" -- right
         local btn_nav = "button[5,4;2,1;submit_nav;Make it so]"
+        local btn_prot = "button[6.5,-0.1;1.5,0.5;protector;Members]"
         local dest = ""
         local busy = ""
 
@@ -73,13 +74,13 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
 
         if is_deepspace then
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
-                           machine_desc:format(tier) .. "]" .. btn_nav .. img_ship .. img_hole_1 .. img_hole_2 ..
-                           img_hole_3 .. img_hole_4 .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit .. busy ..
-                           message
+                           machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. img_ship .. img_hole_1 ..
+                           img_hole_2 .. img_hole_3 .. img_hole_4 .. nav_label .. icon_fan .. icon_env .. icon_eng ..
+                           icon_lit .. busy .. message
         else
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
-                           machine_desc:format(tier) .. "]" .. btn_nav .. img_ship .. coords_label .. input_field ..
-                           nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit .. busy .. message
+                           machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. img_ship .. coords_label ..
+                           input_field .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit .. busy .. message
         end
     end
 
@@ -87,16 +88,15 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
 end
 
 function ship_scout.engine_do_jump(pos, dest, size, jump_callback, dest_offset)
-    local sz = 32
     local pos1 = vector.subtract(pos, {
-        x = sz,
-        y = sz,
-        z = sz
+        x = size.w,
+        y = size.h,
+        z = size.l
     })
     local pos2 = vector.add(pos, {
-        x = sz,
-        y = sz,
-        z = sz
+        x = size.w,
+        y = size.h,
+        z = size.l
     })
 
     local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
@@ -110,16 +110,15 @@ function ship_scout.engine_do_jump(pos, dest, size, jump_callback, dest_offset)
 end
 
 function ship_scout.engine_jump_activate(pos, dest, size)
-    local sz = 32
     local pos1 = vector.subtract(pos, {
-        x = sz,
-        y = sz,
-        z = sz
+        x = size.w,
+        y = size.h,
+        z = size.l
     })
     local pos2 = vector.add(pos, {
-        x = sz,
-        y = sz,
-        z = sz
+        x = size.w,
+        y = size.h,
+        z = size.l
     })
 
     local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
@@ -130,17 +129,16 @@ function ship_scout.engine_jump_activate(pos, dest, size)
     return -3
 end
 
-function ship_scout.get_jump_dest(pos, offset)
-    local sz = 32
+function ship_scout.get_jump_dest(pos, offset, size)
     local pos1 = vector.subtract(pos, {
-        x = sz,
-        y = sz,
-        z = sz
+        x = size.w,
+        y = size.h,
+        z = size.l
     })
     local pos2 = vector.add(pos, {
-        x = sz,
-        y = sz,
-        z = sz
+        x = size.w,
+        y = size.h,
+        z = size.l
     })
 
     local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
@@ -149,4 +147,24 @@ function ship_scout.get_jump_dest(pos, offset)
         return #nodes, vector.add(nodes[1], offset)
     end
     return #nodes, nil
+end
+
+function ship_scout.get_jumpdrive(pos, size)
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
+
+    if #nodes == 1 then
+        return nodes[1]
+    end
+    return nil
 end
