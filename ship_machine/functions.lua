@@ -226,16 +226,20 @@ minetest.register_globalstep(function(dtime)
 
 end)
 
-local function do_particles(pos)
+local function do_particles(pos, amount)
     local prt = {
         texture = {
             name = "vacuum_air_particle_1.png",
             fade = "out"
         },
-        texture_r180 = "vacuum_air_particle_1.png" .. "^[transformR180",
+        animation = {},
+        texture_r180 = {
+            name = "vacuum_air_particle_1.png" .. "^[transformR180",
+            fade = "out"
+        },
         vel = 0.6,
-        time = 7,
-        size = 6,
+        time = 3,
+        size = 10,
         glow = 3,
         cols = false
     }
@@ -247,8 +251,54 @@ local function do_particles(pos)
     if (math.random() >= 0.6) then
         texture = prt.texture_r180
     end
-    local v = vector.new()
-    minetest.add_particle({
+
+    minetest.add_particlespawner({
+        amount = amount,
+        time = prt.time + math.random(0.5, 1),
+        minpos = {
+            x = exm.x - 5,
+            y = exm.y - 1,
+            z = exm.z - 5
+        },
+        maxpos = {
+            x = exm.x + 5,
+            y = exm.y + 4,
+            z = exm.z + 5
+        },
+        minvel = {
+            x = rx,
+            y = prt.vel * 0.2,
+            z = rz
+        },
+        maxvel = {
+            x = rx,
+            y = prt.vel * 0.7,
+            z = rz
+        },
+        minacc = {
+            x = -0.02,
+            y = -0.05,
+            z = -0.02
+        },
+        maxacc = {
+            x = 0.02,
+            y = -0.03,
+            z = 0.02
+        },
+        minexptime = prt.time * 1.76,
+        maxexptime = prt.time * 3.2,
+        minsize = prt.size * 0.7,
+        maxsize = prt.size * 1.5,
+        collisiondetection = prt.cols,
+        collision_removal = false,
+        object_collision = false,
+        vertical = false,
+        animation = prt.animation,
+        texture = texture,
+        glow = prt.glow
+    })
+
+    --[[minetest.add_particle({
         pos = exm,
         velocity = {
             x = rx,
@@ -271,16 +321,16 @@ local function do_particles(pos)
         vertical = false,
         texture = texture,
         glow = prt.glow
-    })
+    })]] --
 end
 
-local function do_particle_tele(pos)
+local function do_particle_tele(pos, amount)
     local prt = {
         texture = "teleport_effect01.png",
         texture_r180 = "teleport_effect01.png" .. "^[transformR180",
         vel = 13,
-        time = 4,
-        size = 4,
+        time = 2,
+        size = 5,
         glow = 7,
         cols = false
     }
@@ -292,7 +342,54 @@ local function do_particle_tele(pos)
     if (math.random() >= 0.6) then
         texture = prt.texture_r180
     end
-    local v = vector.new()
+
+    minetest.add_particlespawner({
+        amount = amount,
+        time = prt.time + math.random(0.5, 0.7),
+        minpos = {
+            x = exm.x - 5,
+            y = exm.y - 3,
+            z = exm.z - 5
+        },
+        maxpos = {
+            x = exm.x + 5,
+            y = exm.y + 1,
+            z = exm.z + 5
+        },
+        minvel = {
+            x = rx,
+            y = prt.vel * 0.2,
+            z = rz
+        },
+        maxvel = {
+            x = rx,
+            y = prt.vel * 0.7,
+            z = rz
+        },
+        minacc = {
+            x = -0.02,
+            y = -0.05,
+            z = -0.02
+        },
+        maxacc = {
+            x = 0.02,
+            y = -0.03,
+            z = 0.02
+        },
+        minexptime = prt.time * 1.28,
+        maxexptime = prt.time * 2.00,
+        minsize = prt.size * 0.8,
+        maxsize = prt.size * 1.2,
+        collisiondetection = prt.cols,
+        collision_removal = false,
+        object_collision = false,
+        vertical = true,
+        animation = prt.animation,
+        texture = texture,
+        glow = prt.glow
+    })
+
+    --[[
     minetest.add_particle({
         pos = exm,
         velocity = {
@@ -313,10 +410,10 @@ local function do_particle_tele(pos)
         expirationtime = ((math.random() / 5) + 0.25) * prt.time,
         size = ((math.random()) * 7 + 0.1) * prt.size,
         collisiondetection = prt.cols,
-        vertical = false,
+        vertical = true,
         texture = texture,
         glow = prt.glow
-    })
+    })]] --
 end
 
 function ship_machine.move_bed(pos, pos_new, n)
@@ -483,19 +580,9 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
                             gain = math.random(0.8, 1.1),
                             pitch = math.random(0.8, 1)
                         })
-                        for i = 1, 200 do
-                            if (obj ~= nil and obj:get_pos() ~= nil) then
-                                local p = {
-                                    x = obj:get_pos().x + math.random(-6, 6),
-                                    y = obj:get_pos().y + math.random(-3, 4),
-                                    z = obj:get_pos().z + math.random(-6, 6)
-                                }
-                                if math.random(0, 1) == 1 then
-                                    do_particles(p)
-                                end
-                                do_particle_tele(p)
-                            end
-                        end
+                        local p = obj:get_pos()
+                        do_particles(p, 40)
+                        do_particle_tele(p, 110)
                     end
                 end)
             end

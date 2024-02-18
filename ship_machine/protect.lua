@@ -695,5 +695,106 @@ minetest.register_node("ship_machine:display_node", {
     drop = ""
 })
 
+local function do_particles(pos, amount)
+    local prt = {
+        texture = {
+            name = "tele_effect03.png",
+            alpha = 1.0,
+            alpha_tween = {1, 0.0},
+            scale_tween = {{
+                x = 0.1,
+                y = 0
+            }, {
+                x = 1,
+                y = 1
+            }}
+        },
+        texture_r180 = {
+            name = "tele_effect03.png" .. "^[transformR180",
+            alpha = 1.0,
+            alpha_tween = {1, 0.0},
+            scale_tween = {{
+                x = 0.1,
+                y = 0.0
+            }, {
+                x = 1,
+                y = 1
+            }}
+        },
+        vel = 3,
+        time = 1,
+        size = 6,
+        glow = 8,
+        cols = false
+    }
+    local exm = pos
+    exm.y = exm.y - 2.25
+    local rx = math.random(-0.05, 0.05) * 0.2
+    local rz = math.random(-0.05, 0.05) * 0.2
+    local texture = prt.texture
+    if (math.random() >= 0.6) then
+        texture = prt.texture_r180
+    end
+
+    minetest.add_particlespawner({
+        amount = amount,
+        time = prt.time + math.random(5.6, 10.7),
+        minpos = {
+            x = pos.x - 2.7,
+            y = pos.y - 2.1,
+            z = pos.z - 2.7
+        },
+        maxpos = {
+            x = pos.x + 2.7,
+            y = pos.y + 3.2,
+            z = pos.z + 2.7
+        },
+        minvel = {
+            x = rx,
+            y = prt.vel * 0.2,
+            z = rz
+        },
+        maxvel = {
+            x = rx,
+            y = prt.vel * 0.7,
+            z = rz
+        },
+        minacc = {
+            x = -0.2,
+            y = 0.15,
+            z = -0.2
+        },
+        maxacc = {
+            x = 0.2,
+            y = 0.23,
+            z = 0.2
+        },
+        minexptime = prt.time * 0.28,
+        maxexptime = prt.time * 0.52,
+        minsize = prt.size * 0.7,
+        maxsize = prt.size * 1.2,
+        collisiondetection = prt.cols,
+        collision_removal = false,
+        object_collision = false,
+        vertical = true,
+        animation = prt.animation,
+        texture = texture,
+        glow = prt.glow
+    })
+end
+
+minetest.register_abm({
+    label = "ship effects - jumpdrive",
+    nodenames = {"ship_machine:protect2"},
+    interval = 1,
+    chance = 3,
+    min_y = vacuum.vac_heights.space.start_height,
+    action = function(pos)
+
+        do_particles(pos, 5)
+
+    end
+})
+
 dofile(MP .. "/hud.lua")
 
