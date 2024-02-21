@@ -9,7 +9,8 @@ minetest.register_node("ship_parts:metal_support", {
     groups = {
         cracky = 1,
         metal = 1,
-        level = 1
+        level = 1,
+        leaky = 1
     },
     sounds = default.node_sound_metal_defaults(),
     drawtype = "glasslike_framed",
@@ -28,7 +29,8 @@ minetest.register_node("ship_parts:aluminum_support", {
     groups = {
         cracky = 1,
         metal = 1,
-        level = 1
+        level = 1,
+        leaky = 1
     },
     sounds = default.node_sound_metal_defaults(),
     drawtype = "glasslike_framed",
