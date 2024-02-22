@@ -53,6 +53,8 @@ function ship_machine.register_jumpship(data)
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             local meta = minetest.get_meta(pos)
             meta:set_string("owner", placer:get_player_name())
+            local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
+            meta:set_string("formspec", formspec)
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
 
@@ -64,7 +66,7 @@ function ship_machine.register_jumpship(data)
             local is_admin = player:get_player_name() == "squidicuzz"
             return player and is_admin
             --return false
-        end,]]--
+        end,]] --
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
@@ -72,7 +74,7 @@ function ship_machine.register_jumpship(data)
             meta:set_int("enabled", 1)
             meta:set_int("ready", 0)
             meta:set_int("jumps", 0)
-            local formspec = ship_machine.update_jumpdrive_formspec(data, false, false)
+            local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
             meta:set_string("formspec", formspec)
         end,
 
@@ -98,6 +100,17 @@ function ship_machine.register_jumpship(data)
                 else
                     meta:set_int("enabled", 1)
                     enabled = true
+                end
+            end
+            local owner_name = ""
+            if fields.set_owner and fields.owner_name then
+                owner_name = fields.owner_name
+                meta:set_string("owner", owner_name)
+                local prot = minetest.find_node_near(pos, 3, "ship_machine:protect2")
+                if prot then
+                    local meta2 = minetest.get_meta(prot.pos)
+                    meta2:set_string("owner", owner_name)
+                    meta2:set_string("infotext", S("Protection (owned by @1)", meta2:get_string("owner")))
                 end
             end
             local move_x = 0
@@ -164,7 +177,7 @@ function ship_machine.register_jumpship(data)
                     end)
                 end
             end
-            local formspec = ship_machine.update_jumpdrive_formspec(data, false, enabled)
+            local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
             meta:set_string("formspec", formspec)
         end,
 

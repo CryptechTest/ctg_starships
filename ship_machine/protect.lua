@@ -695,7 +695,7 @@ minetest.register_node("ship_machine:display_node", {
     drop = ""
 })
 
-local function do_particles(pos, amount)
+function ship_machine.do_particles(pos, amount)
     local prt = {
         texture = {
             name = "tele_effect03.png",
@@ -791,7 +791,7 @@ minetest.register_abm({
     min_y = vacuum.vac_heights.space.start_height,
     action = function(pos)
 
-        do_particles(pos, 5)
+        ship_machine.do_particles(pos, 5)
 
     end
 })
