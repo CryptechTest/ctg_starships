@@ -643,7 +643,11 @@ function ship_machine.load_jumpship(pos, player, ship_name)
         moveObj = false
     })
 
-    minetest.chat_send_player(player:get_player_name(), "Loading Jumpship...")
+    if lmeta then
+        minetest.chat_send_player(player:get_player_name(), "Loading Jumpship...")
+    else
+        minetest.chat_send_player(player:get_player_name(), "Loading Jumpship Failed!")
+    end
 end
 
 function ship_machine.check_engines_charged(pos)
