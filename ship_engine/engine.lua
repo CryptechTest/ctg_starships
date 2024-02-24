@@ -497,12 +497,12 @@ end
 
 register_lv_engine({
     machine_name = "engine_l",
-    machine_desc = "Port Engine",
+    machine_desc = "LV Port Engine",
     engine_digiline_effector = ship_engine.engine_digiline_effector_l
 })
 register_lv_engine({
     machine_name = "engine_r",
-    machine_desc = "Starboard Engine",
+    machine_desc = "LV Starboard Engine",
     engine_digiline_effector = ship_engine.engine_digiline_effector_r
 })
 
