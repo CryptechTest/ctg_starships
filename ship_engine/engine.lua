@@ -517,7 +517,7 @@ function ship_engine.register_engine_core(data)
     data.charge_max = 2000
     data.speed = 25
     data.machine_name = "surveyor"
-    data.machine_desc = "Spacial Conjuction Surveyor"
+    data.machine_desc = data.tier .. " " .. "Spacial Conjuction Surveyor"
 
     local tier = data.tier
     local ltier = string.lower(tier)

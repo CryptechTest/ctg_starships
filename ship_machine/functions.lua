@@ -418,6 +418,30 @@ local function do_particle_tele(pos, amount)
     })]] --
 end
 
+function ship_machine.move_offline_players(drive, offset)
+    -- local node = minetest.get_node(drive)
+    local dmeta = minetest.get_meta(drive)
+
+    local stor_str = dmeta:get_string("player_storage")
+    local contents = {}
+    if stor_str ~= nil and #stor_str > 0 then
+        contents = minetest.deserialize(stor_str)
+    end
+
+    for p, _ in pairs(contents) do
+        local lpos = ship_machine.locations[p];
+        if lpos then
+            local npos = vector.add(lpos, offset);
+            ship_machine.locations[p] = npos
+            --minetest.log("updated loc for player " .. p)
+        else 
+            contents[p] = false
+        end
+        ship_machine.save_locations();
+    end
+    dmeta:set_string("player_storage", minetest.serialize(contents))
+end
+
 function ship_machine.move_bed(pos, pos_new, n)
 
     local node = minetest.get_node(pos)
@@ -530,6 +554,8 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
     else
         -- load the schematic from cache..
         local count, ver, lmeta = schemlib.process_emitted(nil, nil, sdata, true)
+
+        ship_machine.move_offline_players(pos, offset)
 
         minetest.after(5, function()
             local pos1 = vector.subtract(pos, {
@@ -794,4 +820,8 @@ function ship_machine.get_protector(pos, size)
         return nodes[1]
     end
     return nil
+end
+
+function ship_machine.get_jump_drive(pos)
+    return minetest.find_node_near(pos, 15, {"ship_machine:jump_drive"})
 end
