@@ -80,15 +80,28 @@ register_lv_drive({
 
 --------------------------------------------------
 
+-- proto_scout jumpdrive
 ship_machine.register_jumpship({
+    modname = "ship_machine",
     machine_name = "jump_drive",
     machine_desc = "Jump Drive Allocator",
-    typename = "jump_drive"
+    typename = "jump_drive",
+    size = {
+        w = 12,
+        h = 12,
+        l = 15
+    }
 })
 
 -- admin
 ship_machine.register_jumpship({
+    modname = "ship_machine",
     machine_name = "jump_drive_spawn",
     machine_desc = "Jump Drive - Orbital Station",
-    typename = "jump_drive_spawn"
+    typename = "jump_drive_spawn",
+    size = {
+        w = 171,
+        h = 56,
+        l = 219
+    }
 })

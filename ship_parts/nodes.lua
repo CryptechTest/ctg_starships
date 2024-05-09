@@ -101,6 +101,42 @@ local function assembler_is_full(pos)
     return false
 end
 
+local function clear_assembler(pos) 
+    local meta = minetest.get_meta(pos)
+    local inv = meta:get_inventory()
+    inv:set_list("hull1", {})
+    inv:set_list("hull2", {})
+    inv:set_list("cship1", {})
+    inv:set_list("cship2", {})
+    inv:set_list("command", {})
+    inv:set_list("systems", {})
+    inv:set_list("env", {})
+    inv:set_list("eng1", {})
+    inv:set_list("eng2", {})
+    local chull1 = get_count(inv, "hull1", "ship_parts:hull_plating")
+    local chull2 = get_count(inv, "hull2", "ship_parts:hull_plating")
+    local cship1 = get_count(inv, "cship1", "scifi_nodes:white2")
+    local cship2 = get_count(inv, "cship2", "scifi_nodes:white2")
+    local ccommand1 = get_count(inv, "command", "ship_parts:command_capsule")
+    local ccommand2 = get_count(inv, "command", 'ship_parts:system_capsule')
+    local csystems1 = get_count(inv, "systems", "ship_parts:ship_solar_array")
+    local csystems2 = get_count(inv, "systems", "ship_parts:eviromental_sys")
+    local cenv = get_count(inv, "env", "ctg_airs:air_duct_S")
+    local ceng1 = get_count(inv, "eng1", "ship_parts:mass_aggregator")
+    local ceng2 = get_count(inv, "eng2", "ship_parts:mass_aggregator")
+    return chull1 == 0 and chull2 == 0 and cship1 == 0 and cship2 == 0 and
+        ccommand1 == 0 and ccommand2 == 0 and csystems1== 0 and csystems2 == 0 and
+        cenv == 0 and ceng1 == 0 and ceng2 == 0
+end
+
+local function check_full(pos, stack)
+	local one_item_stack = ItemStack(stack)
+	one_item_stack:set_count(1)
+	if not minetest.get_meta(pos):get_inventory():room_for_item("main", one_item_stack) then
+		return true
+	end
+    return false
+end
 
 local function register_assembler(data)
 
@@ -125,7 +161,7 @@ local function register_assembler(data)
             "listring[current_player;main]",
 
             -- topbar
-            "button[4,0;2,0.5;crew;Crew]",
+            --"button[4,0;2,0.5;crew;Crew]",
             "button[6,0;3,0.5;launch;Launch]",
             "button_exit[9,0;1,0.5;exit;Exit]",
 
@@ -241,7 +277,20 @@ local function register_assembler(data)
                     S("Launch is not yet ready. You require additional materials.."))
             elseif sender then
                 minetest.chat_send_player(sender:get_player_name(),
-                    S("Launch is pending..."))
+                    S("Launch is ready."))
+                if not check_full(pos, "ship_parts:proto_ship_key") then
+                    if clear_assembler(pos) then
+                        sender:get_inventory():add_item("main", "ship_parts:proto_ship_key")
+                        minetest.chat_send_player(sender:get_player_name(),
+                            S("Blueprint Key Granted!"))
+                    else
+                        minetest.chat_send_player(sender:get_player_name(),
+                            S("Error on Key Create!"))
+                    end
+                else
+                    minetest.chat_send_player(sender:get_player_name(),
+                        S("there is no room in your inventory..."))
+                end
             end
         end
 

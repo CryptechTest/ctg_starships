@@ -293,7 +293,7 @@ function ship_engine.register_engine(data)
         groups = groups,
         tube = data.tube and tube or nil,
         legacy_facedir_simple = true,
-        sounds = default.node_sound_glass_defaults(),
+        sounds = default.node_sound_metal_defaults(),
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             if data.tube then
                 pipeworks.after_place(pos)

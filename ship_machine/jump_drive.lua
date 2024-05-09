@@ -14,7 +14,7 @@ local function needs_charge(pos)
 end
 
 function ship_machine.register_jumpship(data)
-    data.modname = "ship_machine"
+    --data.modname = "ship_machine"
     -- data.machine_name = "jump_drive"
     -- data.machine_desc = "Jump Drive Allocator"
     -- data.typename = "jump_drive"
@@ -46,7 +46,8 @@ function ship_machine.register_jumpship(data)
             metal = 1,
             jumpdrive = 1,
             ship_machine = 1,
-            jump_dist = 1
+            jump_dist = 1,
+            not_in_creative_inventory = 1
         },
         sounds = default.node_sound_metal_defaults(),
 
@@ -61,12 +62,11 @@ function ship_machine.register_jumpship(data)
             return technic.machine_after_dig_node
         end,
         on_rotate = screwdriver.disallow,
-        can_dig = technic.machine_can_dig,
-        --[[can_dig = function(pos, player)
+        --can_dig = technic.machine_can_dig,
+        can_dig = function(pos, player)
             local is_admin = player:get_player_name() == "squidicuzz"
             return player and is_admin
-            --return false
-        end,]] --
+        end,
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
@@ -74,6 +74,7 @@ function ship_machine.register_jumpship(data)
             meta:set_int("enabled", 1)
             meta:set_int("ready", 0)
             meta:set_int("jumps", 0)
+            meta:set_int("locked", 0)
             local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
             meta:set_string("formspec", formspec)
         end,
@@ -87,12 +88,17 @@ function ship_machine.register_jumpship(data)
             if fields.quit then
                 return
             end
+            local meta = minetest.get_meta(pos)
+            if fields.setup then            
+                local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
+                meta:set_string("formspec", formspec)
+            end
             local is_admin = sender:get_player_name() == "squidicuzz"
             if not is_admin then
+                --meta:set_string("formspec", '')
                 return
             end
             local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
             local enabled = false
             if fields.toggle then
                 if meta:get_int("enabled") == 1 then
@@ -106,9 +112,9 @@ function ship_machine.register_jumpship(data)
             if fields.set_owner and fields.owner_name then
                 owner_name = fields.owner_name
                 meta:set_string("owner", owner_name)
-                local prot = minetest.find_node_near(pos, 3, "ship_machine:protect2")
+                local prot = minetest.find_node_near(pos, 3, data.modname .. ":protect2")
                 if prot then
-                    local meta2 = minetest.get_meta(prot.pos)
+                    local meta2 = minetest.get_meta(prot)
                     meta2:set_string("owner", owner_name)
                     meta2:set_string("infotext", S("Protection (owned by @1)", meta2:get_string("owner")))
                 end
@@ -130,20 +136,8 @@ function ship_machine.register_jumpship(data)
                 file_name = fields.file_name
             end
             if fields.save then
-                local size = {
-                    w = 20,
-                    h = 12,
-                    l = 30
-                }
-                if data.typename == 'jump_drive_spawn' then
-                    size = {
-                        w = 171,
-                        h = 56,
-                        l = 219
-                    }
-                end
                 minetest.after(0, function()
-                    ship_machine.save_jumpship(pos, size, sender, file_name)
+                    ship_machine.save_jumpship(pos, data.size, sender, file_name)
                 end)
             end
             if fields.load then
@@ -161,18 +155,13 @@ function ship_machine.register_jumpship(data)
                 if vector.distance(pos, dest) < 32 then
                     perform = false;
                 end
-                local size = {
-                    w = 16,
-                    h = 16,
-                    l = 32
-                }
-                if not schemlib.check_dest_clear(pos, dest, size) then
+                if perform and not schemlib.check_dest_clear(pos, dest, data.size) then
                     perform = false;
                 end
                 if perform then
                     minetest.after(0, function()
                         if ship_machine.check_engines_charged(pos) then
-                            ship_machine.transport_jumpship(pos, dest, size, sender)
+                            ship_machine.transport_jumpship(pos, dest, data.size, sender)
                         end
                     end)
                 end

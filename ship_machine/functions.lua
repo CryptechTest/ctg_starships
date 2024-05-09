@@ -83,6 +83,11 @@ function ship_machine.update_formspec(data, running, enabled, has_mese, percent,
 end
 
 function ship_machine.update_jumpdrive_formspec(data, meta)
+    local locked = meta:get_int("locked") == 1
+    if locked then
+        return formspec
+    end
+
     local machine_name = data.machine_name
     local machine_desc = "Starship " .. data.machine_desc
     local typename = data.typename
@@ -95,6 +100,7 @@ function ship_machine.update_jumpdrive_formspec(data, meta)
         local set_owner = "field[1,2.65;4,1;owner_name;Owner Name;]button[5,2.25;1,1;set_owner;Set]"
         local input_name = "field[1,1.45;4,1;file_name;File Name;]"
         local input_save_load = "button[5,1;1,1;save;Save]button[6,1;1,1;load;Load]"
+        local setup_button = "button[3,3.5;2.5,1;setup;Complete Setup]"
         local input_test =
             "field[1,2;2,1;inp_x;Move X;0]field[3,2;2,1;inp_y;Move Y;0]field[5,2;2,1;inp_z;Move Z;0]button[3,4;2,1;jump;Test]"
 
@@ -228,7 +234,7 @@ minetest.register_globalstep(function(dtime)
 
 end)
 
-local function do_particles(pos, amount)
+function ship_machine.do_particles(pos, amount)
     local prt = {
         texture = {
             name = "vacuum_air_particle_1.png",
@@ -331,7 +337,7 @@ local function do_particle_tele(pos, amount)
         texture = "teleport_effect01.png",
         texture_r180 = "teleport_effect01.png" .. "^[transformR180",
         vel = 13,
-        time = 2,
+        time = 0.6,
         size = 5,
         glow = 7,
         cols = false
@@ -347,7 +353,7 @@ local function do_particle_tele(pos, amount)
 
     minetest.add_particlespawner({
         amount = amount,
-        time = prt.time + math.random(0.5, 0.7),
+        time = prt.time + math.random(0.8, 2.7),
         minpos = {
             x = exm.x - 5,
             y = exm.y - 3,
@@ -378,8 +384,8 @@ local function do_particle_tele(pos, amount)
             y = -0.03,
             z = 0.02
         },
-        minexptime = prt.time * 1.28,
-        maxexptime = prt.time * 2.00,
+        minexptime = prt.time * 0.28,
+        maxexptime = prt.time * 1.00,
         minsize = prt.size * 0.8,
         maxsize = prt.size * 1.2,
         collisiondetection = prt.cols,
@@ -609,7 +615,7 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
                             pitch = math.random(0.8, 1)
                         })
                         local p = obj:get_pos()
-                        do_particles(p, 40)
+                        ship_machine.do_particles(p, 40)
                         do_particle_tele(p, 110)
                     end
                 end)
@@ -814,7 +820,7 @@ function ship_machine.get_protector(pos, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_machine:protect2")
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_scout:protect2")
 
     if #nodes == 1 then
         return nodes[1]

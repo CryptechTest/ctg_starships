@@ -1,9 +1,9 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
-orbital_teleport = {}
+station_teleport = {}
 
 -- load files
-local default_path = minetest.get_modpath("orbital_teleport")
+local default_path = minetest.get_modpath("station_teleport")
 
 local function isInteger(str)
     return tonumber(str) ~= nil
@@ -23,7 +23,7 @@ local function particle_effect(pos, type)
     }
 
     if type == 1 then
-        time = 1.5
+        time = 1.75
         minpos = {
             x = pos.x - 0.4,
             y = pos.y - 0.3,
@@ -37,7 +37,7 @@ local function particle_effect(pos, type)
     end
 
     minetest.add_particlespawner({
-        amount = 50, -- amount
+        amount = 60, -- amount
         time = time, -- time
         minpos = minpos, -- minpos
         maxpos = maxpos, -- maxpos
@@ -58,7 +58,7 @@ local function particle_effect(pos, type)
         }, -- minacc
         maxacc = {
             x = 0,
-            y = 2,
+            y = 2.1,
             z = 0
         }, -- maxacc
         minexptime = 0.45, -- minexptime
@@ -73,7 +73,7 @@ local function particle_effect(pos, type)
             name = "scifi_nodes_tp_part.png",
             fade = "out"
         }, -- texture
-        glow = 11 -- glow
+        glow = 13 -- glow
     })
 end
 
@@ -157,8 +157,8 @@ end
 if true then
 
     local data = {
-        desc = S("Teleport Pad"),
-        node = "tele_pad"
+        desc = S("Local Teleport Pad"),
+        node = "tele_pad_station"
     }
 
     local update_formspec = function(pos, data)
@@ -170,13 +170,18 @@ if true then
         if meta:get_string("exit") then
             exit = minetest.deserialize(meta:get_string("exit"))
         end
+        if meta:get_string("sta_exit") and meta:get_string("sta_exit") ~= "" then
+            exit = meta:get_string("sta_exit");
+        end
 
         if exit == nil then
             local input_pos = "field[1,1;2,1;inp_x;Dest X;0]field[3,1;2,1;inp_y;Dest Y;0]field[5,1;2,1;inp_z;Dest Z;0]"
+            local input_name = "field[1,1;3,1;inp_name;This Name;]"
+            local input_dest = "field[4,1;3,1;dst_name;Dest Name;]"
             local input_save = "button[3,2;2,1;save;Save]"
 
             formspec = {"formspec_version[6]", "size[8,4]", -- "real_coordinates[false]",
-            input_pos, input_save}
+            input_name, input_dest, input_save}
         else
             formspec = {}
         end
@@ -217,20 +222,32 @@ if true then
             end
         end
 
+        local name = ""
+        local dest = ""
+        if fields.inp_name then
+            name = fields.inp_name;
+        end
+        if fields.dst_name then
+            dest = fields.dst_name;
+        end
+
         if fields.save and not isNumError then
-            local dest = {
+            --[[local dest = {
                 x = dest_x,
                 y = dest_y,
                 z = dest_z
             }
-            meta:set_string("exit", minetest.serialize(dest))
+            meta:set_string("exit", minetest.serialize(dest))]]--
+            meta:set_string("sta_name", name)
+            meta:set_string("sta_exit", dest)
+		    meta:set_string("infotext", "Transport to: " .. dest)
         end
 
         local formspec = update_formspec(pos, data)
         meta:set_string("formspec", formspec)
     end
 
-    minetest.register_node("orbital_teleport:" .. data.node, {
+    minetest.register_node("station_teleport:" .. data.node, {
         description = data.desc,
         tiles = {"orbital_telepad_top.png", "orbital_telepad_bottom.png", "orbital_telepad_side.png", 
                 "orbital_telepad_side.png", "orbital_telepad_side.png", "orbital_telepad_side.png"},
@@ -238,10 +255,9 @@ if true then
         paramtype = "light",
         groups = {
             cracky = 1,
-            oddly_breakable_by_hand = 1,
-            not_in_creative_inventory = 1
+            oddly_breakable_by_hand = 1
         },
-        light_source = 5,
+        light_source = 6,
 
         on_receive_fields = on_receive_fields,
         after_place_node = function(pos, placer, itemstack, pointed_thing)
@@ -251,6 +267,8 @@ if true then
 		    meta:set_string("infotext", data.desc)
             local formspec = update_formspec(pos, data)
             meta:set_string("formspec", formspec)
+            --meta:set_string("sta_name", "")
+            --meta:set_string("sta_exit", "")
         end,
         on_rightclick = function(pos, node, clicker)
             local clicker_name = clicker:get_player_name()
@@ -258,6 +276,28 @@ if true then
             local exit = nil
             if meta:get_string("exit") then
                 exit = minetest.deserialize(meta:get_string("exit"))
+            end
+            if not meta:get_string("sta_name") then
+                minetest.chat_send_player(clicker_name, "Teleporter local name not defined!")
+                return;
+            end
+            if meta:get_string("sta_exit") then
+                --minetest.find_node_near(pos, 1, "station_teleport:tele_pad_station")
+                local r = 32
+                local teles = minetest.find_nodes_in_area(
+                    {x = pos.x - r, y = pos.y - r, z = pos.z - r},
+                    {x = pos.x + r, y = pos.y + r, z = pos.z + r},
+                    {"station_teleport:tele_pad_station"})
+                for _, obj in pairs(teles) do
+                    local metaTo = minetest.get_meta(obj);
+                    if metaTo:get_string("sta_name") == meta:get_string("sta_exit") then
+                        exit = obj
+                        break;
+                    end
+                end
+            else
+                minetest.chat_send_player(clicker_name, "Teleporter exit not defined!")
+                return;
             end
             if exit ~= nil then
                 local objs = minetest.get_objects_inside_radius(pos, 2)
@@ -274,7 +314,7 @@ if true then
                             x = ppos.x,
                             y = ppos.y,
                             z = ppos.z
-                        }).name == "orbital_teleport:" .. data.node then
+                        }).name == "station_teleport:" .. data.node then
                             clicker:set_pos(exit)
                             local name = clicker:get_player_name()
                             minetest.sound_play("tele_zap", { to_player = name, gain = 1.2, pitch = 0.6 })
@@ -306,7 +346,7 @@ if true then
                     end)
                 end
             else
-                minetest.chat_send_player(clicker_name, "Teleporter exit is not defined!")
+                minetest.chat_send_player(clicker_name, "Teleporter exit not found!")
             end
         end,
         on_destruct = function(pos, oldnode, placer)

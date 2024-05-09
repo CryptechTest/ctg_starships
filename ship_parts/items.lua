@@ -172,3 +172,11 @@ minetest.register_craftitem("ship_parts:engine_part5", {
 	inventory_image = "ship_engine_part5.png",
     wield_scale = {x = 0.6, y = 0.6, z = 0.6},
 })
+
+-- Proto-Ship Blue KeyCard
+minetest.register_craftitem("ship_parts:proto_ship_key", {
+	description = S("Proto-Ship Blue Assembly"),
+	inventory_image = "proto_ship_blue_keycard.png",
+    wield_scale = {x = 0.9, y = 0.9, z = 0.9},
+	stack_max = 1,
+})

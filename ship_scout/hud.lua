@@ -1,10 +1,4 @@
-local S = protector.intllib
-local radius = 14
-
--- radius limiter (minetest cannot handle node volume of more than 4096000)
-if radius > 22 then
-    radius = 22
-end
+local S = ship_scout.protector.intllib
 
 local hud = {}
 local hud_timer = 0
@@ -27,14 +21,14 @@ if hud_interval > 0 then
             local hud_text = ""
 
             local protectors = minetest.find_nodes_in_area({
-                x = pos.x - radius,
-                y = pos.y - radius,
-                z = pos.z - radius
+                x = pos.x - ship_scout.protector.size.w,
+                y = pos.y - ship_scout.protector.size.h,
+                z = pos.z - ship_scout.protector.size.l
             }, {
-                x = pos.x + radius,
-                y = pos.y + radius,
-                z = pos.z + radius
-            }, {"ship_machine:jump_drive"})
+                x = pos.x + ship_scout.protector.size.w,
+                y = pos.y + ship_scout.protector.size.h,
+                z = pos.z + ship_scout.protector.size.l
+            }, {"ship_scout:jump_drive"})
 
             if #protectors > 0 then
                 local npos = protectors[1]

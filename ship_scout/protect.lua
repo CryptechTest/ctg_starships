@@ -17,33 +17,24 @@ local S = minetest.get_translator and minetest.get_translator("protector")
 -- Load support for factions
 local factions_available = minetest.global_exists("factions")
 
-ship_machine.protector = {
-    mod = "ship_machine",
+ship_scout.protector = {
+    mod = "ship_scout",
     modpath = MP,
-    intllib = S
+    intllib = S,
+    -- size of protected region
+    size = {
+        l = 15,
+        w = 12,
+        h = 12
+    }
 }
 
 local protector_max_share_count = 12
 -- get minetest.conf settings
-local protector_radius = 14
-local protector_flip = minetest.settings:get_bool("ship_machine.protector_flip") or false
-local protector_hurt = tonumber(minetest.settings:get("ship_machine.protector_hurt")) or 1
-local protector_spawn = tonumber(minetest.settings:get("ship_machine.protector_spawn") or
-                                     minetest.settings:get("ship_machine.protector_pvp_spawn")) or 0
-local protector_show = tonumber(minetest.settings:get("ship_machine.protector_show_interval")) or 7
-local protector_msg = minetest.settings:get_bool("ship_machine.protector_msg") ~= false
-
--- radius limiter (minetest cannot handle node volume of more than 4096000)
-if protector_radius > 22 then
-    protector_radius = 22
-end
-
--- get static spawn position
-local statspawn = minetest.string_to_pos(minetest.settings:get("static_spawnpoint")) or {
-    x = 0,
-    y = 2,
-    z = 0
-}
+local protector_flip = minetest.settings:get_bool("ship_scout.protector_flip") or false
+local protector_hurt = tonumber(minetest.settings:get("ship_scout.protector_hurt")) or 1
+local protector_show = tonumber(minetest.settings:get("ship_scout.protector_show_interval")) or 7
+local protector_msg = minetest.settings:get_bool("ship_scout.protector_msg") ~= false
 
 -- return list of members as a table
 local get_member_list = function(meta)
@@ -148,7 +139,7 @@ local del_member = function(meta, name)
 end
 
 -- protector interface
-ship_machine.protector_formspec = function(meta)
+ship_scout.protector_formspec = function(meta)
 
     local formspec = "size[8,7]" .. default.gui_bg .. default.gui_bg_img .. "label[2.5,0;" ..
                          F(S("Jumpship Protection Interface")) .. "]" .. "label[0,2.5;" ..
@@ -214,22 +205,6 @@ ship_machine.protector_formspec = function(meta)
     return formspec
 end
 
--- check if pos is inside a protected spawn area
-local inside_spawn = function(pos, radius)
-
-    if protector_spawn <= 0 then
-        return false
-    end
-
-    if pos.x < statspawn.x + radius and pos.x > statspawn.x - radius and pos.y < statspawn.y + radius and pos.y >
-        statspawn.y - radius and pos.z < statspawn.z + radius and pos.z > statspawn.z - radius then
-
-        return true
-    end
-
-    return false
-end
-
 -- show protection message if enabled
 local show_msg = function(player, msg)
 
@@ -247,7 +222,7 @@ end
 -- 2 for "This area is owned by <owner>.
 -- 3 for checking protector overlaps
 
-ship_machine.protector.can_dig = function(r, pos, digger, onlyowner, infolevel)
+ship_scout.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
 
     if not digger or not pos then
         return false
@@ -265,25 +240,16 @@ ship_machine.protector.can_dig = function(r, pos, digger, onlyowner, infolevel)
         infolevel = 1
     end
 
-    -- is spawn area protected ?
-    if inside_spawn(pos, protector_spawn) then
-
-        show_msg(digger, S("Spawn @1 has been protected up to a @2 block radius.", minetest.pos_to_string(statspawn),
-            protector_spawn))
-
-        return false
-    end
-
     -- find the protector nodes
     local pos = minetest.find_nodes_in_area({
-        x = pos.x - r,
-        y = pos.y - r,
-        z = pos.z - (r + 3)
+        x = pos.x - s.w,
+        y = pos.y - s.h,
+        z = pos.z - s.l
     }, {
-        x = pos.x + r,
-        y = pos.y + r,
-        z = pos.z + (r + 3)
-    }, {"ship_machine:protect2"}) -- "ship_machine:protect2",
+        x = pos.x + s.w,
+        y = pos.y + s.h,
+        z = pos.z + s.l
+    }, {"ship_scout:protect2"}) -- "ship_scout:protect2",
 
     if pos and #pos > 0 and pos[1] ~= nil then
         local jumpdrive_pos = vector.add(pos[1], {
@@ -292,8 +258,8 @@ ship_machine.protector.can_dig = function(r, pos, digger, onlyowner, infolevel)
             z = 0
         })
         local jumpdrive = minetest.get_node(jumpdrive_pos)
-        if jumpdrive.name ~= "ship_machine:jump_drive" then
-            return true
+        if jumpdrive.name ~= "ship_scout:jump_drive" then
+            --return true
         end
     end
 
@@ -402,7 +368,7 @@ function minetest.is_protected(pos, digger)
     digger = digger or "" -- nil check
 
     -- is area protected against digger?
-    if not ship_machine.protector.can_dig(protector_radius, pos, digger, false, 1) then
+    if not ship_scout.protector.can_dig(ship_scout.protector.size, pos, digger, false, 1) then
         return true
     end
 
@@ -420,17 +386,14 @@ local check_overlap = function(itemstack, placer, pointed_thing)
     local pos = pointed_thing.above
     local name = placer:get_player_name()
 
-    -- make sure protector doesn't overlap onto protected spawn area
-    if inside_spawn(pos, protector_spawn + protector_radius) then
-
-        minetest.chat_send_player(name, S("Spawn @1 has been protected up to a @2 block radius.",
-            minetest.pos_to_string(statspawn), protector_spawn))
-
-        return itemstack
-    end
+    local size = {
+        l = ship_scout.protector.size.l * 2,
+        w = ship_scout.protector.size.w * 2,
+        h = ship_scout.protector.size.h * 2
+    }
 
     -- make sure protector doesn't overlap any other player's area
-    if not ship_machine.protector.can_dig(protector_radius * 2, pos, name, true, 3) then
+    if not ship_scout.protector.can_dig(size, pos, name, true, 3) then
 
         minetest.chat_send_player(name, S("Overlaps into above players protected area"))
 
@@ -448,7 +411,7 @@ local del_display = function(pos)
 
     for _, v in ipairs(objects) do
 
-        if v and v:get_luaentity() and v:get_luaentity().name == "ship_machine:display" then
+        if v and v:get_luaentity() and v:get_luaentity().name == "ship_scout:display" then
             v:remove()
         end
     end
@@ -467,25 +430,30 @@ local texture_active = {
     }
 }
 
-function ship_machine.rightclick(pos, clicker)
+function ship_scout.rightclick(pos, clicker)
     local meta = minetest.get_meta(pos)
     local name = clicker:get_player_name()
 
-    if meta and ship_machine.protector.can_dig(1, pos, name, true, 1) then
+    local s = {
+        l = 1,
+        h = 1,
+        w = 1
+    }
+    if meta and ship_scout.protector.can_dig(s, pos, name, true, 1) then
         player_pos[name] = pos
-        minetest.show_formspec(name, "ship_machine:node", ship_machine.protector_formspec(meta))
+        minetest.show_formspec(name, "ship_scout:node", ship_scout.protector_formspec(meta))
     end
 end
 
-function ship_machine.punch(pos, node, puncher)
+function ship_scout.punch(pos, node, puncher)
     if minetest.is_protected(pos, puncher:get_player_name()) then
         return
     end
-    minetest.add_entity(pos, "ship_machine:display")
+    minetest.add_entity(pos, "ship_scout:display")
 end
 
 -- protection node
-minetest.register_node("ship_machine:protect2", {
+minetest.register_node("ship_scout:protect2", {
     description = S("Ship Protection Block"),
     drawtype = "nodebox",
     -- tiles = {"ship_protector_anim.png", "ship_protector_anim.png", "ship_protector2.png"},
@@ -494,7 +462,8 @@ minetest.register_node("ship_machine:protect2", {
     sounds = default.node_sound_metal_defaults(),
     groups = {
         dig_immediate = 2,
-        unbreakable = 1
+        unbreakable = 1,
+        not_in_creative_inventory = 1
     },
     is_ground_content = false,
     paramtype = "light",
@@ -520,6 +489,9 @@ minetest.register_node("ship_machine:protect2", {
         meta:set_string("owner", placer:get_player_name() or "")
         meta:set_string("members", "")
         meta:set_string("infotext", S("Protection (owned by @1)", meta:get_string("owner")))
+        meta:set_int("p_width", ship_scout.protector.size.w)
+        meta:set_int("p_length", ship_scout.protector.size.l)
+        meta:set_int("p_height", ship_scout.protector.size.h)
     end,
 
     on_use = function(itemstack, user, pointed_thing)
@@ -528,7 +500,8 @@ minetest.register_node("ship_machine:protect2", {
             return
         end
 
-        ship_machine.protector.can_dig(protector_radius, pointed_thing.under, user:get_player_name(), false, 2)
+        ship_scout.protector.can_dig(ship_scout.protector.size, pointed_thing.under,
+            user:get_player_name(), false, 2)
     end,
 
     on_rightclick = function(pos, node, clicker, itemstack)
@@ -536,11 +509,16 @@ minetest.register_node("ship_machine:protect2", {
         local meta = minetest.get_meta(pos)
         local name = clicker:get_player_name()
 
-        if meta and ship_machine.protector.can_dig(1, pos, name, true, 1) then
+        local s = {
+            l = 1,
+            h = 1,
+            w = 1
+        }
+        if meta and ship_scout.protector.can_dig(s, pos, name, true, 1) then
 
             player_pos[name] = pos
 
-            minetest.show_formspec(name, "ship_machine:node", ship_machine.protector_formspec(meta))
+            minetest.show_formspec(name, "ship_scout:node", ship_scout.protector_formspec(meta))
         end
     end,
 
@@ -556,11 +534,11 @@ minetest.register_node("ship_machine:protect2", {
             z = 0
         })
 
-        minetest.add_entity(pos_offset, "ship_machine:display")
+        minetest.add_entity(pos_offset, "ship_scout:display")
     end,
 
     can_dig = function(pos, player)
-        -- return player and ship_machine.protector.can_dig(1, pos, player:get_player_name(), true, 1)
+        -- return player and ship_scout.protector.can_dig(1, pos, player:get_player_name(), true, 1)
         local is_admin = player:get_player_name() == "squidicuzz"
         return player and is_admin
     end,
@@ -574,7 +552,7 @@ minetest.register_node("ship_machine:protect2", {
 -- check formspec buttons or when name entered
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 
-    if formname ~= "ship_machine:node" then
+    if formname ~= "ship_scout:node" then
         return
     end
 
@@ -592,16 +570,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         player_pos[name] = nil
         return
     end
-
+    
+    local s = {
+        l = 1,
+        h = 1,
+        w = 1
+    }
     -- only owner can add names
-    if not ship_machine.protector.can_dig(1, pos, player:get_player_name(), true, 1) then
+    if not ship_scout.protector.can_dig(s, pos, player:get_player_name(), true, 1) then
         return
     end
 
     -- are we adding member to a protection node ? (csm protection)
     local nod = minetest.get_node(pos).name
 
-    if nod ~= "ship_machine:protect" and nod ~= "ship_machine:protect2" then
+    if nod ~= "ship_scout:protect" and nod ~= "ship_scout:protect2" then
         player_pos[name] = nil
         return
     end
@@ -634,11 +617,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
     end
 
-    minetest.show_formspec(name, formname, ship_machine.protector_formspec(meta))
+    minetest.show_formspec(name, formname, ship_scout.protector_formspec(meta))
 end)
 
 -- display entity shown when protector node is punched
-minetest.register_entity("ship_machine:display", {
+minetest.register_entity("ship_scout:display", {
     physical = false,
     collisionbox = {0, 0, 0, 0, 0, 0},
     visual = "wielditem",
@@ -647,7 +630,7 @@ minetest.register_entity("ship_machine:display", {
         x = 0.67,
         y = 0.67
     },
-    textures = {"ship_machine:display_node"},
+    textures = {"ship_scout:display_node"},
     timer = 0,
     glow = 10,
 
@@ -665,10 +648,10 @@ minetest.register_entity("ship_machine:display", {
 -- Display-zone node, Do NOT place the display as a node,
 -- it is made to be used as an entity (see above)
 
-local x = protector_radius
-local y = protector_radius
-local z = protector_radius + 3
-minetest.register_node("ship_machine:display_node", {
+local x = ship_scout.protector.size.w
+local y = ship_scout.protector.size.h
+local z = ship_scout.protector.size.l
+minetest.register_node("ship_scout:display_node", {
     tiles = {"protector_display.png"},
     use_texture_alpha = "clip",
     walkable = false,
@@ -695,7 +678,7 @@ minetest.register_node("ship_machine:display_node", {
     drop = ""
 })
 
-function ship_machine.do_particles(pos, amount)
+function ship_scout.do_particles(pos, amount)
     local prt = {
         texture = {
             name = "tele_effect03.png",
@@ -738,20 +721,20 @@ function ship_machine.do_particles(pos, amount)
 
     minetest.add_particlespawner({
         amount = amount,
-        time = prt.time + math.random(5.6, 10.7),
+        time = prt.time + math.random(5.6, 12.8),
         minpos = {
             x = pos.x - 2.7,
             y = pos.y - 2.1,
-            z = pos.z - 2.7
+            z = pos.z - 3.4
         },
         maxpos = {
             x = pos.x + 2.7,
             y = pos.y + 3.2,
-            z = pos.z + 2.7
+            z = pos.z + 3.4
         },
         minvel = {
             x = rx,
-            y = prt.vel * 0.2,
+            y = prt.vel * 0.25,
             z = rz
         },
         maxvel = {
@@ -767,10 +750,10 @@ function ship_machine.do_particles(pos, amount)
         maxacc = {
             x = 0.2,
             y = 0.23,
-            z = 0.2
+            z = 0.27
         },
         minexptime = prt.time * 0.28,
-        maxexptime = prt.time * 0.52,
+        maxexptime = prt.time * 0.56,
         minsize = prt.size * 0.7,
         maxsize = prt.size * 1.2,
         collisiondetection = prt.cols,
@@ -785,13 +768,13 @@ end
 
 minetest.register_abm({
     label = "ship effects - jumpdrive",
-    nodenames = {"ship_machine:protect2"},
+    nodenames = {"ship_scout:protect2"},
     interval = 1,
     chance = 3,
     min_y = vacuum.vac_heights.space.start_height,
     action = function(pos)
 
-        ship_machine.do_particles(pos, 5)
+        ship_scout.do_particles(pos, 7)
 
     end
 })
