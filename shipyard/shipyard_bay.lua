@@ -125,7 +125,7 @@ local function register_assembler_bay(data)
 
                 minetest.chat_send_player(sender:get_player_name(),
                     S("Assembling Jumpship..."))
-                load_schematic_ship_shell(core_pos, "proto_scout1");
+                load_schematic_ship_shell(core_pos, "proto_scout1b");
 
                 minetest.after(7, function()   
                     minetest.set_node(core_pos, {
