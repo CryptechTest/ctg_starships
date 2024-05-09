@@ -1,3 +1,5 @@
+local S = minetest.get_translator(minetest.get_current_modname())
+
 shipyard.can_access_crate = function(clicker, pos)
 
     if not clicker or not pos then
