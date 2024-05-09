@@ -1,3 +1,4 @@
+local S = minetest.get_translator(minetest.get_current_modname())
 
 -- Comamnd Capsule
 --[[minetest.register_craftitem("ship_parts:command_capsule", {
