@@ -463,7 +463,8 @@ minetest.register_node("ship_scout:protect2", {
     groups = {
         dig_immediate = 2,
         unbreakable = 1,
-        not_in_creative_inventory = 1
+        not_in_creative_inventory = 1,
+        ship_protector = 1
     },
     is_ground_content = false,
     paramtype = "light",

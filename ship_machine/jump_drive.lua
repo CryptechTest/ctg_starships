@@ -112,7 +112,7 @@ function ship_machine.register_jumpship(data)
             if fields.set_owner and fields.owner_name then
                 owner_name = fields.owner_name
                 meta:set_string("owner", owner_name)
-                local prot = minetest.find_node_near(pos, 3, data.modname .. ":protect2")
+                local prot = minetest.find_node_near(pos, 3, "group:ship_protector")
                 if prot then
                     local meta2 = minetest.get_meta(prot)
                     meta2:set_string("owner", owner_name)
