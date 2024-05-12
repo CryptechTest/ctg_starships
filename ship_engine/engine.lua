@@ -92,6 +92,7 @@ function ship_engine.register_engine(data)
 
     local active_groups = {
         not_in_creative_inventory = 1
+        -- radioactive = 1,
     }
     for k, v in pairs(groups) do
         active_groups[k] = v
@@ -146,6 +147,7 @@ function ship_engine.register_engine(data)
             local enabled = meta:get_int("enabled") == 1
             local has_mese = ship_engine.get_mese(inv:get_list("src"), false) ~= nil
             local chrg = meta:get_int('last_input_type')
+            local xclear = meta:get_int("exhaust_clear") >= 1
 
             if (not enabled) then
                 technic.swap_node(pos, machine_node)
@@ -153,6 +155,19 @@ function ship_engine.register_engine(data)
                 meta:set_int(tier .. "_EU_demand", 0)
                 meta:set_int(tier .. "_EU_supply", 0)
                 meta:set_int("src_time", 0)
+                meta:set_int("exhaust_clear", 1)
+                local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max,
+                    eu_input, eu_supply, meta:get_int("src_tick"), tick_scl)
+                meta:set_string("formspec", formspec)
+                return
+            end
+
+            if (not xclear) then
+                technic.swap_node(pos, machine_node)
+                meta:set_string("infotext", machine_desc_tier .. S(" Exhaust Blocked"):format())
+                meta:set_int(tier .. "_EU_demand", 0)
+                meta:set_int(tier .. "_EU_supply", 0)
+                --meta:set_int("src_time", 0)
                 local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max,
                     eu_input, eu_supply, meta:get_int("src_tick"), tick_scl)
                 meta:set_string("formspec", formspec)
@@ -802,6 +817,84 @@ end
 ship_engine.register_engine_core({})
 
 
+-- engine radiation
+if minetest.get_modpath("radiant_damage") then
+
+    local on_radiation_damage = function(player, damage, pos)
+        if player:get_hp() <= 0 or damage == 0 then
+            return
+        end
+        local armor_groups = player.get_armor_groups and player:get_armor_groups()
+        local old_damage = damage;
+        local has_prot = false
+        if armor_groups then
+            local radiation_multiplier = armor_groups.radiation
+            if radiation_multiplier ~= nil then
+                damage = damage * (radiation_multiplier / 100)
+                if (damage > 0) then
+                    has_prot = true;
+                end
+            elseif radiation_multiplier == nil and damage > 0 then
+                damage = 0
+                has_prot = true;
+            else
+                damage = 0
+            end
+        end
+        if has_prot then
+            -- damage armor..
+            local _, armor_inv = armor.get_valid_player(armor, player, "[radiant_damage]")
+            local armor_list = armor_inv:get_list("armor")
+            for i, stack in pairs(armor_list) do
+                if not stack:is_empty() then
+                    local name = stack:get_name()
+                    if name:match('lead') then
+                        local use = minetest.get_item_group(name, "armor_use") * old_damage * 0.1
+                        armor:damage(player, i, stack, use)
+                    end
+                end
+            end
+        end
+        damage = math.floor(damage)
+        if damage > 0 then
+            minetest.log("action",
+                player:get_player_name() .. " takes " .. tostring(damage) .. " damage from engine radiation damage at " ..
+                    minetest.pos_to_string(pos))
+            player:set_hp(player:get_hp() - damage)
+        end
+        if damage > 0 or has_prot then
+            if has_prot then
+                old_damage = old_damage * 0.5
+            end
+            minetest.sound_play({
+                name = "radiant_damage_geiger",
+                gain = math.min(1, math.max(0.6, old_damage) / 10)
+            }, {
+                to_player = player:get_player_name()
+            })
+        end
+    end
+
+    radiant_damage.register_radiant_damage("eng_radiation", {
+        interval = radiant_damage.config.mese_interval,
+        inverse_square_falloff = true,
+        emitted_by = {
+            ["ship_engine:lv_engine_l"] = radiant_damage.config.mese_damage * 0.1,
+            ["ship_engine:lv_engine_r"] = radiant_damage.config.mese_damage * 0.1,
+            ["ship_engine:lv_engine_l_active"] = radiant_damage.config.mese_damage,
+            ["ship_engine:lv_engine_r_active"] = radiant_damage.config.mese_damage
+        },
+        attenuated_by = {
+            ["group:stone"] = 0.5,
+            ["group:metal"] = 0.6,
+            ["group:mese_radiation_shield"] = 0.1,
+            ["group:mese_radiation_amplifier"] = 3
+        },
+        default_attenuation = 0.72,
+        on_damage = on_radiation_damage
+    })
+end
+
 -- engine effects
 
 local function apply_fractional_damage(o, dmg)
@@ -818,7 +911,6 @@ local function apply_fractional_damage(o, dmg)
     end
     return false
 end
-
 
 local function calculate_damage_multiplier(object)
     local ag = object.get_armor_groups and object:get_armor_groups()
@@ -858,14 +950,16 @@ end
 minetest.register_abm({
     label = "ship engine particles",
     nodenames = {"ship_engine:lv_engine_l_active", "ship_engine:lv_engine_r_active"},
-    --neighbors = {"air", "vacuum:vacuum", "vacuum:atmos_thin"},
+    -- neighbors = {"air", "vacuum:vacuum", "vacuum:atmos_thin"},
     interval = 1,
-    chance = 2,
+    chance = 1,
     min_y = vacuum.vac_heights.space.start_height,
-    action = vacuum.throttle(5000, function(pos)
+    action = function(pos)
 
         local node = minetest.get_node(pos)
+        local meta = minetest.get_meta(pos)
         local param2 = node.param2
+
         local dir = param2;
         local xdir = 0;
         local zdir = 0;
@@ -889,14 +983,23 @@ minetest.register_abm({
             z = zdir
         })
 
-        local strength = 2
-        for _, o in pairs(minetest.get_objects_inside_radius(npos, 1.65)) do
+        
+        local xnode = minetest.get_node(npos)
+        local xclear = meta:get_int("exhaust_clear")
+        if xnode.name == "vacuum:vacuum" or xnode.sunlight_propagates then
+            meta:set_int("exhaust_clear", 1)
+        else
+            meta:set_int("exhaust_clear", 0)
+        end
+
+        local strength = 4
+        for _, o in pairs(minetest.get_objects_inside_radius(npos, 1.55)) do
             if o ~= nil and o:get_hp() > 0 then
                 dmg_object(pos, o, strength)
             end
         end
 
-        ship_engine.spawn_particle(pos, xdir * -1, math.random(-0.005, 0.005), zdir * -1,
-            math.random(0.02, 0.1) * xdir, 0, math.random(0.02, 0.1) * zdir, 0.2, 4, 10)
-    end)
+        ship_engine.spawn_particle(pos, xdir * -1, math.random(-0.005, 0.005), zdir * -1, math.random(0.02, 0.1) * xdir,
+            0, math.random(0.02, 0.1) * zdir, 0.2, 4, 10)
+    end
 })

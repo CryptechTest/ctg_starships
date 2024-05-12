@@ -190,7 +190,7 @@ function ship_engine.spawn_particle(pos, dir_x, dir_y, dir_z, acl_x, acl_y, acl_
         blend = "alpha",
         scale = 1,
         alpha = 1.0,
-        alpha_tween = {1, 0.2},
+        alpha_tween = {1, 0.1},
         scale_tween = {{
             x = 1.5,
             y = 1.5
@@ -209,53 +209,51 @@ function ship_engine.spawn_particle(pos, dir_x, dir_y, dir_z, acl_x, acl_y, acl_
         cols = false
     }
 
-    if math.random(0, 10) > 1 then
-        local rx = dir_x * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
-        local ry = dir_y * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
-        local rz = dir_z * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
-        minetest.add_particlespawner({
-            amount = amount,
-            --pos = pos,
-            minpos = {
-                x = pos.x + -0.35,
-                y = pos.y + -0.35,
-                z = pos.z + -0.35
-            },
-            maxpos = {
-                x = pos.x + 0.35,
-                y = pos.y + 0.35,
-                z = pos.z + 0.35
-            },
-            minvel = {
-                x = rx * 0.8,
-                y = ry * 0.8,
-                z = rz * 0.8
-            },
-            maxvel = {
-                x = rx,
-                y = ry,
-                z = rz
-            },
-            minacc = {
-                x = acl_x,
-                y = acl_y,
-                z = acl_z
-            },
-            maxacc = {
-                x = acl_x,
-                y = acl_y,
-                z = acl_z
-            },
-            time = prt.time + 2,
-            minexptime = prt.time - math.random(1, 3),
-            maxexptime = prt.time,
-            minsize = ((math.random(0.77, 0.93)) * 2 + 1.6) * prt.size,
-            maxsize = ((math.random(0.77, 0.93)) * 2 + 1.6) * prt.size,
-            collisiondetection = prt.cols,
-            vertical = false,
-            texture = texture,
-            --animation = animation,
-            glow = prt.glow
-        })
-    end
+    local rx = dir_x * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
+    local ry = dir_y * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
+    local rz = dir_z * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
+    minetest.add_particlespawner({
+        amount = amount,
+        -- pos = pos,
+        minpos = {
+            x = pos.x + -0.35,
+            y = pos.y + -0.35,
+            z = pos.z + -0.35
+        },
+        maxpos = {
+            x = pos.x + 0.35,
+            y = pos.y + 0.35,
+            z = pos.z + 0.35
+        },
+        minvel = {
+            x = rx * 0.8,
+            y = ry * 0.8,
+            z = rz * 0.8
+        },
+        maxvel = {
+            x = rx,
+            y = ry,
+            z = rz
+        },
+        minacc = {
+            x = acl_x,
+            y = acl_y,
+            z = acl_z
+        },
+        maxacc = {
+            x = acl_x,
+            y = acl_y,
+            z = acl_z
+        },
+        time = prt.time + 2,
+        minexptime = prt.time - math.random(1, 3),
+        maxexptime = prt.time,
+        minsize = ((math.random(0.57, 0.63)) * 2 + 1.6) * prt.size,
+        maxsize = ((math.random(0.77, 0.93)) * 2 + 1.6) * prt.size,
+        collisiondetection = prt.cols,
+        vertical = false,
+        texture = texture,
+        -- animation = animation,
+        glow = prt.glow
+    })
 end
