@@ -986,7 +986,7 @@ minetest.register_abm({
         
         local xnode = minetest.get_node(npos)
         local xclear = meta:get_int("exhaust_clear")
-        if xnode.name == "vacuum:vacuum" or xnode.sunlight_propagates then
+        if xnode.name == "vacuum:vacuum" or xnode.name == "xpanes:pane_red_flat" or xnode.sunlight_propagates then
             meta:set_int("exhaust_clear", 1)
         else
             meta:set_int("exhaust_clear", 0)
