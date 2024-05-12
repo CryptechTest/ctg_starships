@@ -129,10 +129,10 @@ local function clear_assembler(pos)
         cenv == 0 and ceng1 == 0 and ceng2 == 0
 end
 
-local function check_full(pos, stack)
+local function check_full(sender, stack)
 	local one_item_stack = ItemStack(stack)
 	one_item_stack:set_count(1)
-	if not minetest.get_meta(pos):get_inventory():room_for_item("main", one_item_stack) then
+	if not sender:get_inventory():room_for_item("main", one_item_stack) then
 		return true
 	end
     return false
@@ -278,7 +278,7 @@ local function register_assembler(data)
             elseif sender then
                 minetest.chat_send_player(sender:get_player_name(),
                     S("Launch is ready."))
-                if not check_full(pos, "ship_parts:proto_ship_key") then
+                if not check_full(sender, "ship_parts:proto_ship_key") then
                     if clear_assembler(pos) then
                         sender:get_inventory():add_item("main", "ship_parts:proto_ship_key")
                         minetest.chat_send_player(sender:get_player_name(),
