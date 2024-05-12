@@ -42,6 +42,8 @@ function ship_scout.register_scout(custom_data)
         local node = minetest.get_node(pos)
         local meta = minetest.get_meta(pos)
 
+        local jpos = ship_scout.get_jumpdrive(pos, data.size)
+
         local enabled = false
         if fields.toggle then
             if meta:get_int("enabled") == 1 then
@@ -61,7 +63,7 @@ function ship_scout.register_scout(custom_data)
         end
 
         local jump_dis = meta:get_int("jump_dist")
-        local is_deepspace = pos.y > 22000;
+        local is_deepspace = jpos.y > 22000;
 
         -- local pos_nav = meta:get_string("pos_nav")
         -- local nav = minetest.get_meta(pos_nav)
@@ -88,7 +90,7 @@ function ship_scout.register_scout(custom_data)
         local locked = meta:get_int("travel_ready") == 1
         if locked then
             local formspec =
-                ship_scout.update_formspec(pos, data, loc, false, "Interface lockout! Allocator is busy...")
+                ship_scout.update_formspec(pos, data, loc, false, "Interface lockout!\nAllocator is busy...")
             meta:set_string("formspec", formspec)
             return
         end
@@ -119,13 +121,78 @@ function ship_scout.register_scout(custom_data)
             end
         end
 
+        if fields.submit_dock then
+            local message = ""
+            -- TDOO: this should be dynamic...
+            local spos = {
+                x = 0,
+                y = 5350,
+                z = 0
+            }
+            local s = shipyard.size
+            local bays = minetest.find_nodes_in_area({
+                x = spos.x - s.w,
+                y = spos.y - s.h,
+                z = spos.z - s.l
+            }, {
+                x = spos.x + s.w,
+                y = spos.y + s.h,
+                z = spos.z + s.l
+            }, {"shipyard:assembler_bay"})
+
+            local bFound = false
+            if #bays > 0 and vector.distance(jpos, spos) <= 768 then
+                for c = 1, #bays do
+                    local bay = bays[c]
+                    local offset = {
+                        x = 0,
+                        y = 2,
+                        z = 1 + 2 + 14
+                    }
+                    local bay_center = vector.add(bay, offset);
+                    -- local bmeta = minetest.get_meta(bay)
+                    local bnode = minetest.get_node(bay_center)
+                    if bnode.name ~= "ship_scout:protect2" and bnode.name == "vacuum:vacuum" then
+                        if bay_center.x < jpos.x then
+                            move_x = bay_center.x - jpos.x
+                        else
+                            move_x = jpos.x - bay_center.x
+                        end
+                        if bay_center.y < jpos.y then
+                            move_y = bay_center.y - jpos.y
+                        else
+                            move_y = jpos.y - bay_center.y
+                        end
+                        if bay_center.z < jpos.z then
+                            move_z = bay_center.z - jpos.z
+                        else
+                            move_z = jpos.z - bay_center.z
+                        end
+                        fields.submit_nav = true
+                        bFound = true;
+                        message = "Docking bay found!"
+                        local formspec = ship_scout.update_formspec(pos, data, loc, 1, message)
+                        meta:set_string("formspec", formspec)
+                        break
+                    end
+                end
+            end
+
+            if not bFound then
+                message = "Docking bay not found..."
+                local formspec = ship_scout.update_formspec(pos, data, loc, 0, message)
+                meta:set_string("formspec", formspec)
+                return;
+            end
+        end
+
         local message = ""
         local offset = {
             x = move_x,
             y = move_y,
             z = move_z
         }
-        local ncount, dest = ship_scout.get_jump_dest(pos, offset, data.size)
+        local ncount, dest = ship_scout.get_jump_dest(jpos, offset, data.size)
         local panel_dest = vector.add(pos, offset)
 
         if ncount == 0 and dest == nil then
@@ -137,9 +204,12 @@ function ship_scout.register_scout(custom_data)
         elseif isNumError then
             meta:set_int("travel_ready", 0)
             message = "Must input a valid number..."
-        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < 99 then
+        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < 99 and not fields.submit_dock then
             meta:set_int("travel_ready", 0)
             message = "Jump distance below engine range..."
+        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < 41 and fields.submit_dock then
+            meta:set_int("travel_ready", 0)
+            message = "You are already Docked..."
         elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) > jump_dis + 1 then
             meta:set_int("travel_ready", 0)
             message = "Jump distance beyond engine range..."
@@ -265,7 +335,7 @@ function ship_scout.register_scout(custom_data)
         --[[can_dig = function(pos, player)
             local is_admin = player:get_player_name() == "squidicuzz"
             return player and is_admin
-        end,]]--
+        end,]] --
 
         on_receive_fields = on_receive_fields,
         digiline = {

@@ -14,6 +14,13 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
 
     local is_deepspace = pos.y > 22000;
 
+    local spos = {
+        x = 0,
+        y = 5350,
+        z = 0
+    }
+    local near_shipyard = vector.distance(pos, spos) <= 192
+
     if typename == 'ship_scout' then
 
         local bg = "image[0,0.5;9.78,6.5;starfield_2.png]image[5,3.25;2.2,0.88;bg2.png]"
@@ -29,9 +36,14 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
         local img_hole_3 = "image_button[1,2;1,1;space_wormhole1.png;btn_hole_3;;true;false;space_wormhole2.png]" -- left
         local img_hole_4 = "image_button[3,2;1,1;space_wormhole1.png;btn_hole_4;;true;false;space_wormhole2.png]" -- right
         local btn_nav = "button[5,4;2,1;submit_nav;Make it so]"
+        local btn_doc = ""
         local btn_prot = "button[6.5,-0.1;1.5,0.5;protector;Members]"
         local dest = ""
         local busy = ""
+
+        if near_shipyard then
+            btn_doc = "button[5,4.8;2,1;submit_dock;Dock Ship]"
+        end
 
         if loc == "1" then
             img_hole_1 = "image_button[2,1;1,1;space_wormhole2.png;btn_hole_1;;true;false]"
@@ -64,6 +76,7 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
             btn_nav = "label[5,4;" .. minetest.colorize('#8c8c8c', "Interace Locked") .. "]"
             local lbl = minetest.colorize('#ffa600', "Preparing for FTL jump...")
             busy = busy_bg .. "label[0.5,4.2;" .. lbl .. "]"
+            btn_doc = ""
         end
 
         local coord_tag = "image[0.7,1.2;4.7,0.9;bg2.png]" .. "label[0.8,1.2;Current Coordinates]"
@@ -79,8 +92,9 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
                            icon_lit .. busy .. message
         else
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
-                           machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. img_ship .. coords_label ..
-                           input_field .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit .. busy .. message
+                           machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. btn_doc .. img_ship ..
+                           coords_label .. input_field .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit ..
+                           busy .. message
         end
     end
 
