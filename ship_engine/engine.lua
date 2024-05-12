@@ -224,9 +224,9 @@ function ship_engine.register_engine(data)
                     meta:set_int("src_tick", 0)
                     meta:set_int("last_input_type", 0)
                 end
-                --local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, item_percent, charge,
+                -- local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, item_percent, charge,
                 --    charge_max, eu_input, eu_supply, meta:get_int("src_tick"), tick_scl)
-                --meta:set_string("formspec", formspec)
+                -- meta:set_string("formspec", formspec)
                 return
             end
 
@@ -800,3 +800,103 @@ function ship_engine.register_engine_core(data)
 end
 
 ship_engine.register_engine_core({})
+
+
+-- engine effects
+
+local function apply_fractional_damage(o, dmg)
+    local dmg_int = math.floor(dmg)
+    -- The closer you are to getting one more damage point,
+    -- the more likely it will be added.
+    if math.random() < dmg - dmg_int then
+        dmg_int = dmg_int + 1
+    end
+    if dmg_int > 0 then
+        local new_hp = math.max(o:get_hp() - dmg_int, 0)
+        o:set_hp(new_hp)
+        return new_hp == 0
+    end
+    return false
+end
+
+
+local function calculate_damage_multiplier(object)
+    local ag = object.get_armor_groups and object:get_armor_groups()
+    if not ag then
+        return 0
+    end
+    if ag.immortal and ag.immortal > 0 then
+        return 0
+    end
+    local ent = object:get_luaentity()
+    if ent and ent.immortal then
+        return 0
+    end
+    if ag.fleshy then
+        return 0.01 * ag.fleshy
+    end
+    if ag.radiation then
+        return math.sqrt(0.01 * ag.radiation)
+    end
+    return 0.1
+end
+
+local function dmg_object(pos, object, strength)
+    -- local obj_pos = vector.add(object:get_pos(), calculate_object_center(object))
+    local mul = calculate_damage_multiplier(object)
+    local dmg = math.random(0.25, 1.0) * strength
+    if not dmg then
+        return
+    end
+    -- abort if blocked
+    if mul == 0 then
+        return
+    end
+    apply_fractional_damage(object, dmg * mul)
+end
+
+minetest.register_abm({
+    label = "ship engine particles",
+    nodenames = {"ship_engine:lv_engine_l_active", "ship_engine:lv_engine_r_active"},
+    --neighbors = {"air", "vacuum:vacuum", "vacuum:atmos_thin"},
+    interval = 1,
+    chance = 2,
+    min_y = vacuum.vac_heights.space.start_height,
+    action = vacuum.throttle(5000, function(pos)
+
+        local node = minetest.get_node(pos)
+        local param2 = node.param2
+        local dir = param2;
+        local xdir = 0;
+        local zdir = 0;
+        if param2 == 0 then
+            dir = 2
+            zdir = 1.5
+        elseif param2 == 1 then
+            dir = 3
+            xdir = 1.5
+        elseif param2 == 2 then
+            dir = 0
+            zdir = -1.5
+        elseif param2 == 3 then
+            dir = 1
+            xdir = -1.5
+        end
+
+        local npos = vector.add(pos, {
+            x = xdir,
+            y = 0,
+            z = zdir
+        })
+
+        local strength = 2
+        for _, o in pairs(minetest.get_objects_inside_radius(npos, 1.65)) do
+            if o ~= nil and o:get_hp() > 0 then
+                dmg_object(pos, o, strength)
+            end
+        end
+
+        ship_engine.spawn_particle(pos, xdir * -1, math.random(-0.005, 0.005), zdir * -1,
+            math.random(0.02, 0.1) * xdir, 0, math.random(0.02, 0.1) * zdir, 0.2, 4, 10)
+    end)
+})
