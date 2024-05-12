@@ -243,11 +243,11 @@ ship_scout.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
     -- find the protector nodes
     local pos = minetest.find_nodes_in_area({
         x = pos.x - s.w,
-        y = pos.y - s.h,
+        y = (pos.y - s.h) + 2,
         z = pos.z - s.l
     }, {
         x = pos.x + s.w,
-        y = pos.y + s.h,
+        y = (pos.y + s.h) + 2,
         z = pos.z + s.l
     }, {"ship_scout:protect2"}) -- "ship_scout:protect2",
 
@@ -259,7 +259,7 @@ ship_scout.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
         })
         local jumpdrive = minetest.get_node(jumpdrive_pos)
         if jumpdrive.name ~= "ship_scout:jump_drive" then
-            --return true
+            --pos = jumpdrive_pos
         end
     end
 

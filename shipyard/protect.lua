@@ -243,11 +243,11 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
     -- find the protector nodes
     local prots = minetest.find_nodes_in_area({
         x = pos.x - s.w,
-        y = pos.y - s.h,
+        y = (pos.y - s.h) + 2,
         z = pos.z - s.l
     }, {
         x = pos.x + s.w,
-        y = pos.y + s.h,
+        y = (pos.y + s.h) + 2,
         z = pos.z + s.l
     }, {"shipyard:protect2"}) -- "shipyard:protect2",
 
@@ -259,7 +259,7 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
         })
         local jumpdrive = minetest.get_node(jumpdrive_pos)
         if jumpdrive.name ~= "shipyard:jump_drive" then
-            -- return false
+            --pos = jumpdrive_pos
         end
     end
 
@@ -269,11 +269,11 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
 
     local childs = minetest.find_nodes_in_area({
         x = pos.x - s.w,
-        y = pos.y - s.h,
+        y = (pos.y - s.h) + 2,
         z = pos.z - s.l
     }, {
         x = pos.x + s.w,
-        y = pos.y + s.h,
+        y = (pos.y + s.h) + 2,
         z = pos.z + s.l
     }, {"ship_scout:protect2"})
 
@@ -289,11 +289,11 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
         }
         local childArea = minetest.find_nodes_in_area({
             x = pos.x - sc.w,
-            y = pos.y - sc.h,
+            y = (pos.y - sc.h) + 2,
             z = pos.z - sc.l
         }, {
             x = pos.x + sc.w,
-            y = pos.y + sc.h,
+            y = (pos.y + sc.h) + 2,
             z = pos.z + sc.l
         }, {"ship_scout:protect2"})
 
