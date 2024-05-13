@@ -390,35 +390,32 @@ function spatial_tubes.register_machine(data)
         if fields.save and not isNumError then
             if (dest_y > -11000 and dest_y < 22000) then
                 local tfound = false
-                for i = -1, 1 do
-                    local dest = {
-                        x = dest_x,
-                        y = dest_y + i,
-                        z = dest_z
-                    }
-                    local dnode = minetest.get_node(dest)
-                    if string.match(dnode.name, node_name) then
-                        local dmeta = minetest.get_meta(dest)
-                        if minetest.is_protected(dest, sender:get_player_name()) and
-                            not minetest.check_player_privs(sender:get_player_name(), "protection_bypass") then
-                            minetest.chat_send_player(sender:get_player_name(),
-                                "Destination is within a protected area!")
-                            minetest.record_protection_violation(dest, sender:get_player_name())
-                            tfound = true
-                            break
-                        elseif dmeta:get_int("locked") ~= nil and dmeta:get_int("locked") == 0 then
-                            -- save exit destination
-                            meta:set_string("exit", minetest.serialize(dest))
-                            -- lock receiver
-                            dmeta:set_int("locked", 1)
-                            minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked!")
-                            tfound = true
-                            break
-                        elseif dmeta:get_int("locked") == 1 then
-                            minetest.chat_send_player(sender:get_player_name(), "This Telepad already has a receiver!")
-                            tfound = true
-                            break
-                        end
+                local dest = minetest.find_nodes_in_area({
+                    x = pos.x - 1,
+                    y = pos.y - 1,
+                    z = pos.z - 1
+                }, {
+                    x = pos.x + 1,
+                    y = pos.y + 2,
+                    z = pos.z + 1
+                }, {node_name})
+                if #dest > 0 then
+                    local dmeta = minetest.get_meta(dest[1])
+                    if minetest.is_protected(dest[1], sender:get_player_name()) and
+                        not minetest.check_player_privs(sender:get_player_name(), "protection_bypass") then
+                        minetest.chat_send_player(sender:get_player_name(), "Destination is within a protected area!")
+                        minetest.record_protection_violation(dest[1], sender:get_player_name())
+                        tfound = true
+                    elseif dmeta:get_int("locked") ~= nil and dmeta:get_int("locked") == 0 then
+                        -- save exit destination
+                        meta:set_string("exit", minetest.serialize(dest[1]))
+                        -- lock receiver
+                        dmeta:set_int("locked", 1)
+                        minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked!")
+                        tfound = true
+                    elseif dmeta:get_int("locked") == 1 then
+                        minetest.chat_send_player(sender:get_player_name(), "This Telepad already has a receiver!")
+                        tfound = true
                     end
                 end
                 if not tfound then
