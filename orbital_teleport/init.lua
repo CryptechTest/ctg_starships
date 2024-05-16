@@ -292,7 +292,7 @@ if true then
                                     obj2:get_luaentity():set_item(item1)
                                     obj:remove()
                                     particle_effect_teleport(exit, 1)
-                                elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monseter") then
+                                elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
                                     obj:set_pos(exit)
                                     particle_effect_teleport(exit, 1)
                                 end

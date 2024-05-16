@@ -557,7 +557,7 @@ function spatial_tubes.register_machine(data)
                                 obj2:get_luaentity():set_item(item1)
                                 obj:remove()
                                 spatial_tubes.particle_effect_teleport(exit, 1)
-                            elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monseter") then
+                            elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
                                 obj:set_pos(exit)
                                 spatial_tubes.particle_effect_teleport(exit, 1)
                             end
