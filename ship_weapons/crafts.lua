@@ -1,7 +1,7 @@
 
 local orb = "spectrum:spectrum_orb_block"
 local glw = "group:crystal"
-local ml = "technic:laser_mk3"
+local ml = "technic:laser_mk1"
 local flx = "ship_parts:flux_tube"
 local cor = "ctg_world:corestone_glow_octa"
 local sc = "technic:supply_converter"
