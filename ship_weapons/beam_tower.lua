@@ -920,6 +920,7 @@ function ship_weapons.register_beam_tower(data)
             if data.tube then
                 pipeworks.after_place(pos)
             end
+            local meta = minetest.get_meta(pos)
             minetest.get_node_timer(pos):start(30)
             meta:set_int("attack_type", 1)
             meta:set_int("last_hit", 0)
