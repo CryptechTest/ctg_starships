@@ -502,6 +502,19 @@ function ship_weapons.register_beam_tower(data)
         meta:set_string("formspec", formspec)
     end
 
+    local function remove_attached(pos) 
+        local objs = minetest.get_objects_inside_radius(pos, 0.25)
+        for _, obj in pairs(objs) do
+            if obj:get_luaentity() then
+                local ent = obj:get_luaentity()
+                if ent.name == "ship_weapons:tower_display" then
+                    obj:remove()
+                    break
+                end
+            end
+        end
+    end
+    
     -------------------------------------------------------
     -------------------------------------------------------
     -- technic run
@@ -725,6 +738,7 @@ function ship_weapons.register_beam_tower(data)
                 pipeworks.after_place(pos)
             end
             minetest.add_entity(pos, "ship_weapons:tower_display")
+
             local meta = minetest.get_meta(pos)
             if placer:is_player() then
                 meta:set_string("owner", placer:get_player_name())
@@ -735,6 +749,7 @@ function ship_weapons.register_beam_tower(data)
             meta:set_int("last_hit", 0)
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
+            remove_attached(pos)
             return technic.machine_after_dig_node
         end,
         on_push_item = function(pos, dir, item)
@@ -815,6 +830,7 @@ function ship_weapons.register_beam_tower(data)
             end
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
+            remove_attached(pos)
             return technic.machine_after_dig_node
         end,
         on_rotate = screwdriver.disallow,
@@ -859,6 +875,7 @@ function ship_weapons.register_beam_tower(data)
             end
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
+            remove_attached(pos)
             return technic.machine_after_dig_node
         end,
         on_rotate = screwdriver.disallow,
@@ -908,6 +925,7 @@ function ship_weapons.register_beam_tower(data)
             meta:set_int("last_hit", 0)
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
+            remove_attached(pos)
             return technic.machine_after_dig_node
         end,
         on_rotate = screwdriver.disallow,

@@ -10,5 +10,5 @@ local det = "digistuff:detector"
 
 minetest.register_craft({
     output = "ship_weapons:lv_beam_tower",
-    recipe = {{glw, ml, glw}, {flx, orb, sw}, {det, cor, sc}}
+    recipe = {{glw, ml, glw}, {sw, orb, sw}, {det, cor, sc}}
 })
