@@ -1,6 +1,6 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
-local time_scl = 20
+local time_scl = 30
 
 local function round(v)
     return math.floor(v + 0.5)
@@ -40,12 +40,14 @@ local function has_charge(pos)
     return charge > 0
 end
 
-local function spawn_particle(pos, dir)
+local function spawn_particle(pos, dir, i, dist)
     dir = vector.multiply(dir, {
         x = 0.5,
         y = 0.5,
         z = 0.5
     })
+    local i = (dist - (dist - i * 0.1)) * 0.064
+    local t = 0.6 + i
     local def = {
         pos = pos,
         velocity = {
@@ -55,12 +57,12 @@ local function spawn_particle(pos, dir)
         },
         acceleration = {
             x = 0,
-            y = 0.01,
+            y = randFloat(-0.02, 0.05),
             z = 0
         },
 
-        expirationtime = 0.7,
-        size = 0.97,
+        expirationtime = t,
+        size = randFloat(1.32, 1.6),
         collisiondetection = false,
         collision_removal = false,
         object_collision = false,
@@ -83,7 +85,7 @@ local function spawn_particle(pos, dir)
             type = "vertical_frames",
             aspect_w = 16,
             aspect_h = 16,
-            length = 1
+            length = t + 0.1
         },
         glow = 12
     }
@@ -146,8 +148,8 @@ local function spawn_particle_hit(pos)
         },
         minexptime = 0.7,
         maxexptime = 1.0,
-        minsize = 0.8,
-        maxsize = 1.1
+        minsize = 0.9,
+        maxsize = 1.4
     }
 
     minetest.add_particlespawner(def);
@@ -208,8 +210,8 @@ local function spawn_particle2(pos)
         },
         minexptime = 0.5,
         maxexptime = 2.2,
-        minsize = 0.21,
-        maxsize = 0.66
+        minsize = 0.28,
+        maxsize = 0.72
     }
 
     minetest.add_particlespawner(def);
@@ -283,8 +285,73 @@ local function spawn_particle_hit2(pos)
         },
         minexptime = 0.8,
         maxexptime = 2.5,
-        minsize = 0.2,
-        maxsize = 0.26
+        minsize = 0.25,
+        maxsize = 0.34
+    }
+
+    minetest.add_particlespawner(def);
+end
+
+local function spawn_particle_area(pos)
+    local meta = minetest.get_meta(pos)
+    local hp = meta:get_int("hp")
+    local amount = hp + math.random(1, hp + 1)
+    local def = {
+        amount = amount,
+        time = randFloat(2.6, 5.2),
+        collisiondetection = true,
+        collision_removal = false,
+        object_collision = false,
+        vertical = false,
+
+        texture = {
+            name = "ctg_beam_effect2.png",
+            alpha_tween = {1, 0.2},
+            scale_tween = {{
+                x = 2.0,
+                y = 2.2
+            }, {
+                x = 0.1,
+                y = 0.0
+            }},
+            blend = "alpha"
+        },
+        glow = 13,
+
+        minpos = {
+            x = pos.x + -0.66,
+            y = pos.y + -0.46,
+            z = pos.z + -0.66
+        },
+        maxpos = {
+            x = pos.x + 0.66,
+            y = pos.y + 0.54,
+            z = pos.z + 0.66
+        },
+        minvel = {
+            x = -0.13,
+            y = 0.09,
+            z = -0.13
+        },
+        maxvel = {
+            x = 0.13,
+            y = 0.12,
+            z = 0.13
+        },
+        minacc = {
+            x = -0.07,
+            y = -0.08,
+            z = -0.07
+        },
+        maxacc = {
+            x = 0.07,
+            y = 0.12,
+            z = 0.07
+        },
+        minexptime = 4.6,
+        maxexptime = 6.8,
+        minsize = 0.45,
+        maxsize = 1.44
     }
 
     minetest.add_particlespawner(def);
@@ -318,43 +385,52 @@ function ship_weapons.strike_effect(pos1, pos2)
 
     local dir = vector.direction(pos1, target)
     local dist = vector.distance(pos1, target)
+    local step_min = 0.25
     local step = vector.multiply(dir, {
-        x = 0.1,
-        y = 0.1,
-        z = 0.1
+        x = step_min,
+        y = step_min,
+        z = step_min
     })
 
-    minetest.sound_play("ctg_zap", {
-        pos = pos1,
-        gain = 1.4,
-        pitch = randFloat(1.3, 1.5)
-    })
-    minetest.sound_play("ctg_zap", {
-        pos = target,
-        gain = 0.1,
-        pitch = randFloat(1.4, 1.6)
-    })
-    minetest.sound_play("ctg_hit3", {
-        pos = target,
-        gain = 0.3,
-        pitch = randFloat(1.15, 1.3)
-    })
+    minetest.after(0, function()
+        minetest.sound_play("ctg_zap", {
+            pos = pos1,
+            gain = 1.3,
+            pitch = randFloat(1.3, 1.5)
+        })
+    end)
 
     -- minetest.log("pew pew! " .. tostring(dist))
 
-    local cur_pos = pos1
-    while (vector.distance(cur_pos, target) > 0.1) do
-        spawn_particle(cur_pos, dir)
-        cur_pos = vector.add(cur_pos, step)
-    end
+    minetest.after(0, function()
+        local i = 1
+        local cur_pos = pos1
+        while (vector.distance(cur_pos, target) > step_min) do
+            if math.random(1, 10) > 1 then
+                spawn_particle(cur_pos, dir, i, vector.distance(cur_pos, target))
+            end
+            cur_pos = vector.add(cur_pos, step)
+            i = i + 1
+            if i > 256 then
+                break
+            end
+        end
+    end)
 
-    spawn_particle(target, {
-        x = 0,
-        y = 0,
-        z = 0
-    })
-    spawn_particle_hit(target)
-    spawn_particle_hit2(target)
+    minetest.after(0.1, function()
+        spawn_particle_hit(target)
+        spawn_particle_hit2(target)
+        minetest.sound_play("ctg_zap", {
+            pos = target,
+            gain = 0.1,
+            pitch = randFloat(1.4, 1.6)
+        })
+        minetest.sound_play("ctg_hit3", {
+            pos = target,
+            gain = 0.3,
+            pitch = randFloat(1.15, 1.3)
+        })
+    end)
 
     return true
 end
@@ -439,10 +515,14 @@ function ship_weapons.register_beam_tower(data)
         if fields.quit then
             return
         end
+        local name = sender:get_player_name()
+        if not name or not pos then
+            return
+        end
         local node = minetest.get_node(pos)
         local meta = minetest.get_meta(pos)
         local owner = meta:get_string("owner")
-        if sender:get_player_name() ~= owner then
+        if name ~= owner then
             return
         end
         local enabled = meta:get_int("enabled") == 1
@@ -471,11 +551,6 @@ function ship_weapons.register_beam_tower(data)
             meta:set_int("attack_type", attack_type)
         end
 
-        local name = sender:get_player_name()
-        if not name or not pos then
-            return
-        end
-
         local add_member_input = fields.add_member
         -- reset formspec until close button pressed
         if (fields.close_me or fields.quit) and (not add_member_input or add_member_input == "") then
@@ -502,7 +577,7 @@ function ship_weapons.register_beam_tower(data)
         meta:set_string("formspec", formspec)
     end
 
-    local function remove_attached(pos) 
+    local function remove_attached(pos)
         local objs = minetest.get_objects_inside_radius(pos, 0.25)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
@@ -514,7 +589,7 @@ function ship_weapons.register_beam_tower(data)
             end
         end
     end
-    
+
     -------------------------------------------------------
     -------------------------------------------------------
     -- technic run
@@ -568,8 +643,9 @@ function ship_weapons.register_beam_tower(data)
 
             if (not enabled) then
                 technic.swap_node(pos, machine_node)
-                meta:set_string("infotext", machine_desc_tier ..
-                    S(" Disabled" .. "\nHP: " .. meta:get_int("hp") .. "/" .. data.hp .. ""))
+                meta:set_string("infotext",
+                    machine_desc_tier .. S(" Disabled") .. "\nHP: " .. meta:get_int("hp") .. "/" .. data.hp .. "\n" ..
+                        S("Charge: ") .. meta:get_int("charge") .. "/" .. meta:get_int("charge_max"))
                 meta:set_int(tier .. "_EU_demand", 0)
                 meta:set_int("src_time", 0)
                 --[[local formspec = ship_weapons.update_formspec(data, false, enabled, 0, charge, charge_max,
@@ -588,8 +664,9 @@ function ship_weapons.register_beam_tower(data)
 
             if (not needs_charge(pos) or (isFiring and has_charge(pos))) and meta:get_int("last_hit") == 0 then
                 technic.swap_node(pos, machine_node .. "_idle")
-                meta:set_string("infotext", machine_desc_tier ..
-                    S(" Operational" .. "\nHP: " .. meta:get_int("hp") .. "/" .. data.hp .. ""))
+                meta:set_string("infotext",
+                    machine_desc_tier .. S(" Operational") .. "\nHP: " .. meta:get_int("hp") .. "/" .. data.hp .. "\n" ..
+                        S("Charge: ") .. meta:get_int("charge") .. "/" .. meta:get_int("charge_max"))
                 -- meta:set_int(tier .. "_EU_demand", machine_demand_idle)
                 meta:set_int("src_time", 0)
                 --[[local formspec = ship_weapons.update_formspec(data, true, enabled, 0, charge, charge_max,
@@ -604,13 +681,17 @@ function ship_weapons.register_beam_tower(data)
                 local nTargetCount = 0
                 local objs = minetest.get_objects_inside_radius(pos, data.range + 0.251)
                 for _, obj in pairs(objs) do
-                    if nTargetCount >= 3 then
+                    if nTargetCount >= data.targets then
                         break
                     end
                     local obj_pos = obj:get_pos()
                     if obj:get_luaentity() and not obj:is_player() then
                         local ent = obj:get_luaentity()
                         if ent.name == "__builtin:item" and (attack_type == 2) then
+                            if math.random(1, 4) == 1 then
+                                bFoundTarget = true;
+                                break
+                            end
                             -- objects...
                             local item1 = obj:get_luaentity().itemstring
                             -- local obj2 = minetest.add_entity(exit, "__builtin:item")
@@ -622,10 +703,18 @@ function ship_weapons.register_beam_tower(data)
                             end
 
                         elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
+
                             -- animals?
+                            -- npc?
+
+                            -- monsters
                             if ent.type == "monster" and (attack_type == 2 or attack_type == 3 or attack_type == 5) then
+                                if math.random(1, 8) == 1 then
+                                    bFoundTarget = true;
+                                    break
+                                end
                                 if ship_weapons.strike_effect(pos, obj_pos) then
-                                    ent.health = ent.health - randFloat(1, 2, 1)
+                                    ent.health = ent.health - randFloat(1, 2.7, 1)
                                     bFoundTarget = true;
                                     nTargetCount = nTargetCount + 1
                                 end
@@ -635,6 +724,10 @@ function ship_weapons.register_beam_tower(data)
                         local name = obj:get_player_name()
                         -- players
                         if name ~= meta:get_string("owner") and not ship_weapons.is_member(meta, name) then
+                            if math.random(1, 6) == 1 then
+                                bFoundTarget = true;
+                                break
+                            end
                             if ship_weapons.strike_effect(pos, obj_pos) then
                                 local tool_capabilities = {
                                     full_punch_interval = 0.4,
@@ -661,12 +754,15 @@ function ship_weapons.register_beam_tower(data)
                                 obj:punch(obj, time_since_last_punch, tool_capabilities)
 
                                 local hp = obj:get_hp()
-                                obj:set_hp(hp - randFloat(1, 2, 1))
+                                obj:set_hp(hp - randFloat(1, 2.5, 1))
 
                                 bFoundTarget = true;
                                 nTargetCount = nTargetCount + 1
                             end
                         end
+                    end
+                    if bFoundTarget and math.random(1, 20) == 1 then
+                        break
                     end
                 end
 
@@ -685,14 +781,15 @@ function ship_weapons.register_beam_tower(data)
             end
 
             if meta:get_int("last_hit") >= 1 then
-                meta:set_int("last_hit", 0)
+                meta:set_int("last_hit", meta:get_int("last_hit") - 0)
                 return
             end
 
             meta:set_int("firing", 0)
 
-            meta:set_string("infotext", machine_desc_tier ..
-                S(" Charging" .. "\nHP: " .. meta:get_int("hp") .. "/" .. data.hp .. ""))
+            meta:set_string("infotext",
+                machine_desc_tier .. S(" Charging") .. "\nHP: " .. meta:get_int("hp") .. "/" .. data.hp .. "\n" ..
+                    S("Charge: ") .. meta:get_int("charge") .. "/" .. meta:get_int("charge_max"))
             if meta:get_int("src_time") < round(time_scl * 10) then
                 local item_percent = (math.floor(meta:get_int("src_time") / round(time_scl * 10) * 100))
                 if not powered then
@@ -1122,19 +1219,37 @@ end
 -------------------------------------------------------
 -------------------------------------------------------
 
+minetest.register_abm({
+    label = "beam emitterer effect",
+    nodenames = {"ship_weapons:lv_beam_tower_active", "ship_weapons:lv_beam_tower_idle"},
+    interval = 3,
+    chance = 3,
+    -- min_y = 0,
+    action = function(pos)
+        local meta = minetest.get_meta(pos)
+        if meta:get_int("last_hit") == 0 then
+            spawn_particle_area(pos)
+        end
+    end
+})
+
+-------------------------------------------------------
+-------------------------------------------------------
+
 local function register_lv_beam_tower(data)
     data.modname = "ship_weapons"
     data.machine_name = "beam_tower"
     data.machine_desc = "Beam Emitter"
-    data.charge_max = 10
+    data.charge_max = 13
     data.demand = {2000}
-    data.speed = 10
+    data.speed = 5
     data.tier = "LV"
     data.typename = "beam_tower"
     data.digiline_effector = nil
-    data.range = 42
+    data.range = 44
     data.hp = 8
     data.repair_length = 300
+    data.targets = 2
 
     ship_weapons.register_beam_tower(data)
 end
