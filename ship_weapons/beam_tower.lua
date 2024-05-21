@@ -422,7 +422,7 @@ function ship_weapons.strike_effect(pos1, pos2)
         spawn_particle_hit2(target)
         minetest.sound_play("ctg_zap", {
             pos = target,
-            gain = 0.1,
+            gain = 0.4,
             pitch = randFloat(1.4, 1.6)
         })
         minetest.sound_play("ctg_hit3", {
@@ -1021,6 +1021,10 @@ function ship_weapons.register_beam_tower(data)
             minetest.get_node_timer(pos):start(30)
             meta:set_int("attack_type", 1)
             meta:set_int("last_hit", 0)
+            if placer:is_player() then
+                meta:set_string("owner", placer:get_player_name())
+                meta:set_string("members", "")
+            end
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
             remove_attached(pos)
