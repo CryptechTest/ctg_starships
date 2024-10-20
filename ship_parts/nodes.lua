@@ -348,3 +348,66 @@ end
 register_assembler({
     name = "Scout"
 });
+
+
+minetest.register_node("ship_parts:lightbar_white", {
+	description = "Node Light White",
+	tiles = {
+		"ctg_light_white.png",
+	},
+	drawtype = "nodebox",
+	paramtype = "light",
+	paramtype2 = "wallmounted",
+	sunlight_propagates = true,
+	light_source = minetest.LIGHT_MAX - 1,
+	node_box = {
+		type = "fixed",
+		fixed = {
+            {-0.3125, -0.5, -0.125, 0.3125, -0.375, 0.125}, -- NodeBox1
+			{-0.125, -0.5, -0.3125, 0.125, -0.375, 0.3125}, -- NodeBox2
+			{-0.1875, -0.5, -0.1875, 0.1875, -0.3125, 0.1875}, -- NodeBox3
+		}
+	},
+	selection_box = {
+		type = "wallmounted",
+		wallmounted = {
+            {-0.3125, -0.5, -0.125, 0.3125, -0.375, 0.125}, -- NodeBox1
+			{-0.125, -0.5, -0.3125, 0.125, -0.375, 0.3125}, -- NodeBox2
+			--{-0.1875, -0.5, -0.1875, 0.1875, -0.3125, 0.1875}, -- NodeBox3
+		}
+	},
+	groups = {cracky=1, dig_generic = 3, leaky = 1},
+	is_ground_content = false,
+	sounds = scifi_nodes.node_sound_glass_defaults()
+})
+
+minetest.register_node("ship_parts:lightbar_blue", {
+	description = "Node Light Blue",
+	tiles = {
+		"ctg_light_blue.png",
+	},
+	drawtype = "nodebox",
+	paramtype = "light",
+	paramtype2 = "wallmounted",
+	sunlight_propagates = true,
+	light_source = minetest.LIGHT_MAX - 1,
+	node_box = {
+		type = "fixed",
+		fixed = {
+            {-0.3125, -0.5, -0.125, 0.3125, -0.375, 0.125}, -- NodeBox1
+			{-0.125, -0.5, -0.3125, 0.125, -0.375, 0.3125}, -- NodeBox2
+			{-0.1875, -0.5, -0.1875, 0.1875, -0.3125, 0.1875}, -- NodeBox3
+		}
+	},
+	selection_box = {
+		type = "wallmounted",
+		wallmounted = {
+            {-0.3125, -0.5, -0.125, 0.3125, -0.375, 0.125}, -- NodeBox1
+			{-0.125, -0.5, -0.3125, 0.125, -0.375, 0.3125}, -- NodeBox2
+			--{-0.1875, -0.5, -0.1875, 0.1875, -0.3125, 0.1875}, -- NodeBox3
+		}
+	},
+	groups = {cracky=1, dig_generic = 3, leaky = 1},
+	is_ground_content = false,
+	sounds = scifi_nodes.node_sound_glass_defaults()
+})

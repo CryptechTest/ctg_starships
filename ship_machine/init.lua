@@ -14,6 +14,7 @@ dofile(default_path .. DIR_DELIM .. "gravity_drive.lua")
 dofile(default_path .. DIR_DELIM .. "jump_drive.lua")
 dofile(default_path .. DIR_DELIM .. "nodes.lua")
 dofile(default_path .. DIR_DELIM .. "crafts.lua")
+dofile(default_path .. DIR_DELIM .. "coolants.lua")
 
 minetest.register_on_joinplayer(function(player, last_login)
     local name = player:get_player_name()

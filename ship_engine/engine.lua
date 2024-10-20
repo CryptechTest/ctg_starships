@@ -702,6 +702,7 @@ function ship_engine.register_engine_core(data)
             meta:set_int("charge_max", data.charge_max)
             meta:set_int("demand", data.demand[1])
             meta:set_int("jump_ready", 0)
+            meta:set_int("exhaust_clear", 0)
             local formspec = ship_engine.update_formspec(data, false, false)
             meta:set_string("formspec", formspec)
         end,
@@ -791,6 +792,7 @@ function ship_engine.register_engine_core(data)
                     meta:set_int("enabled", 0)
                 else
                     meta:set_int("enabled", 1)
+                    meta:set_int("exhaust_clear", 1)
                     enabled = true
                 end
             end
