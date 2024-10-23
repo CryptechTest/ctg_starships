@@ -50,6 +50,58 @@ local function register_projectile(def)
         target_pos = {},
         object_target = nil,
 
+        on_death = function(self, killer)
+            local pos = self.object:get_pos()
+            local radius = 1
+            --Death smoke
+            minetest.add_particlespawner({
+                amount = 16,
+                time = 0.5,
+                minpos = vector.subtract(pos, radius / 4),
+                maxpos = vector.add(pos, radius / 4),
+                minvel = {x = -0.5, y = -0.5, z = -0.5},
+                maxvel = {x = 0.5, y = 0.5, z = 0.5},
+                minacc = vector.new(),
+                maxacc = vector.new(),
+                minexptime = 2,
+                maxexptime = 6,
+                minsize = radius * 3,
+                maxsize = radius * 5,
+                texture = {
+                    name = "ctg_missile_smoke.png",
+                    blend = "alpha",
+                    scale = 1,
+                    alpha = 1.0,
+                    alpha_tween = {1, 0},
+                    scale_tween = {{
+                        x = 0.25,
+                        y = 0.25
+                    }, {
+                        x = 6,
+                        y = 6
+                    }}
+                },
+                collisiondetection = true,
+                glow = 5,
+            })
+            --Death flash
+            if def.hit_flare then
+                minetest.add_particle({
+                    pos = pos,
+                    expirationtime = 0.3,
+                    size = def.hit_flare_size,
+                    collisiondetection = false,
+                    vertical = false,
+                    texture = def.hit_flare,
+                    glow = def.hit_flare_glow,
+                })
+            end
+            --Hit sound
+            if def.hit_sound then
+                minetest.sound_play(def.hit_sound, {pos=self.previous_pos, gain=def.hit_sound_gain, max_hear_distance=2*48})
+            end
+        end,
+
         --Performing checks every server step
         on_step = function(self, dtime)
             self.timer = self.timer + 1
@@ -93,12 +145,13 @@ local function register_projectile(def)
                 })
             end
             
+            local retarget = false
             --Target position update
             if self.object_target then
                 if self.object_target:get_hp() > 0 and self.object_target:get_pos() then
                     self.target_pos = self.object_target:get_pos();
                 end
-            else
+            elseif retarget then
                 local objs = minetest.get_objects_inside_radius(pos, 2.5)
                 for _, obj in pairs(objs) do
                     local obj_pos = obj:get_pos()
@@ -117,19 +170,21 @@ local function register_projectile(def)
             if self.target_pos then
                 local target_delta = vector.direction(pos, self.target_pos)
                 local dist_delta = vector.distance(pos, self.target_pos)
-                local velo = self.object:get_velocity()
-                local veln = {x=((target_delta.x+ship_weapons.get_spread(def.spread))*def.projectile_speed),
-                            y=((target_delta.y+ship_weapons.get_spread(def.spread))*def.projectile_speed),
-                            z=((target_delta.z+ship_weapons.get_spread(def.spread))*def.projectile_speed)}
-                local vel = vector.add(vector.multiply(velo, 7), veln) / 8
                 if (self.timer % 2 == 0 and self.timer > self.target_delay) then
+                    local velo = self.object:get_velocity()
+                    local veln = {x=((target_delta.x+ship_weapons.get_spread(def.spread))*def.projectile_speed),
+                                y=((target_delta.y+ship_weapons.get_spread(def.spread))*def.projectile_speed),
+                                z=((target_delta.z+ship_weapons.get_spread(def.spread))*def.projectile_speed)}
+                    local vel = vector.add(vector.multiply(velo, 5), veln) / 6
                     self.object:setvelocity(vel)
                 end
                 if (dist_delta < 1) then
-                    self.node_hit = true 
+                    --self.node_hit = true 
                     if def.on_timeout then
                         def.on_timeout(self, self.target_pos)
                     end
+                    --Remove the projectile
+                    self.object:remove()
                 end
             end
 
@@ -180,7 +235,7 @@ local function register_projectile(def)
                         vertical = false,
                         texture = def.hit_flare,
                         glow = def.hit_flare_glow,
-                })
+                    })
                 end
                 --Hit particles
                 if def.hit_particle then
@@ -203,7 +258,7 @@ local function register_projectile(def)
                         vertical = false,
                         texture = def.hit_particle,
                         glow = def.hit_particle_glow,
-                        })
+                    })
                 end
                 --Hit sound
                 if def.hit_sound then

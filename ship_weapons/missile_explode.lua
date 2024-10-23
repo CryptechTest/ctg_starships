@@ -214,27 +214,26 @@ local function add_effects(pos, radius, drops)
 		pos = pos,
 		velocity = vector.new(),
 		acceleration = vector.new(),
-		expirationtime = 0.46,
-		size = radius * 15,
+		expirationtime = 0.64,
+		size = radius * 16,
 		collisiondetection = false,
 		vertical = false,
 		texture = "tnt_boom.png",
 		glow = 15,
 	})
 	minetest.add_particlespawner({
-		amount = 48,
-		time = 0.7,
-		minpos = vector.subtract(pos, radius / 2),
-		maxpos = vector.add(pos, radius / 2),
+		amount = 16,
+		time = 0.6,
+		minpos = vector.subtract(pos, radius / 4),
+		maxpos = vector.add(pos, radius / 4),
 		minvel = {x = -1, y = -1, z = -1},
 		maxvel = {x = 1, y = 1, z = 1},
 		minacc = vector.new(),
 		maxacc = vector.new(),
 		minexptime = 3,
-		maxexptime = 8,
+		maxexptime = 7,
 		minsize = radius * 4,
-		maxsize = radius * 6,
-		--texture = "tnt_smoke.png",
+		maxsize = radius * 7,
         texture = {
             name = "ctg_missile_vapor.png",
             blend = "alpha",
@@ -245,18 +244,49 @@ local function add_effects(pos, radius, drops)
                 x = 0.5,
                 y = 0.5
             }, {
+                x = 5,
+                y = 5
+            }}
+        },
+        collisiondetection = true,
+        glow = 3,
+	})
+	minetest.add_particlespawner({
+		amount = 16,
+		time = 0.7,
+		minpos = vector.subtract(pos, radius / 3),
+		maxpos = vector.add(pos, radius / 3),
+		minvel = {x = -1, y = -1, z = -1},
+		maxvel = {x = 1, y = 1, z = 1},
+		minacc = vector.new(),
+		maxacc = vector.new(),
+		minexptime = 2,
+		maxexptime = 5,
+		minsize = radius * 5,
+		maxsize = radius * 7,
+		--texture = "tnt_smoke.png",
+        texture = {
+            name = "ctg_missile_smoke.png",
+            blend = "alpha",
+            scale = 1,
+            alpha = 1.0,
+            alpha_tween = {1, 0},
+            scale_tween = {{
+                x = 0.25,
+                y = 0.25
+            }, {
                 x = 6,
                 y = 5
             }}
         },
         collisiondetection = true,
-        glow = 2,
+        glow = 5,
 	})
 	minetest.add_particlespawner({
-		amount = 64,
+		amount = 72,
 		time = 0.45,
-		minpos = vector.subtract(pos, radius / 3),
-		maxpos = vector.add(pos, radius / 3),
+		minpos = vector.subtract(pos, radius / 2),
+		maxpos = vector.add(pos, radius / 2),
 		minvel = {x = -3.5, y = -3.5, z = -3.5},
 		maxvel = {x = 3.5, y = 5.0, z = 3.5},
 		minacc = {x = -0.5, y = -2.0, z = -0.5},
@@ -264,7 +294,7 @@ local function add_effects(pos, radius, drops)
 		minexptime = 0.5,
 		maxexptime = 2,
 		minsize = radius * 0.2,
-		maxsize = radius * 0.7,
+		maxsize = radius * 0.6,
         texture = {
             name = "ctg_spark.png",
             blend = "alpha",
