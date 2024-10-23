@@ -110,10 +110,10 @@ local function register_projectile(def)
             if def.trail_particle then
                 --Smoke Effect
                 minetest.add_particlespawner({
-                    amount = 1,
+                    amount = 2,
                     time = 0.1,
-                    minpos = {x=pos.x-0.01, y=pos.y-0.01, z=pos.z-0.01},
-                    maxpos = {x=pos.x+0.01, y=pos.y+0.01, z=pos.z+0.01},
+                    minpos = {x=pos.x-0.1, y=pos.y-0.1, z=pos.z-0.1},
+                    maxpos = {x=pos.x+0.1, y=pos.y+0.1, z=pos.z+0.1},
                     minvel = {x=-0.1, y=-0.1, z=-0.1},
                     maxvel = {x=0.1, y=0.1, z=0.1},
                     minacc = {x=0, y=def.trail_particle_gravity, z=0},
@@ -309,8 +309,8 @@ local function setup_projectile_register(tier)
             x = 0.5,
             y = 0.5
         }, {
-            x = 2.2,
-            y = 2.0
+            x = 2.5,
+            y = 2.2
         }}
     }
     local spark_texture = {

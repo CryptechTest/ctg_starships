@@ -334,7 +334,9 @@ function ship_weapons.update_formspec(data, meta)
         local inp_count = meta:get_int("target_count")
         local input_count = "field[6.5,3;2,1;inp_count;Count;" .. inp_count .. "]"
 
-        local btn_tgt = "button[5.5,6.5;3,1;submit_target;Target Lock]"
+        local num_error = meta:get_int("target_error_number")
+        local btn_tgt_clr = (num_error == 1 and "style[submit_target;bgcolor=#eb403410]") or (lock == 1 and "style[submit_target;bgcolor=#38c72c05]") or ""
+        local btn_tgt = btn_tgt_clr .. "button[5.5,6.5;3,1;submit_target;Target Lock]"
         local btn_lnc = "image_button[6.5,1.0;2,1;b_launch.png;submit_launch;Launch;0;1;b_launch_press.png]"
 
         -- "list[current_player;main;0,5;8,4;]" .. "listring[current_player;main]" .. 

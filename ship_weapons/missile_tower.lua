@@ -222,7 +222,7 @@ local function calculateNewPoint(pos, dir, power, pitchDegrees, yawDegrees)
         -- Convert degrees to radians
         local pitchRad = math.rad((pitchDegrees * 0.5) - pitch)
         local yawRad = math.rad(-(yawDegrees * 0.5) + yaw)
-        
+
         local newX = power * math.sin(pitchRad) * math.cos(yawRad)
         local newZ = power * math.sin(pitchRad) * math.sin(yawRad)
         local newY = power * math.cos(pitchRad)
@@ -515,7 +515,7 @@ function ship_weapons.register_missile_tower(data)
             technic.handle_machine_pipeworks(pos, tube_upgrade)
         end
 
-        local powered = eu_input >= machine_demand_active[EU_upgrade + 1]
+        local powered = eu_input >= machine_demand_idle
         if powered then
             meta:set_int("src_time", meta:get_int("src_time") + round(data.speed * 10 * 1.0))
         end
@@ -555,40 +555,7 @@ function ship_weapons.register_missile_tower(data)
 
             local isFiring = meta:get_int("firing") ~= 0
 
-            -- Get a missile from inventory...
-            local missile_item = get_missile(inv:get_list("src"), ltier)
-
-            if missile_item and digiline_data.launch then
-                technic.swap_node(pos, machine_node .. "_idle")
-                -------------------------------------------------------
-                -- strike launch to target
-                local proj_def = {tier = ltier, delay = digiline_data.delay, count = 1}
-                local bFoundTarget = false
-                local nTargetCount = digiline_data.count
-                local dir = ship_weapons.get_port_direction(pos)
-                local target_pos = calculateNewPoint(pos, dir, digiline_data.power, digiline_data.pitch,
-                    digiline_data.yaw)
-                -- minetest.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
-                if ship_weapons.missile_launch(proj_def, operator, pos, target_pos, nil) then
-                    bFoundTarget = true;
-                end
-                if bFoundTarget then
-                    meta:set_int("firing", 1)
-                    meta:set_int("charge", charge - 1)
-                    digiline_data.count = nTargetCount - 1
-                    if digiline_data.count <= 0 then
-                        digiline_data.launch = false
-                    end
-                    -- Update digiline data...
-                    meta:set_string("digiline_data", minetest.serialize(digiline_data))
-                    -- Reduce inventory storage
-                    if (missile_item.new_input) then
-                        inv:set_list("src", missile_item.new_input)
-                    end
-                end
-
-            elseif missile_item and (not needs_charge(pos) or (isFiring and has_charge(pos))) and
-                meta:get_int("last_hit") == 0 then
+            if powered and (not needs_charge(pos) or (isFiring and has_charge(pos))) and meta:get_int("last_hit") == 0 then
                 technic.swap_node(pos, machine_node .. "_idle")
                 meta:set_string("infotext",
                     machine_desc_tier .. S(" Operational") .. "\nHP: " .. meta:get_int("hp") .. "/" .. data.hp .. "\n" ..
@@ -596,66 +563,104 @@ function ship_weapons.register_missile_tower(data)
                 -- meta:set_int(tier .. "_EU_demand", machine_demand_idle)
                 meta:set_int("src_time", 0)
 
-                -------------------------------------------------------
-                -- strike
+                -- Get a missile from inventory...
+                local missile_item = get_missile(inv:get_list("src"), ltier)
 
-                local proj_def = {delay = 3, tier = ltier}
-                local attack_type = meta:get_int("attack_type")
-                local bFoundTarget = false
-                local nTargetCount = 0
-                local objs = minetest.get_objects_inside_radius(pos, data.range + 0.251)
-                for _, obj in pairs(objs) do
-                    if nTargetCount >= data.targets then
-                        break
+                if missile_item and digiline_data.launch then
+                    -------------------------------------------------------
+                    -- strike launch to target location
+                    local proj_def = {
+                        tier = ltier,
+                        delay = digiline_data.delay,
+                        count = 1
+                    }
+                    local bFoundTarget = false
+                    local nTargetCount = digiline_data.count
+                    local dir = ship_weapons.get_port_direction(pos)
+                    local target_pos = calculateNewPoint(pos, dir, digiline_data.power, digiline_data.pitch,
+                        digiline_data.yaw)
+                    -- minetest.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
+                    if ship_weapons.missile_launch(proj_def, operator, pos, target_pos, nil) then
+                        bFoundTarget = true;
                     end
-                    local obj_pos = obj:get_pos()
-                    if obj:get_luaentity() and not obj:is_player() then
-                        local ent = obj:get_luaentity()
-                        if ent.name == "__builtin:item" and (attack_type == 2) then
-                            -- objects...
-                            local item1 = obj:get_luaentity().itemstring
-                            -- local obj2 = minetest.add_entity(exit, "__builtin:item")
-                            if ship_weapons.missile_strike(proj_def, operator, pos, obj_pos, obj) then
-                                bFoundTarget = true;
-                                nTargetCount = nTargetCount + 1
-                            end
+                    if bFoundTarget then
+                        meta:set_int("firing", 1)
+                        meta:set_int("charge", charge - 1)
+                        digiline_data.count = nTargetCount - 1
+                        if digiline_data.count <= 0 then
+                            digiline_data.launch = false
+                        end
+                        -- Update digiline data...
+                        meta:set_string("digiline_data", minetest.serialize(digiline_data))
+                        -- Reduce inventory storage
+                        if (missile_item.new_input) then
+                            inv:set_list("src", missile_item.new_input)
+                        end
+                    end
+                elseif missile_item then
+                    -------------------------------------------------------
+                    -- strike launch to target object
+                    local proj_def = {
+                        delay = 3,
+                        tier = ltier
+                    }
+                    local attack_type = meta:get_int("attack_type")
+                    local bFoundTarget = false
+                    local nTargetCount = 0
+                    local objs = minetest.get_objects_inside_radius(pos, data.range + 0.251)
+                    for _, obj in pairs(objs) do
+                        if nTargetCount >= data.targets then
+                            break
+                        end
+                        local obj_pos = obj:get_pos()
+                        if obj:get_luaentity() and not obj:is_player() then
+                            local ent = obj:get_luaentity()
+                            if ent.name == "__builtin:item" and (attack_type == 2) then
+                                -- objects...
+                                local item1 = obj:get_luaentity().itemstring
+                                -- local obj2 = minetest.add_entity(exit, "__builtin:item")
+                                if ship_weapons.missile_strike(proj_def, operator, pos, obj_pos, obj) then
+                                    bFoundTarget = true;
+                                    nTargetCount = nTargetCount + 1
+                                end
 
-                        elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
-                            -- monsters
-                            if ent.type == "monster" and (attack_type == 2 or attack_type == 3 or attack_type == 5) then
+                            elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
+                                -- monsters
+                                if ent.type == "monster" and (attack_type == 2 or attack_type == 3 or attack_type == 5) then
+                                    if ship_weapons.missile_strike(proj_def, operator, pos, obj_pos, obj) then
+                                        bFoundTarget = true;
+                                        nTargetCount = nTargetCount + 1
+                                    end
+                                end
+                            end
+                        elseif obj:is_player() and (attack_type == 2 or attack_type == 4 or attack_type == 5) then
+                            local name = obj:get_player_name()
+                            -- players
+                            if name ~= meta:get_string("owner") and not ship_weapons.is_member(meta, name) then
                                 if ship_weapons.missile_strike(proj_def, operator, pos, obj_pos, obj) then
                                     bFoundTarget = true;
                                     nTargetCount = nTargetCount + 1
                                 end
                             end
                         end
-                    elseif obj:is_player() and (attack_type == 2 or attack_type == 4 or attack_type == 5) then
-                        local name = obj:get_player_name()
-                        -- players
-                        if name ~= meta:get_string("owner") and not ship_weapons.is_member(meta, name) then
-                            if ship_weapons.missile_strike(proj_def, operator, pos, obj_pos, obj) then
-                                bFoundTarget = true;
-                                nTargetCount = nTargetCount + 1
-                            end
+                        if bFoundTarget and math.random(1, 20) == 1 then
+                            break
                         end
                     end
-                    if bFoundTarget and math.random(1, 20) == 1 then
-                        break
-                    end
-                end
 
-                if bFoundTarget then
-                    meta:set_int("firing", 1)
-                    meta:set_int("charge", charge - nTargetCount)
-                    -- Reduce inventory storage
-                    if (missile_item.new_input) then
-                        inv:set_list("src", missile_item.new_input)
+                    if bFoundTarget then
+                        meta:set_int("firing", 1)
+                        meta:set_int("charge", charge - nTargetCount)
+                        -- Reduce inventory storage
+                        if (missile_item.new_input) then
+                            inv:set_list("src", missile_item.new_input)
+                        end
+                    else
+                        meta:set_int("firing", 0)
                     end
-                else
-                    meta:set_int("firing", 0)
-                end
 
-                -- end strike
+                    -- end strike
+                end
                 return
             end
             if needs_charge(pos) then
@@ -669,8 +674,12 @@ function ship_weapons.register_missile_tower(data)
 
             meta:set_int("firing", 0)
 
+            local charging = S(" Charging")
+            if not needs_charge(pos) then
+                charging = S(" Charged")
+            end
             meta:set_string("infotext",
-                machine_desc_tier .. S(" Charging") .. "\nHP: " .. meta:get_int("hp") .. "/" .. data.hp .. "\n" ..
+                machine_desc_tier .. charging .. "\nHP: " .. meta:get_int("hp") .. "/" .. data.hp .. "\n" ..
                     S("Charge: ") .. meta:get_int("charge") .. "/" .. meta:get_int("charge_max"))
             if meta:get_int("src_time") < round(time_scl * 10) then
                 local item_percent = (math.floor(meta:get_int("src_time") / round(time_scl * 10) * 100))
@@ -1119,7 +1128,7 @@ local function register_lv_missile_tower(ref)
     data.modname = "ship_weapons"
     data.machine_name = "missile_tower"
     data.machine_desc = "Missile Emitter"
-    data.charge_max = 3
+    data.charge_max = 9
     data.demand = {1000}
     data.speed = 20
     data.tier = "LV"
@@ -1142,7 +1151,7 @@ local function register_mv_missile_tower(ref)
     data.modname = "ship_weapons"
     data.machine_name = "missile_tower"
     data.machine_desc = "Missile Emitter"
-    data.charge_max = 5
+    data.charge_max = 9
     data.demand = {2000}
     data.speed = 25
     data.tier = "MV"
@@ -1165,7 +1174,7 @@ local function register_hv_missile_tower(ref)
     data.modname = "ship_weapons"
     data.machine_name = "missile_tower"
     data.machine_desc = "Missile Emitter"
-    data.charge_max = 7
+    data.charge_max = 9
     data.demand = {3000}
     data.speed = 30
     data.tier = "HV"

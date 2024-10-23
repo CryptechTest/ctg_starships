@@ -209,19 +209,21 @@ function ship_weapons.register_targeting_computer(custom_data)
 
         if power < 10 then
             power = 10
+        elseif power > 1000 then
+            power = 1000
         end
-        if pitch > 100 then
-            pitch = 100
-        elseif pitch < -100 then
-            pitch = -100
+        if pitch > 110 then
+            pitch = 110
+        elseif pitch < -110 then
+            pitch = -110
         end
-        if yaw > 100 then
-            yaw = 100
-        elseif yaw < -100 then
-            yaw = -100
+        if yaw > 120 then
+            yaw = 120
+        elseif yaw < -120 then
+            yaw = -120
         end
 
-        if fields.submit_target then
+        if fields.submit_target and not isNumError then
             meta:set_int("target_locked", 1)
             meta:set_float("target_power", power)
             meta:set_float("target_pitch", pitch)
@@ -235,7 +237,7 @@ function ship_weapons.register_targeting_computer(custom_data)
                 }
             })
         end
-        
+
         local delay = meta:get_int("target_delay")
         if fields.inp_delay then
             if isNumber(fields.inp_delay) then
@@ -249,8 +251,10 @@ function ship_weapons.register_targeting_computer(custom_data)
         elseif delay < 0 then
             delay = 0
         end
-        meta:set_int("target_delay", delay)
-        
+        if not isNumError then
+            meta:set_int("target_delay", delay)
+        end
+
         local count = meta:get_int("target_count")
         if fields.inp_count then
             if isNumber(fields.inp_count) then
@@ -264,21 +268,29 @@ function ship_weapons.register_targeting_computer(custom_data)
         elseif count < 1 then
             count = 1
         end
-        meta:set_int("target_count", count)
+        if not isNumError then
+            meta:set_int("target_count", count)
+        end
 
-        if fields.submit_launch then
+        if isNumError then
+            meta:set_int("target_error_number", 1)
+        else
+            meta:set_int("target_error_number", 0)
+        end
+
+        if fields.submit_launch and locked then
             digilines.receptor_send(pos, digilines.rules.default, "missile_tower", {
                 command = "targeting_launch",
                 launch_entry = {
                     count = count,
-                    delay = delay,
+                    delay = delay
                 }
             })
         end
 
         local formspec = ship_weapons.update_formspec(data, meta)
         meta:set_string("formspec", formspec)
-        
+
     end
 
     minetest.register_node(modname .. ":" .. lmachine_name .. "", {
@@ -320,6 +332,7 @@ function ship_weapons.register_targeting_computer(custom_data)
             meta:set_int("selected_dir", 13)
             meta:set_string("formspec", ship_weapons.update_formspec(data, meta))
             meta:set_string("pos_target", minetest.serialize({}))
+            meta:set_int("target_error_number", 0)
             meta:set_int("target_locked", 0)
             meta:set_int("target_delay", 3)
             meta:set_int("target_count", 1)
