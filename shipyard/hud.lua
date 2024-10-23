@@ -43,7 +43,7 @@ if hud_interval > 0 then
                 hud[name] = {}
 
                 hud[name].id = player:hud_add({
-                    hud_elem_type = "text",
+                    type = "text",
                     name = "Jumpship Area",
                     number = 0xFFFF22,
                     position = {
