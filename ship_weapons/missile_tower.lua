@@ -2,6 +2,12 @@ local S = minetest.get_translator(minetest.get_current_modname())
 
 local time_scl = 30
 
+local has_pipeworks = minetest.get_modpath("pipeworks")
+local tube_entry_metal = ""
+if has_pipeworks then
+    tube_entry_metal = "^pipeworks_tube_connection_metallic.png"
+end
+
 local function round(v)
     return math.floor(v + 0.5)
 end
@@ -40,124 +46,32 @@ local function has_charge(pos)
     return charge > 0
 end
 
-local function spawn_particle(pos, dir, i, dist, tier)
-    local grav = 1;
-    if (pos.y > 4000) then
-        grav = 0.4;
+local function get_missile(items, tier)
+    local new_input = {}
+    local new_output = nil
+    local found_item = false;
+    for i, stack in ipairs(items) do
+        if stack:get_name() == 'ship_weapons:' .. tier .. '_missile' then
+            new_input[i] = ItemStack(stack)
+            new_input[i]:take_item(1)
+            new_output = nil
+            found_item = true
+            break
+        end
     end
-    dir = vector.multiply(dir, {
-        x = 0.5,
-        y = 0.5,
-        z = 0.5
-    })
-    local i = (dist - (dist - i * 0.1)) * 0.064
-    local t = 0.6 + i
-    local def = {
-        pos = pos,
-        velocity = {
-            x = dir.x,
-            y = dir.y,
-            z = dir.z
-        },
-        acceleration = {
-            x = 0,
-            y = randFloat(-0.02, 0.05) * grav,
-            z = 0
-        },
-
-        expirationtime = t,
-        size = randFloat(1.32, 1.6),
-        collisiondetection = false,
-        collision_removal = false,
-        object_collision = false,
-        vertical = false,
-
-        texture = {
-            name = "ctg_beam_effect_anim_" .. tier .. ".png",
-            alpha = 1.0,
-            alpha_tween = {1, 0},
-            scale_tween = {{
-                x = 0.5,
-                y = 0.5
-            }, {
-                x = 1.3,
-                y = 1.3
-            }},
-            blend = "alpha"
-        },
-        animation = {
-            type = "vertical_frames",
-            aspect_w = 16,
-            aspect_h = 16,
-            length = t + 0.1
-        },
-        glow = 12
-    }
-
-    minetest.add_particle(def);
+    if (found_item) then
+        return {
+            new_input = new_input,
+            output = new_output
+        }
+    else
+        return nil
+    end
 end
 
-local function spawn_particle_hit(pos, tier)
-    local def = {
-        amount = 13,
-        time = 0.6,
-        collisiondetection = false,
-        collision_removal = false,
-        object_collision = false,
-        vertical = false,
-
-        texture = {
-            name = "ctg_beam_effect_" .. tier .. ".png",
-            alpha_tween = {1, 0},
-            scale_tween = {{
-                x = 0.5,
-                y = 0.5
-            }, {
-                x = 5,
-                y = 5
-            }},
-            blend = "alpha"
-        },
-        glow = 12,
-
-        minpos = {
-            x = pos.x + -0.1,
-            y = pos.y + 0,
-            z = pos.z + -0.1
-        },
-        maxpos = {
-            x = pos.x + 0.1,
-            y = pos.y + 0.2,
-            z = pos.z + 0.1
-        },
-        minvel = {
-            x = 0,
-            y = 0,
-            z = 0
-        },
-        maxvel = {
-            x = 0,
-            y = 0.1,
-            z = 0
-        },
-        minacc = {
-            x = -0.5,
-            y = 0.25,
-            z = -0.5
-        },
-        maxacc = {
-            x = 0.5,
-            y = 0.75,
-            z = 0.5
-        },
-        minexptime = 0.7,
-        maxexptime = 1.0,
-        minsize = 0.9,
-        maxsize = 1.4
-    }
-
-    minetest.add_particlespawner(def);
-end
+-------------------------------------------------------
+-------------------------------------------------------
+-------------------------------------------------------
 
 local function spawn_particle2(pos, tier)
     local grav = 1;
@@ -238,144 +152,110 @@ local function spawn_particle2(pos, tier)
     minetest.add_particlespawner(def);
 end
 
-local function spawn_particle_hit2(pos, tier)
-    local grav = 1;
-    if (pos.y > 4000) then
-        grav = 0.4;
+local function calculateDisplacement(pos, dir, power, angleForceDirection)
+    -- Convert pitch and yaw to a unit vector for direction in 2D if necessary.
+    local pitch = math.rad(angleForceDirection.pitch or 0)
+    local yaw = math.rad(angleForceDirection.yaw or 0)
+
+    local flipped = false
+    local xz1 = pos.x
+    local xz2 = pos.z
+    local yy1 = pos.y
+    --[[if dir.x == 1 or dir.x == -1 then
+        xz1 = pos.z
+        xz2 = pos.x
+        flipped = true
+    elseif dir.z == 1 or dir.z == -1 then
+        xz1 = pos.x
+        xz2 = pos.z
+    end]] --
+
+    -- Calcaulate displacement
+    local displacementX = xz1 + (power * math.sin(yaw)) * 2 + (10 * dir.x)
+    local displacementY = yy1 + (power * math.sin(pitch)) * 2 + (10 * dir.y)
+    local displacementZ = xz2 + (power * math.cos(yaw)) * 2 + (10 * dir.z)
+    -- Return target coordinates considering force direction.
+    if flipped then
+        return {
+            x = displacementZ,
+            y = displacementY,
+            z = displacementX
+        }
+    else
+        return {
+            x = displacementX,
+            y = displacementY,
+            z = displacementZ
+        }
     end
-    local def = {
-        amount = 17,
-        time = 0.35,
-        collisiondetection = false,
-        collision_removal = false,
-        object_collision = false,
-        vertical = false,
-
-        texture = {
-            name = "ctg_beam_effect2_" .. tier .. ".png",
-            alpha_tween = {1, 1, 0},
-            scale_tween = {{
-                x = 2.0,
-                y = 2.0
-            }, {
-                x = 0.1,
-                y = 0.1
-            }},
-            blend = "alpha"
-        },
-        glow = 12,
-
-        minpos = {
-            x = pos.x + -0.05,
-            y = pos.y + -0.1,
-            z = pos.z + -0.05
-        },
-        maxpos = {
-            x = pos.x + 0.05,
-            y = pos.y + 0.05,
-            z = pos.z + 0.05
-        },
-        minvel = {
-            x = -0.41,
-            y = 2.76,
-            z = -0.41
-        },
-        maxvel = {
-            x = 0.41,
-            y = 4.20,
-            z = 0.41
-        },
-        minacc = {
-            x = -0.35,
-            y = -2.65 * grav,
-            z = -0.35
-        },
-        maxacc = {
-            x = 0.35,
-            y = -4.65 * grav,
-            z = 0.35
-        },
-        minexptime = 0.8,
-        maxexptime = 2.5,
-        minsize = 0.25,
-        maxsize = 0.34
-    }
-
-    minetest.add_particlespawner(def);
 end
 
-local function spawn_particle_area(pos, tier)
-    local meta = minetest.get_meta(pos)
-    local hp = meta:get_int("hp")
-    local amount = hp + math.random(1, hp + 1)
-    local def = {
-        amount = amount,
-        time = randFloat(2.6, 5.2),
-        collisiondetection = true,
-        collision_removal = false,
-        object_collision = false,
-        vertical = false,
+local function calculateNewPoint(pos, dir, power, pitchDegrees, yawDegrees)
+    local pitch = 90
+    local yaw = 0
+    local vertical = false
 
-        texture = {
-            name = "ctg_beam_effect2_".. tier .. ".png",
-            alpha_tween = {1, 0.2},
-            scale_tween = {{
-                x = 2.0,
-                y = 2.2
-            }, {
-                x = 0.1,
-                y = 0.0
-            }},
-            blend = "alpha"
-        },
-        glow = 13,
+    if dir.x == 1 then
+        yaw = -180
+    elseif dir.x == -1 then
+        yaw = 0
+    elseif dir.z == 1 then
+        yaw = -90
+    elseif dir.z == -1 then
+        yaw = 90
+    elseif dir.y == 1 then
+        pitch = 0
+        yaw = 180
+        vertical = true
+    elseif dir.y == -1 then
+        pitch = -180
+        yaw = 0
+        vertical = true
+    end
 
-        minpos = {
-            x = pos.x + -0.66,
-            y = pos.y + -0.46,
-            z = pos.z + -0.66
-        },
-        maxpos = {
-            x = pos.x + 0.66,
-            y = pos.y + 0.54,
-            z = pos.z + 0.66
-        },
-        minvel = {
-            x = -0.13,
-            y = 0.09,
-            z = -0.13
-        },
-        maxvel = {
-            x = 0.13,
-            y = 0.12,
-            z = 0.13
-        },
-        minacc = {
-            x = -0.07,
-            y = -0.08,
-            z = -0.07
-        },
-        maxacc = {
-            x = 0.07,
-            y = 0.12,
-            z = 0.07
-        },
-        minexptime = 4.6,
-        maxexptime = 6.8,
-        minsize = 0.45,
-        maxsize = 1.44
-    }
+    -- Spherical to Cartesian coordinates conversion formulae:
+    -- x = r * sin(theta) * cos(phi)
+    -- y = r * sin(theta) * sin(phi)
+    -- z = r * cos(theta)
 
-    minetest.add_particlespawner(def);
+    if not vertical then
+        -- Convert degrees to radians
+        local pitchRad = math.rad((pitchDegrees * 0.5) - pitch)
+        local yawRad = math.rad(-(yawDegrees * 0.5) + yaw)
+        
+        local newX = power * math.sin(pitchRad) * math.cos(yawRad)
+        local newZ = power * math.sin(pitchRad) * math.sin(yawRad)
+        local newY = power * math.cos(pitchRad)
+        return vector.add(pos, {
+            x = newX,
+            y = newY,
+            z = newZ
+        })
+    else
+        -- Convert degrees to radians
+        local pitchRad = math.rad((pitchDegrees * 0.5) + pitch)
+        local yawRad = math.rad(-(yawDegrees * 0.5) + yaw)
+
+        local newX = power * math.sin(pitchRad) * math.cos(yawRad)
+        local newZ = power * math.cos(pitchRad) * math.sin(yawRad)
+        local newY = power * math.cos(pitchRad)
+        return vector.add(pos, {
+            x = newX,
+            y = newY,
+            z = newZ
+        })
+    end
 end
 
-function ship_weapons.strike_effect(pos1, pos2, tier)
+-------------------------------------------------------
+
+function ship_weapons.missile_strike(def, op, origin, pos_target, object_target)
     local bClear = true;
-    local ray = minetest.raycast(pos1, pos2, true, false)
+    local ray = minetest.raycast(origin, pos_target, true, false)
     for pointed_thing in ray do
         if pointed_thing.type == "node" then
             local pos = pointed_thing.intersection_point
-            if (vector.distance(pos1, pos) > 0.25) and (vector.distance(pos2, pos) > 1) then
+            if (vector.distance(origin, pos) > 0.25) and (vector.distance(pos_target, pos) > 1) then
                 local node = minetest.get_node(pos)
                 if node.name ~= "air" and node.name ~= "vacuum:vacuum" and node.name ~= "vacuum:atmos_thin" then
                     bClear = false;
@@ -389,69 +269,37 @@ function ship_weapons.strike_effect(pos1, pos2, tier)
         return false
     end
 
-    local target = vector.add(pos2, {
+    local target = vector.add(pos_target, {
         x = randFloat(-0.2, 0.2),
-        y = randFloat(-0.15, 0.21),
+        y = randFloat(-0.15, 0.2),
         z = randFloat(-0.2, 0.2)
     })
 
-    local dir = vector.direction(pos1, target)
-    local dist = vector.distance(pos1, target)
-    local step_min = 0.25
-    local step = vector.multiply(dir, {
-        x = step_min,
-        y = step_min,
-        z = step_min
+    local dist = vector.distance(origin, target)
+    -- minetest.log("missile pew pew! " .. tostring(dist))
+
+    ship_weapons.launch_projectile(def, op, origin, target, object_target)
+    return true
+end
+
+function ship_weapons.missile_launch(def, op, origin, pos_target, object_target)
+    local target = vector.add(pos_target, {
+        x = randFloat(-0.2, 0.2),
+        y = randFloat(-0.2, 0.2),
+        z = randFloat(-0.2, 0.2)
     })
 
-    minetest.after(0, function()
-        minetest.sound_play("ctg_zap", {
-            pos = pos1,
-            gain = 1.3,
-            pitch = randFloat(1.3, 1.5)
-        })
-    end)
+    local dist = vector.distance(origin, target)
+    -- minetest.log("missile pew pew! " .. tostring(dist))
 
-    -- minetest.log("pew pew! " .. tostring(dist))
-
-    minetest.after(0, function()
-        local i = 1
-        local cur_pos = pos1
-        while (vector.distance(cur_pos, target) > step_min) do
-            if math.random(1, 10) > 1 then
-                spawn_particle(cur_pos, dir, i, vector.distance(cur_pos, target), tier)
-            end
-            cur_pos = vector.add(cur_pos, step)
-            i = i + 1
-            if i > 256 then
-                break
-            end
-        end
-    end)
-
-    minetest.after(0.1, function()
-        spawn_particle_hit(target, tier)
-        spawn_particle_hit2(target, tier)
-        minetest.sound_play("ctg_zap", {
-            pos = target,
-            gain = 0.4,
-            pitch = randFloat(1.4, 1.6)
-        })
-        minetest.sound_play("ctg_hit3", {
-            pos = target,
-            gain = 0.3,
-            pitch = randFloat(1.15, 1.3)
-        })
-    end)
-
+    ship_weapons.launch_projectile(def, op, origin, target, object_target)
     return true
 end
 
 -------------------------------------------------------
 -------------------------------------------------------
--------------------------------------------------------
 
-function ship_weapons.register_beam_tower(data)
+function ship_weapons.register_missile_tower(data)
     local tier = data.tier
     local ltier = string.lower(tier)
     local machine_name = data.machine_name
@@ -469,12 +317,39 @@ function ship_weapons.register_beam_tower(data)
         ship_weapon = 1
     }
 
+    if data.tube then
+        groups.tubedevice = 1
+        groups.tubedevice_receiver = 1
+    end
     local active_groups = {
         not_in_creative_inventory = 1
     }
     for k, v in pairs(groups) do
         active_groups[k] = v
     end
+
+    local tube = technic.new_default_tube()
+    if data.can_insert then
+        tube.can_insert = data.can_insert
+    end
+    if data.insert_object then
+        tube.insert_object = data.insert_object
+    end
+    if data.connect_sides then
+        tube.connect_sides = data.connect_sides
+    end
+
+    local connect_sides = {"top", "bottom", "left", "right"}
+
+    local default_digi_data = {
+        launch = false,
+        target_pos = nil,
+        power = 1,
+        pitch = 0,
+        yaw = 0,
+        count = 1,
+        delay = 0
+    }
 
     -------------------------------------------------------
 
@@ -486,9 +361,9 @@ function ship_weapons.register_beam_tower(data)
 
             local node = minetest.get_node(target)
             -- minetest.log("hit node " .. node.name)
-            if node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name or 
-                node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_active" or
-                node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_idle" then
+            if node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name or node.name == "ship_weapons:" .. ltier ..
+                "_" .. tmachine_name .. "_active" or node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name ..
+                "_idle" then
 
                 technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
             end
@@ -507,13 +382,13 @@ function ship_weapons.register_beam_tower(data)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
-                if ent.name == "ship_weapons:" .. ltier .. "_tower_display" then
+                if ent.name == "ship_weapons:" .. ltier .. "_missile_tower_display" then
                     obj:set_properties({
                         is_visible = true
                     })
                     break
                 else
-                    minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_tower_display")
+                    minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
                     break
                 end
             end
@@ -591,7 +466,7 @@ function ship_weapons.register_beam_tower(data)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
-                if ent.name == "ship_weapons:" .. ltier .. "_tower_display" then
+                if ent.name == "ship_weapons:" .. ltier .. "_missile_tower_display" then
                     obj:remove()
                     break
                 end
@@ -604,6 +479,8 @@ function ship_weapons.register_beam_tower(data)
     -- technic run
     local run = function(pos, node)
         local meta = minetest.get_meta(pos)
+        local owner = meta:get_string("owner")
+        local operator = minetest.get_player_by_name(owner);
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
 
@@ -614,6 +491,9 @@ function ship_weapons.register_beam_tower(data)
 
         local charge_max = meta:get_int("charge_max")
         local charge = meta:get_int("charge")
+
+        -- Get digiline data storage
+        local digiline_data = minetest.deserialize(meta:get_string("digiline_data")) or default_digi_data
 
         -- Setup meta data if it does not exist.
         if not eu_input then
@@ -668,27 +548,58 @@ function ship_weapons.register_beam_tower(data)
             else
                 meta:set_int(tier .. "_EU_demand", machine_demand_idle)
             end
-            
+
             if meta:get_int("last_hit") >= 1 then
                 meta:set_int("last_hit", meta:get_int("last_hit") - 1)
             end
 
             local isFiring = meta:get_int("firing") ~= 0
 
-            if (not needs_charge(pos) or (isFiring and has_charge(pos))) and meta:get_int("last_hit") == 0 then
+            -- Get a missile from inventory...
+            local missile_item = get_missile(inv:get_list("src"), ltier)
+
+            if missile_item and digiline_data.launch then
+                technic.swap_node(pos, machine_node .. "_idle")
+                -------------------------------------------------------
+                -- strike launch to target
+                local proj_def = {tier = ltier, delay = digiline_data.delay, count = 1}
+                local bFoundTarget = false
+                local nTargetCount = digiline_data.count
+                local dir = ship_weapons.get_port_direction(pos)
+                local target_pos = calculateNewPoint(pos, dir, digiline_data.power, digiline_data.pitch,
+                    digiline_data.yaw)
+                -- minetest.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
+                if ship_weapons.missile_launch(proj_def, operator, pos, target_pos, nil) then
+                    bFoundTarget = true;
+                end
+                if bFoundTarget then
+                    meta:set_int("firing", 1)
+                    meta:set_int("charge", charge - 1)
+                    digiline_data.count = nTargetCount - 1
+                    if digiline_data.count <= 0 then
+                        digiline_data.launch = false
+                    end
+                    -- Update digiline data...
+                    meta:set_string("digiline_data", minetest.serialize(digiline_data))
+                    -- Reduce inventory storage
+                    if (missile_item.new_input) then
+                        inv:set_list("src", missile_item.new_input)
+                    end
+                end
+
+            elseif missile_item and (not needs_charge(pos) or (isFiring and has_charge(pos))) and
+                meta:get_int("last_hit") == 0 then
                 technic.swap_node(pos, machine_node .. "_idle")
                 meta:set_string("infotext",
                     machine_desc_tier .. S(" Operational") .. "\nHP: " .. meta:get_int("hp") .. "/" .. data.hp .. "\n" ..
                         S("Charge: ") .. meta:get_int("charge") .. "/" .. meta:get_int("charge_max"))
                 -- meta:set_int(tier .. "_EU_demand", machine_demand_idle)
                 meta:set_int("src_time", 0)
-                --[[local formspec = ship_weapons.update_formspec(data, true, enabled, 0, charge, charge_max,
-                    meta:get_int("attack_type"), meta)
-                meta:set_string("formspec", formspec)]] --
 
                 -------------------------------------------------------
                 -- strike
 
+                local proj_def = {delay = 3, tier = ltier}
                 local attack_type = meta:get_int("attack_type")
                 local bFoundTarget = false
                 local nTargetCount = 0
@@ -701,46 +612,18 @@ function ship_weapons.register_beam_tower(data)
                     if obj:get_luaentity() and not obj:is_player() then
                         local ent = obj:get_luaentity()
                         if ent.name == "__builtin:item" and (attack_type == 2) then
-                            if math.random(1, 4) == 1 then
-                                bFoundTarget = true;
-                                break
-                            end
                             -- objects...
                             local item1 = obj:get_luaentity().itemstring
                             -- local obj2 = minetest.add_entity(exit, "__builtin:item")
-                            if ship_weapons.strike_effect(pos, obj_pos, ltier) then
-                                local hp = obj:get_hp()
-                                obj:set_hp(hp - 1)
-                                bFoundTarget = true;
-                                nTargetCount = nTargetCount + 1
-                            end
-
-                        elseif ent.name:match("_ship_missile_projectile") then
-                            if math.random(1, 8) == 1 then
-                                bFoundTarget = true;
-                                break
-                            end
-                            if ship_weapons.strike_effect(pos, obj_pos, ltier) then
-                                local hp = obj:get_hp()
-                                obj:set_hp(hp - 5)
+                            if ship_weapons.missile_strike(proj_def, operator, pos, obj_pos, obj) then
                                 bFoundTarget = true;
                                 nTargetCount = nTargetCount + 1
                             end
 
                         elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
-
-                            -- animals?
-                            -- npc?
-
                             -- monsters
                             if ent.type == "monster" and (attack_type == 2 or attack_type == 3 or attack_type == 5) then
-                                if math.random(1, 8) == 1 then
-                                    bFoundTarget = true;
-                                    break
-                                end
-                                if ship_weapons.strike_effect(pos, obj_pos, ltier) then
-                                    ent.health = ent.health - (randFloat(1, 2.7, 1) * data.damage)
-                                    obj:move_to({ x = obj_pos.x, y = obj_pos.y + 0.25, z = obj_pos.z })
+                                if ship_weapons.missile_strike(proj_def, operator, pos, obj_pos, obj) then
                                     bFoundTarget = true;
                                     nTargetCount = nTargetCount + 1
                                 end
@@ -750,38 +633,7 @@ function ship_weapons.register_beam_tower(data)
                         local name = obj:get_player_name()
                         -- players
                         if name ~= meta:get_string("owner") and not ship_weapons.is_member(meta, name) then
-                            if math.random(1, 6) == 1 then
-                                bFoundTarget = true;
-                                break
-                            end
-                            if ship_weapons.strike_effect(pos, obj_pos, ltier) then
-                                local tool_capabilities = {
-                                    full_punch_interval = 0.4,
-                                    damage_groups = {
-                                        fleshy = 3,
-                                        level = 1
-                                    },
-                                    -- This is only used for digging nodes, but is still required
-                                    max_drop_level = 1,
-                                    groupcaps = {
-                                        fleshy = {
-                                            times = {
-                                                [1] = 2.5,
-                                                [2] = 1.20,
-                                                [3] = 0.35
-                                            },
-                                            uses = 30,
-                                            maxlevel = 2
-                                        }
-                                    }
-                                }
-                                local time_since_last_punch = tool_capabilities.full_punch_interval
-                                obj:punch(obj, time_since_last_punch, tool_capabilities)
-
-                                local hp = obj:get_hp()
-                                obj:set_hp(hp - (randFloat(1, 2.5, 1) * data.damage))
-                                obj:move_to({ x = obj_pos.x, y = obj_pos.y + 0.3, z = obj_pos.z })
-
+                            if ship_weapons.missile_strike(proj_def, operator, pos, obj_pos, obj) then
                                 bFoundTarget = true;
                                 nTargetCount = nTargetCount + 1
                             end
@@ -795,6 +647,10 @@ function ship_weapons.register_beam_tower(data)
                 if bFoundTarget then
                     meta:set_int("firing", 1)
                     meta:set_int("charge", charge - nTargetCount)
+                    -- Reduce inventory storage
+                    if (missile_item.new_input) then
+                        inv:set_list("src", missile_item.new_input)
+                    end
                 else
                     meta:set_int("firing", 0)
                 end
@@ -807,7 +663,7 @@ function ship_weapons.register_beam_tower(data)
             end
 
             if meta:get_int("last_hit") >= 1 then
-                --meta:set_int("last_hit", meta:get_int("last_hit") - 1)
+                -- meta:set_int("last_hit", meta:get_int("last_hit") - 1)
                 return
             end
 
@@ -849,10 +705,12 @@ function ship_weapons.register_beam_tower(data)
         description = machine_desc,
         tiles = {ltier .. "_" .. tmachine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_top.png",
                  ltier .. "_" .. tmachine_name .. "_side.png", ltier .. "_" .. tmachine_name .. "_side.png",
-                 ltier .. "_" .. tmachine_name .. "_side.png", ltier .. "_" .. tmachine_name .. "_side.png"},
+                 ltier .. "_" .. tmachine_name .. "_side.png" .. tube_entry_metal,
+                 ltier .. "_" .. tmachine_name .. "_front.png"},
         paramtype2 = "facedir",
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = groups,
+        connect_sides = connect_sides,
         tube = data.tube and tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_metal_defaults(),
@@ -860,7 +718,7 @@ function ship_weapons.register_beam_tower(data)
             if data.tube then
                 pipeworks.after_place(pos)
             end
-            minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_tower_display")
+            minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
 
             local meta = minetest.get_meta(pos)
             if placer:is_player() then
@@ -875,12 +733,13 @@ function ship_weapons.register_beam_tower(data)
             remove_attached(pos)
             return technic.machine_after_dig_node
         end,
-        on_rotate = screwdriver.disallow,
+        -- on_rotate = screwdriver.disallow,
         can_dig = technic.machine_can_dig,
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
-            meta:set_string("infotext", "Beam Tower Emitter")
+            meta:set_string("infotext", "Missile Tower Emitter")
+            meta:set_int("tube_time", 0)
             local inv = meta:get_inventory()
             inv:set_size("src", 1)
             inv:set_size("dst", 1)
@@ -893,6 +752,7 @@ function ship_weapons.register_beam_tower(data)
             meta:set_int("demand", data.demand[1])
             local formspec = ship_weapons.update_formspec(data, meta)
             meta:set_string("formspec", formspec)
+            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
         end,
 
         allow_metadata_inventory_put = technic.machine_inventory_put,
@@ -915,25 +775,18 @@ function ship_weapons.register_beam_tower(data)
         on_timer = on_timer
     })
 
-    local texture_active = {
-        image = ltier .. "_" .. machine_name .. "_side_active_anim.png",
-        animation = {
-            type = "vertical_frames",
-            aspect_w = 16,
-            aspect_h = 16,
-            length = 2
-        }
-    }
-
     minetest.register_node(node_name .. "_active", {
         description = machine_desc,
-        tiles = {ltier .. "_" .. machine_name .. "_top_active.png", ltier .. "_" .. tmachine_name .. "_top.png",
-                 texture_active, texture_active, texture_active, texture_active},
+        tiles = {ltier .. "_" .. machine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_top.png",
+                 ltier .. "_" .. tmachine_name .. "_side.png", ltier .. "_" .. tmachine_name .. "_side.png",
+                 ltier .. "_" .. tmachine_name .. "_side.png" .. tube_entry_metal,
+                 ltier .. "_" .. tmachine_name .. "_front.png"},
         param = "light",
-        -- paramtype2 = "facedir",
-        light_source = 10,
+        paramtype2 = "facedir",
+        light_source = 4,
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = active_groups,
+        connect_sides = connect_sides,
         tube = data.tube and tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_metal_defaults(),
@@ -971,14 +824,16 @@ function ship_weapons.register_beam_tower(data)
 
     minetest.register_node(node_name .. "_idle", {
         description = machine_desc,
-        tiles = {ltier .. "_" .. machine_name .. "_top_active.png", ltier .. "_" .. tmachine_name .. "_top.png",
-                 ltier .. "_" .. machine_name .. "_side_active.png", ltier .. "_" .. machine_name .. "_side_active.png",
-                 ltier .. "_" .. machine_name .. "_side_active.png", ltier .. "_" .. machine_name .. "_side_active.png"},
+        tiles = {ltier .. "_" .. machine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_top.png",
+                 ltier .. "_" .. machine_name .. "_side.png", ltier .. "_" .. machine_name .. "_side.png",
+                 ltier .. "_" .. machine_name .. "_side.png" .. tube_entry_metal,
+                 ltier .. "_" .. tmachine_name .. "_front.png"},
         param = "light",
-        -- paramtype2 = "facedir",
-        light_source = 10,
+        paramtype2 = "facedir",
+        light_source = 3,
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = active_groups,
+        connect_sides = connect_sides,
         tube = data.tube and tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_metal_defaults(),
@@ -1019,13 +874,14 @@ function ship_weapons.register_beam_tower(data)
         tiles = {ltier .. "_" .. machine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_top.png",
                  ltier .. "_" .. machine_name .. "_side_cracked.png",
                  ltier .. "_" .. machine_name .. "_side_cracked.png",
-                 ltier .. "_" .. machine_name .. "_side_cracked.png",
-                 ltier .. "_" .. machine_name .. "_side_cracked.png"},
+                 ltier .. "_" .. machine_name .. "_side_cracked.png" .. tube_entry_metal,
+                 ltier .. "_" .. machine_name .. "_front_cracked.png"},
         -- param = "light",
-        -- paramtype2 = "facedir",
-        -- light_source = 10,
+        paramtype2 = "facedir",
+        -- light_source = 1,
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name .. "_broken",
         groups = active_groups,
+        connect_sides = connect_sides,
         tube = data.tube and tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_metal_defaults(),
@@ -1051,7 +907,8 @@ function ship_weapons.register_beam_tower(data)
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
-            meta:set_string("infotext", "Broken Starship Laser Emitter")
+            meta:set_string("infotext", "Broken Starship Missile Emitter")
+            meta:set_int("tube_time", 0)
             local inv = meta:get_inventory()
             inv:set_size("src", 1)
             inv:set_size("dst", 1)
@@ -1064,6 +921,7 @@ function ship_weapons.register_beam_tower(data)
             meta:set_int("demand", data.demand[1])
             local formspec = ship_weapons.update_formspec(data, meta)
             meta:set_string("formspec", formspec)
+            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
         end,
 
         allow_metadata_inventory_put = technic.machine_inventory_put,
@@ -1089,7 +947,7 @@ function ship_weapons.register_beam_tower(data)
             if time >= 1 then
                 technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name)
                 meta:set_int("broken", 0);
-                minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_tower_display")
+                minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
                 meta:set_int("hp", data.hp)
                 meta:set_int("charge", 0)
             else
@@ -1109,7 +967,7 @@ function ship_weapons.register_beam_tower(data)
     -------------------------------------------------------
 
     -- display entity shown for tower hit effect
-    minetest.register_entity("ship_weapons:" .. ltier .. "_tower_display", {
+    minetest.register_entity("ship_weapons:" .. ltier .. "_missile_tower_display", {
         physical = false,
         collisionbox = {-0.75, -0.75, -0.75, 0.75, 0.75, 0.75},
         visual = "wielditem",
@@ -1119,7 +977,7 @@ function ship_weapons.register_beam_tower(data)
             y = 0.67
         },
         hp_max = 10,
-        textures = {"ship_weapons:" .. ltier .. "_tower_display_node"},
+        textures = {"ship_weapons:" .. ltier .. "_missile_tower_display_node"},
         glow = 3,
 
         infotext = "HP: " .. data.hp .. "/" .. data.hp .. "",
@@ -1151,9 +1009,9 @@ function ship_weapons.register_beam_tower(data)
                 local meta = minetest.get_meta(target)
                 -- minetest.log("hit " .. node.name)
 
-                if node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name or 
-                    node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_active" or
-                    node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_idle" then
+                if node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name or node.name == "ship_weapons:" ..
+                    ltier .. "_" .. tmachine_name .. "_active" or node.name == "ship_weapons:" .. ltier .. "_" ..
+                    tmachine_name .. "_idle" then
 
                     -- and self.object:get_player_name() == meta:get_string("owner") 
 
@@ -1206,7 +1064,7 @@ function ship_weapons.register_beam_tower(data)
     local x = 0.2
     local y = 0.2
     local z = 0.2
-    minetest.register_node("ship_weapons:" .. ltier .. "_tower_display_node", {
+    minetest.register_node("ship_weapons:" .. ltier .. "_missile_tower_display_node", {
         tiles = {"ctg_tower_select_" .. ltier .. ".png"},
         use_texture_alpha = "clip",
         walkable = false,
@@ -1237,8 +1095,8 @@ function ship_weapons.register_beam_tower(data)
 
     -------------------------------------------------------
 
-    minetest.register_abm({
-        label = "beam emitterer effect",
+    --[[minetest.register_abm({
+        label = "missile emitter effect",
         nodenames = {"ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_active", "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_idle"},
         interval = 3,
         chance = 3,
@@ -1246,73 +1104,85 @@ function ship_weapons.register_beam_tower(data)
         action = function(pos)
             local meta = minetest.get_meta(pos)
             if meta:get_int("last_hit") == 0 then
-                spawn_particle_area(pos, ltier)
+                --spawn_particle_area(pos, ltier)
             end
         end
-    })
+    })]] --
 
 end
 
 -------------------------------------------------------
 -------------------------------------------------------
 
-local function register_lv_beam_tower(data)
+local function register_lv_missile_tower(ref)
+    local data = ref or {}
     data.modname = "ship_weapons"
-    data.machine_name = "beam_tower"
-    data.machine_desc = "Beam Emitter"
-    data.charge_max = 13
-    data.demand = {2000}
-    data.speed = 5
+    data.machine_name = "missile_tower"
+    data.machine_desc = "Missile Emitter"
+    data.charge_max = 3
+    data.demand = {1000}
+    data.speed = 20
     data.tier = "LV"
-    data.typename = "beam_tower"
-    data.digiline_effector = nil
-    data.range = 44
-    data.hp = 8
+    data.typename = "missile_tower"
+    data.digiline_effector = ship_weapons.missile_tower_digiline_effector
+    data.range = 64
+    data.hp = 5
     data.repair_length = 300
-    data.targets = 2
+    data.targets = 1
     data.damage = 1.0
-
-    ship_weapons.register_beam_tower(data)
+    data.tube = 1
+    data.connect_sides = {
+        back = 1
+    }
+    ship_weapons.register_missile_tower(data)
 end
 
-local function register_mv_beam_tower(data)
+local function register_mv_missile_tower(ref)
+    local data = ref or {}
     data.modname = "ship_weapons"
-    data.machine_name = "beam_tower"
-    data.machine_desc = "Beam Emitter"
-    data.charge_max = 20
-    data.demand = {5000}
-    data.speed = 8
+    data.machine_name = "missile_tower"
+    data.machine_desc = "Missile Emitter"
+    data.charge_max = 5
+    data.demand = {2000}
+    data.speed = 25
     data.tier = "MV"
-    data.typename = "beam_tower"
-    data.digiline_effector = nil
-    data.range = 56
-    data.hp = 13
+    data.typename = "missile_tower"
+    data.digiline_effector = ship_weapons.missile_tower_digiline_effector
+    data.range = 72
+    data.hp = 10
     data.repair_length = 270
     data.targets = 2
     data.damage = 2.07
-
-    ship_weapons.register_beam_tower(data)
+    data.tube = 1
+    data.connect_sides = {
+        back = 1
+    }
+    ship_weapons.register_missile_tower(data)
 end
 
-local function register_hv_beam_tower(data)
+local function register_hv_missile_tower(ref)
+    local data = ref or {}
     data.modname = "ship_weapons"
-    data.machine_name = "beam_tower"
-    data.machine_desc = "Beam Emitter"
-    data.charge_max = 25
-    data.demand = {8000}
-    data.speed = 9
+    data.machine_name = "missile_tower"
+    data.machine_desc = "Missile Emitter"
+    data.charge_max = 7
+    data.demand = {3000}
+    data.speed = 30
     data.tier = "HV"
-    data.typename = "beam_tower"
-    data.digiline_effector = nil
-    data.range = 68
+    data.typename = "missile_tower"
+    data.digiline_effector = ship_weapons.missile_tower_digiline_effector
+    data.range = 85
     data.hp = 15
     data.repair_length = 250
     data.targets = 3
     data.damage = 3.2
-
-    ship_weapons.register_beam_tower(data)
+    data.tube = 1
+    data.connect_sides = {
+        back = 1
+    }
+    ship_weapons.register_missile_tower(data)
 end
 
-register_lv_beam_tower({})
-register_mv_beam_tower({})
-register_hv_beam_tower({})
+register_lv_missile_tower()
+register_mv_missile_tower()
+register_hv_missile_tower()
