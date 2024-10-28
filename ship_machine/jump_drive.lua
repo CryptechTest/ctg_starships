@@ -155,7 +155,7 @@ function ship_machine.register_jumpship(data)
                 if vector.distance(pos, dest) < 32 then
                     perform = false;
                 end
-                if perform and not schemlib.check_dest_clear(pos, dest, data.size) then
+                if perform and not schemlib.func.check_dest_clear(pos, dest, data.size) then
                     perform = false;
                 end
                 if perform then
