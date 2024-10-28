@@ -148,7 +148,7 @@ function ship_machine.register_engine(data)
                 local formspec = ship_machine.update_formspec(data, true, enabled, has_mese, 0, charge, charge_max)
                 meta:set_string("formspec", formspec)
                 -- apply gravity
-                ship_machine.apply_gravity(pos)
+                ship_machine.apply_gravity(pos, data.gravity)
                 return
             end
 

@@ -83,7 +83,7 @@ local function particle_effect(pos, type)
     })
 end
 
-function spatial_tubes.particle_effect_teleport(pos, amount)
+local function particle_effect_teleport(pos, amount)
     local texture = {
         name = "local_tele_effect_anim.png",
         fade = "out"
@@ -193,7 +193,8 @@ function spatial_tubes.register_machine(data)
         ctg_machine = 1,
         metal = 1,
         level = 1,
-        telepad = 1
+        telepad = 1,
+        ["telepad_" .. ltier] = 1
     }
 
     local active_groups = {
@@ -209,22 +210,51 @@ function spatial_tubes.register_machine(data)
         local exit = nil
         local formspec = nil
 
-        if meta:get_string("exit") then
-            exit = minetest.deserialize(meta:get_string("exit"))
-        end
+        if data.tier == "LV" or data.tier == "MV" then
+            if meta:get_string("exit") then
+                exit = minetest.deserialize(meta:get_string("exit"))
+            end
+            if meta:get_string("sta_exit") and meta:get_string("sta_exit") ~= "" then
+                exit = meta:get_string("sta_exit");
+            end
 
-        if exit == nil then
-            local desc = "label[0.15,0.3;" .. machine_desc .. "]"
-            local input_pos =
-                "field[1,1.5;2,1;inp_x;Dest X;]field[3,1.5;2,1;inp_y;Dest Y;]field[5,1.5;2,1;inp_z;Dest Z;]"
-            local input_save = "button[3,2.5;2,1;save;Lock Link]"
+            if exit == nil then
+                local desc = "label[0.15,0.3;" .. machine_desc .. "]"
+                local input_pos =
+                    "field[1,1.5;2,1;inp_x;Dest X;0]field[3,1.5;2,1;inp_y;Dest Y;0]field[5,1.5;2,1;inp_z;Dest Z;0]"
+                local input_name = "field[1,1.5;3,1;inp_name;This Name;]"
+                local input_dest = "field[4,1.5;3,1;dst_name;Dest Name;]"
+                local input_save = "button[3,2.5;2,1;save;Save]"
 
-            formspec = {"formspec_version[6]", "size[8,4]", desc, input_pos, input_save}
+                formspec = {"formspec_version[6]", "size[8,4]", desc, input_name, input_dest, input_save}
+            else
+                formspec = {}
+            end
         else
-            formspec = {}
+            if meta:get_string("exit") then
+                exit = minetest.deserialize(meta:get_string("exit"))
+            end
+
+            if exit == nil then
+                local desc = "label[0.15,0.3;" .. machine_desc .. "]"
+                local input_pos =
+                    "field[1,1.5;2,1;inp_x;Dest X;]field[3,1.5;2,1;inp_y;Dest Y;]field[5,1.5;2,1;inp_z;Dest Z;]"
+                local input_save = "button[3,2.5;2,1;save;Lock Link]"
+
+                formspec = {"formspec_version[6]", "size[8,4]", desc, input_pos, input_save}
+            else
+                formspec = {}
+            end
         end
 
         return table.concat(formspec)
+    end
+
+    local texture_tier = ''
+    if ltier == "mv" then
+        texture_tier = '^[colorize:#4bff3b0a'
+    elseif ltier == "hv" then
+        texture_tier = '^[colorize:#fff5850f'
     end
 
     -------------------------------------------------------
@@ -291,8 +321,11 @@ function spatial_tubes.register_machine(data)
 
             -- get destination from metadata
             local exit = nil
-            if meta:get_string("exit") then
+            if meta:get_string("exit") ~= nil then
                 exit = minetest.deserialize(meta:get_string("exit"))
+            end
+            if exit == nil and meta:get_string("sta_exit") ~= nil then
+                exit = meta:get_string("sta_exit")
             end
 
             -- check if charged..
@@ -301,7 +334,8 @@ function spatial_tubes.register_machine(data)
                 meta:set_int("src_time", 0)
                 if exit then
                     technic.swap_node(pos, machine_node .. "_active")
-                    meta:set_string("infotext", machine_desc_tier .. S(" Ready - Charged"))
+                    local dest = (meta:get_string("sta_exit") ~= nil and "\n" .. "Transport to: " .. exit) or ""
+                    meta:set_string("infotext", machine_desc_tier .. S(" Ready - Charged") .. dest)
                     meta:set_int("ready", 1)
                 else
                     technic.swap_node(pos, machine_node .. "_error")
@@ -319,7 +353,8 @@ function spatial_tubes.register_machine(data)
 
             -- calculate charge percent
             local charge_percent = (math.floor(meta:get_int("charge") / meta:get_int("charge_max") * 100))
-            meta:set_string("infotext", machine_desc_tier .. S(" - Charge: " .. charge_percent .. "%"))
+            local dest = (meta:get_string("sta_exit") ~= nil and "\n" .. "Transport to: " .. exit) or ""
+            meta:set_string("infotext", machine_desc_tier .. S(" - Charge: " .. charge_percent .. "%" .. dest))
             -- check if run time is not expired..
             if meta:get_int("src_time") < round(time_scl * 10) then
                 local item_percent = (math.floor(meta:get_int("src_time") / round(time_scl * 10) * 100))
@@ -387,43 +422,61 @@ function spatial_tubes.register_machine(data)
             end
         end
 
+        local name = ""
+        local dest = ""
+        if fields.inp_name then
+            name = fields.inp_name;
+        end
+        if fields.dst_name then
+            dest = fields.dst_name;
+        end
+
         if fields.save and not isNumError then
-            if (dest_y > -11000 and dest_y < 22000) then
-                local tfound = false
-                local dest = minetest.find_nodes_in_area({
-                    x = pos.x - 1,
-                    y = pos.y - 1,
-                    z = pos.z - 1
-                }, {
-                    x = pos.x + 1,
-                    y = pos.y + 2,
-                    z = pos.z + 1
-                }, {node_name})
-                if #dest > 0 then
-                    local dmeta = minetest.get_meta(dest[1])
-                    if minetest.is_protected(dest[1], sender:get_player_name()) and
-                        not minetest.check_player_privs(sender:get_player_name(), "protection_bypass") then
-                        minetest.chat_send_player(sender:get_player_name(), "Destination is within a protected area!")
-                        minetest.record_protection_violation(dest[1], sender:get_player_name())
-                        tfound = true
-                    elseif dmeta:get_int("locked") ~= nil and dmeta:get_int("locked") == 0 then
-                        -- save exit destination
-                        meta:set_string("exit", minetest.serialize(dest[1]))
-                        -- lock receiver
-                        dmeta:set_int("locked", 1)
-                        minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked!")
-                        tfound = true
-                    elseif dmeta:get_int("locked") == 1 then
-                        minetest.chat_send_player(sender:get_player_name(), "This Telepad already has a receiver!")
-                        tfound = true
+            if ltier == "lv" or ltier == "mv" then
+                meta:set_string("sta_name", name)
+                meta:set_string("sta_exit", dest)
+                meta:set_string("infotext", "Transport to: " .. dest)
+                meta:set_int("locked", 1)
+                minetest.chat_send_player(sender:get_player_name(), "Setup Complete")
+            else
+                if (dest_y > -11000 and dest_y < 22000) then
+                    local tfound = false
+                    local dest = minetest.find_nodes_in_area({
+                        x = pos.x - 1,
+                        y = pos.y - 1,
+                        z = pos.z - 1
+                    }, {
+                        x = pos.x + 1,
+                        y = pos.y + 2,
+                        z = pos.z + 1
+                    }, {node_name})
+                    if #dest > 0 then
+                        local dmeta = minetest.get_meta(dest[1])
+                        if minetest.is_protected(dest[1], sender:get_player_name()) and
+                            not minetest.check_player_privs(sender:get_player_name(), "protection_bypass") then
+                            minetest.chat_send_player(sender:get_player_name(),
+                                "Destination is within a protected area!")
+                            minetest.record_protection_violation(dest[1], sender:get_player_name())
+                            tfound = true
+                        elseif dmeta:get_int("locked") ~= nil and dmeta:get_int("locked") == 0 then
+                            -- save exit destination
+                            meta:set_string("exit", minetest.serialize(dest[1]))
+                            -- lock receiver
+                            dmeta:set_int("locked", 1)
+                            minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked!")
+                            tfound = true
+                        elseif dmeta:get_int("locked") == 1 then
+                            minetest.chat_send_player(sender:get_player_name(), "This Telepad already has a receiver!")
+                            tfound = true
+                        end
                     end
+                    if not tfound then
+                        minetest.chat_send_player(sender:get_player_name(), "No Telepad found at destination location!")
+                    end
+                elseif sender:is_player() then
+                    minetest.chat_send_player(sender:get_player_name(),
+                        "Invalid Location Entered for Telepad!  Destination must be within spatial bounds.")
                 end
-                if not tfound then
-                    minetest.chat_send_player(sender:get_player_name(), "No Telepad found at destination location!")
-                end
-            elseif sender:is_player() then
-                minetest.chat_send_player(sender:get_player_name(),
-                    "Invalid Location Entered for Telepad!  Destination must be within spatial bounds.")
             end
         end
 
@@ -446,8 +499,29 @@ function spatial_tubes.register_machine(data)
         end
         local exit = nil
         -- get destination pos
-        if meta:get_string("exit") then
+        if meta:get_string("sta_exit") ~= nil then
+            local r = (data.iter == "MV" and 48) or 32
+            local teles = minetest.find_nodes_in_area({
+                x = pos.x - r,
+                y = pos.y - r,
+                z = pos.z - r
+            }, {
+                x = pos.x + r,
+                y = pos.y + r,
+                z = pos.z + r
+            }, {"group:telepad_" .. ltier})
+            for _, obj in pairs(teles) do
+                local metaTo = minetest.get_meta(obj);
+                if metaTo:get_string("sta_name") == meta:get_string("sta_exit") then
+                    exit = obj
+                    break
+                end
+            end
+        elseif meta:get_string("exit") ~= nil then
             exit = minetest.deserialize(meta:get_string("exit"))
+        else
+            minetest.chat_send_player(clicker_name, "Teleporter exit not found or defined!")
+            return;
         end
         -- is our exit destination setup?
         if exit ~= nil then
@@ -543,7 +617,7 @@ function spatial_tubes.register_machine(data)
                     local objs = minetest.get_objects_inside_radius(pos, 2.25)
                     if #objs > 0 then
                         -- summon effects at dest
-                        spatial_tubes.particle_effect_teleport(exit, 1)
+                        particle_effect_teleport(exit, 1)
                         local name = clicker:get_player_name()
                         play_sound(exit, "local_tele_zap", 7, name)
                     end
@@ -556,10 +630,10 @@ function spatial_tubes.register_machine(data)
                                 local obj2 = minetest.add_entity(exit, "__builtin:item")
                                 obj2:get_luaentity():set_item(item1)
                                 obj:remove()
-                                spatial_tubes.particle_effect_teleport(exit, 1)
+                                particle_effect_teleport(exit, 1)
                             elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
                                 obj:set_pos(exit)
-                                spatial_tubes.particle_effect_teleport(exit, 1)
+                                particle_effect_teleport(exit, 1)
                             end
                         elseif obj and obj:is_player() then
                             local name = obj:get_player_name()
@@ -569,7 +643,7 @@ function spatial_tubes.register_machine(data)
                                 pitch = 0.6
                             })
                             obj:set_pos(exit)
-                            spatial_tubes.particle_effect_teleport(exit, 1)
+                            particle_effect_teleport(exit, 1)
                         end
                     end
                 end)
@@ -584,8 +658,9 @@ function spatial_tubes.register_machine(data)
 
     minetest.register_node(node_name, {
         description = machine_desc,
-        tiles = {"local_telepad_top_dark.png", "local_telepad_bottom.png", "local_telepad_side.png",
-                 "local_telepad_side.png", "local_telepad_side.png", "local_telepad_side.png"},
+        tiles = {"local_telepad_top_dark.png" .. texture_tier, "local_telepad_bottom.png" .. texture_tier,
+                 "local_telepad_side.png" .. texture_tier, "local_telepad_side.png" .. texture_tier,
+                 "local_telepad_side.png" .. texture_tier, "local_telepad_side.png" .. texture_tier},
         drawtype = "nodebox",
         paramtype = "light",
         drop = node_name,
@@ -630,6 +705,9 @@ function spatial_tubes.register_machine(data)
             if meta:get_string("exit") then
                 exit = minetest.deserialize(meta:get_string("exit"))
             end
+            if meta:get_string("sta_exit") and meta:get_string("sta_exit") ~= "" then
+                exit = meta:get_string("sta_exit");
+            end
             if not exit then
                 minetest.chat_send_player(clicker_name, "Teleporter exit is not defined!")
             end
@@ -638,8 +716,9 @@ function spatial_tubes.register_machine(data)
 
     minetest.register_node(node_name .. "_wait", {
         description = machine_desc,
-        tiles = {"local_telepad_top_wait.png", "local_telepad_bottom.png", "local_telepad_side.png",
-                 "local_telepad_side.png", "local_telepad_side.png", "local_telepad_side.png"},
+        tiles = {"local_telepad_top_wait.png" .. texture_tier, "local_telepad_bottom.png" .. texture_tier,
+                 "local_telepad_side.png" .. texture_tier, "local_telepad_side.png" .. texture_tier,
+                 "local_telepad_side.png" .. texture_tier, "local_telepad_side.png" .. texture_tier},
         drawtype = "nodebox",
         paramtype = "light",
         drop = node_name,
@@ -668,6 +747,9 @@ function spatial_tubes.register_machine(data)
             local exit = nil
             if meta:get_string("exit") then
                 exit = minetest.deserialize(meta:get_string("exit"))
+            end
+            if meta:get_string("sta_exit") and meta:get_string("sta_exit") ~= "" then
+                exit = meta:get_string("sta_exit");
             end
             if exit == nil then
                 minetest.chat_send_player(clicker_name, "Teleporter exit is not defined!")
@@ -677,8 +759,9 @@ function spatial_tubes.register_machine(data)
 
     minetest.register_node(node_name .. "_error", {
         description = machine_desc,
-        tiles = {"local_telepad_top_error.png", "local_telepad_bottom.png", "local_telepad_side.png",
-                 "local_telepad_side.png", "local_telepad_side.png", "local_telepad_side.png"},
+        tiles = {"local_telepad_top_error.png" .. texture_tier, "local_telepad_bottom.png" .. texture_tier,
+                 "local_telepad_side.png" .. texture_tier, "local_telepad_side.png" .. texture_tier,
+                 "local_telepad_side.png" .. texture_tier, "local_telepad_side.png" .. texture_tier},
         drawtype = "nodebox",
         paramtype = "light",
         drop = node_name,
@@ -708,6 +791,9 @@ function spatial_tubes.register_machine(data)
             if meta:get_string("exit") then
                 exit = minetest.deserialize(meta:get_string("exit"))
             end
+            if meta:get_string("sta_exit") and meta:get_string("sta_exit") ~= "" then
+                exit = meta:get_string("sta_exit");
+            end
             if exit == nil then
                 minetest.chat_send_player(clicker_name, "Teleporter exit is not defined!")
             end
@@ -716,8 +802,9 @@ function spatial_tubes.register_machine(data)
 
     minetest.register_node(node_name .. "_busy", {
         description = machine_desc,
-        tiles = {"local_telepad_top_send.png", "local_telepad_bottom.png", "local_telepad_side.png",
-                 "local_telepad_side.png", "local_telepad_side.png", "local_telepad_side.png"},
+        tiles = {"local_telepad_top_send.png" .. texture_tier, "local_telepad_bottom.png" .. texture_tier,
+                 "local_telepad_side.png" .. texture_tier, "local_telepad_side.png" .. texture_tier,
+                 "local_telepad_side.png" .. texture_tier, "local_telepad_side.png" .. texture_tier},
         drawtype = "nodebox",
         paramtype = "light",
         drop = node_name,
@@ -742,7 +829,7 @@ function spatial_tubes.register_machine(data)
     })
 
     local texture_active = {
-        image = "local_telepad_top" .. "_active.png",
+        image = "local_telepad_top" .. "_active.png" .. texture_tier,
         animation = {
             type = "vertical_frames",
             aspect_w = 32,
@@ -753,8 +840,9 @@ function spatial_tubes.register_machine(data)
 
     minetest.register_node(node_name .. "_active", {
         description = machine_desc,
-        tiles = {texture_active, "local_telepad_bottom.png", "local_telepad_side.png", "local_telepad_side.png",
-                 "local_telepad_side.png", "local_telepad_side.png"},
+        tiles = {texture_active, "local_telepad_bottom.png" .. texture_tier, "local_telepad_side.png" .. texture_tier,
+                 "local_telepad_side.png" .. texture_tier, "local_telepad_side.png" .. texture_tier,
+                 "local_telepad_side.png" .. texture_tier},
         drawtype = "nodebox",
         paramtype = "light",
         drop = node_name,
@@ -792,10 +880,32 @@ spatial_tubes.register_machine({
     modname = "spatial_tubes",
     machine_name = "telepad_machine",
     machine_desc = S("Teleport Pad"),
+    tier = "LV",
+    demand = {2000},
+    charge_max = 32,
+    speed = 5
+})
+
+-- register telepad
+spatial_tubes.register_machine({
+    modname = "spatial_tubes",
+    machine_name = "telepad_machine",
+    machine_desc = S("Teleport Pad"),
+    tier = "MV",
+    demand = {3000},
+    charge_max = 32,
+    speed = 6
+})
+
+-- register telepad
+spatial_tubes.register_machine({
+    modname = "spatial_tubes",
+    machine_name = "telepad_machine",
+    machine_desc = S("Teleport Pad"),
     tier = "HV",
     demand = {2800},
     charge_max = 32,
-    speed = 1
+    speed = 5
 })
 
 -- register crafting recipes

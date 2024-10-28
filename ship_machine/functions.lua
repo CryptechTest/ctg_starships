@@ -118,7 +118,7 @@ local get_distance = function(a, b)
 end
 
 local gen_grav = 0.92
-local gen_dist = 46
+local gen_dist = 64
 local players_near_gen = {}
 
 ship_machine.apply_gravity = function(_pos, grav)
