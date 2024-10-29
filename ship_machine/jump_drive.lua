@@ -172,6 +172,7 @@ function ship_machine.register_jumpship(data)
 
         digiline = {
             receptor = {
+                rules = technic.digilines.rules_allfaces,
                 action = function()
                 end
             },

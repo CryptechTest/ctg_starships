@@ -44,6 +44,13 @@ function ship_scout.register_scout(custom_data)
 
         local jpos = ship_scout.get_jumpdrive(pos, data.size)
 
+        if jpos == nil then
+            local message = "Jump Drive not found..."
+            local formspec = ship_scout.update_formspec(pos, data, 0, 0, message)
+            meta:set_string("formspec", formspec)
+            return
+        end
+
         local enabled = false
         if fields.toggle then
             if meta:get_int("enabled") == 1 then
@@ -63,7 +70,7 @@ function ship_scout.register_scout(custom_data)
         end
 
         local jump_dis = meta:get_int("jump_dist")
-        local is_deepspace = jpos.y > 22000;
+        local is_deepspace = jpos and jpos.y > 22000;
 
         -- local pos_nav = meta:get_string("pos_nav")
         -- local nav = minetest.get_meta(pos_nav)
@@ -330,7 +337,9 @@ function ship_scout.register_scout(custom_data)
 
         on_punch = function(pos, node, puncher)
             local drive_loc = ship_scout.get_jumpdrive(pos, data.size)
-            ship_scout.punch(drive_loc, node, puncher)
+            if drive_loc then
+                ship_scout.punch(drive_loc, node, puncher)
+            end
         end,
         --[[can_dig = function(pos, player)
             local is_admin = player:get_player_name() == "squidicuzz"

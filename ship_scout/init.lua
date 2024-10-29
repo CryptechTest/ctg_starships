@@ -47,10 +47,6 @@ if minetest.get_modpath("ship_machine") then
         machine_name = "jump_drive_scout",
         machine_desc = "Jump Drive Allocator",
         typename = "jump_drive",
-        size = {
-            w = 15,
-            h = 15,
-            l = 32
-        }
+        size = ship_scout.proto_size
     })
 end

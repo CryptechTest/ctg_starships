@@ -448,7 +448,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
             meta:set_float("target_power", power)
             meta:set_float("target_pitch", pitch)
             meta:set_float("target_yaw", yaw)
-            digilines.receptor_send(pos, digilines.rules.default, "missile_tower", {
+            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
                 command = "targeting_entry",
                 target_entry = {
                     power = power,
@@ -499,7 +499,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         end
 
         if fields.submit_launch and locked and attack_mode == 1 then
-            digilines.receptor_send(pos, digilines.rules.default, "missile_tower", {
+            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
                 command = "targeting_launch",
                 launch_entry = {
                     count = count,
@@ -665,6 +665,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
 
         digiline = {
             receptor = {
+                rules = technic.digilines.rules_allfaces,
                 action = function()
                 end
             },

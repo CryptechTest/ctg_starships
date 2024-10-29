@@ -263,6 +263,7 @@ function ship_machine.register_engine(data)
 
         digiline = {
             receptor = {
+                rules = technic.digilines.rules_allfaces,
                 action = function()
                 end
             },
@@ -351,6 +352,7 @@ function ship_machine.register_engine(data)
 
         digiline = {
             receptor = {
+                rules = technic.digilines.rules_allfaces,
                 action = function()
                 end
             },

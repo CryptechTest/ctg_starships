@@ -43,6 +43,12 @@ function ship_cube.register_cruiser(custom_data)
         local meta = minetest.get_meta(pos)
 
         local jpos = ship_cube.get_jumpdrive(pos, data.size)
+        if jpos == nil then
+            local message = "Jump Drive not found..."
+            local formspec = ship_scout.update_formspec(pos, data, 0, 0, message)
+            meta:set_string("formspec", formspec)
+            return
+        end
 
         local enabled = false
         if fields.toggle then
@@ -330,7 +336,9 @@ function ship_cube.register_cruiser(custom_data)
 
         on_punch = function(pos, node, puncher)
             local drive_loc = ship_cube.get_jumpdrive(pos, data.size)
-            ship_cube.punch(drive_loc, node, puncher)
+            if drive_loc then
+                ship_cube.punch(drive_loc, node, puncher)
+            end
         end,
         --[[can_dig = function(pos, player)
             local is_admin = player:get_player_name() == "squidicuzz"
