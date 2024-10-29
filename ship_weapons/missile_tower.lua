@@ -577,8 +577,9 @@ function ship_weapons.register_missile_tower(data)
                     local bFoundTarget = false
                     local nTargetCount = digiline_data.count
                     local dir = ship_weapons.get_port_direction(pos)
-                    local target_pos = calculateNewPoint(pos, dir, digiline_data.power, digiline_data.pitch,
-                        digiline_data.yaw)
+                    local target_pos = digiline_data.target_pos or
+                                           calculateNewPoint(pos, dir, digiline_data.power, digiline_data.pitch,
+                            digiline_data.yaw)
                     -- minetest.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
                     if ship_weapons.missile_launch(proj_def, operator, pos, target_pos, nil) then
                         bFoundTarget = true;
@@ -589,6 +590,7 @@ function ship_weapons.register_missile_tower(data)
                         digiline_data.count = nTargetCount - 1
                         if digiline_data.count <= 0 then
                             digiline_data.launch = false
+                            digiline_data.target_pos = nil
                         end
                         -- Update digiline data...
                         meta:set_string("digiline_data", minetest.serialize(digiline_data))
@@ -597,7 +599,7 @@ function ship_weapons.register_missile_tower(data)
                             inv:set_list("src", missile_item.new_input)
                         end
                     end
-                elseif missile_item then
+                elseif missile_item and meta:get_int("attack_type") > 1 then
                     -------------------------------------------------------
                     -- strike launch to target object
                     local proj_def = {

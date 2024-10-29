@@ -265,35 +265,41 @@ function ship_weapons.update_formspec(data, meta)
     elseif typename == 'target_computer' then
         -- TARGET COMPUTER
 
+        local mode_index = meta:get_int("attack_mode") or 1
         local sel = meta:get_int("selected_dir")
         local lock = meta:get_int("target_locked")
-        local select = (lock == 1 and "^[colorize:green:25") or "^[colorize:yellow:25"
+        local select = (mode_index == 1 and ((lock == 1 and "^[colorize:green:25") or "^[colorize:yellow:25")) or ''
+        local disabled = (mode_index > 1 and "^[colorize:black:120") or ''
 
-        local b1_sel = (sel == 1 and select) or ''
-        local b2_sel = (sel == 2 and select) or ''
-        local b3_sel = (sel == 3 and select) or ''
-        local b4_sel = (sel == 4 and select) or ''
-        local b5_sel = (sel == 5 and select) or ''
-        local b6_sel = (sel == 6 and select) or ''
-        local b7_sel = (sel == 7 and select) or ''
-        local b8_sel = (sel == 8 and select) or ''
-        local b9_sel = (sel == 9 and select) or ''
-        local b10_sel = (sel == 10 and select) or ''
-        local b11_sel = (sel == 11 and select) or ''
-        local b12_sel = (sel == 12 and select) or ''
-        local b13_sel = (sel == 13 and select) or ''
-        local b14_sel = (sel == 14 and select) or ''
-        local b15_sel = (sel == 15 and select) or ''
-        local b16_sel = (sel == 16 and select) or ''
-        local b17_sel = (sel == 17 and select) or ''
-        local b18_sel = (sel == 18 and select) or ''
-        local b19_sel = (sel == 19 and select) or ''
-        local b20_sel = (sel == 20 and select) or ''
-        local b21_sel = (sel == 21 and select) or ''
-        local b22_sel = (sel == 22 and select) or ''
-        local b23_sel = (sel == 23 and select) or ''
-        local b24_sel = (sel == 24 and select) or ''
-        local b25_sel = (sel == 25 and select) or ''
+        if mode_index > 1 then
+            sel = 0
+        end
+
+        local b1_sel = (sel == 1 and select) or disabled
+        local b2_sel = (sel == 2 and select) or disabled
+        local b3_sel = (sel == 3 and select) or disabled
+        local b4_sel = (sel == 4 and select) or disabled
+        local b5_sel = (sel == 5 and select) or disabled
+        local b6_sel = (sel == 6 and select) or disabled
+        local b7_sel = (sel == 7 and select) or disabled
+        local b8_sel = (sel == 8 and select) or disabled
+        local b9_sel = (sel == 9 and select) or disabled
+        local b10_sel = (sel == 10 and select) or disabled
+        local b11_sel = (sel == 11 and select) or disabled
+        local b12_sel = (sel == 12 and select) or disabled
+        local b13_sel = (sel == 13 and select) or disabled
+        local b14_sel = (sel == 14 and select) or disabled
+        local b15_sel = (sel == 15 and select) or disabled
+        local b16_sel = (sel == 16 and select) or disabled
+        local b17_sel = (sel == 17 and select) or disabled
+        local b18_sel = (sel == 18 and select) or disabled
+        local b19_sel = (sel == 19 and select) or disabled
+        local b20_sel = (sel == 20 and select) or disabled
+        local b21_sel = (sel == 21 and select) or disabled
+        local b22_sel = (sel == 22 and select) or disabled
+        local b23_sel = (sel == 23 and select) or disabled
+        local b24_sel = (sel == 24 and select) or disabled
+        local b25_sel = (sel == 25 and select) or disabled
 
         local fsetup =
             "image_button[1,1;1,1;b1.png" .. b1_sel .. ";btn1;]" .. "image_button[2,1;1,1;b6.png" .. b6_sel .. ";btn6;]" ..
@@ -330,18 +336,29 @@ function ship_weapons.update_formspec(data, meta)
 
         local inp_delay = meta:get_int("target_delay")
         local input_delay = "field[6.5,5;2,1;inp_delay;Delay;" .. inp_delay .. "]"
-        
+
         local inp_count = meta:get_int("target_count")
         local input_count = "field[6.5,3;2,1;inp_count;Count;" .. inp_count .. "]"
 
+        local input_mode = "label[6.5,2.8;Attack:]" ..
+                               "dropdown[6.5,3.0;2,1;attack_mode;Manual,Automatic,Auto Player,Auto Ship;" .. mode_index ..
+                               "]"
+
         local num_error = meta:get_int("target_error_number")
-        local btn_tgt_clr = (num_error == 1 and "style[submit_target;bgcolor=#eb403410]") or (lock == 1 and "style[submit_target;bgcolor=#38c72c05]") or ""
+        local btn_tgt_clr = (num_error == 1 and "style[submit_target;bgcolor=#eb403410]") or
+                                (lock == 1 and "style[submit_target;bgcolor=#38c72c05]") or ""
+        if mode_index > 1 then
+            btn_tgt_clr = "style[submit_target;bgcolor=#34ebe510]"
+        end
         local btn_tgt = btn_tgt_clr .. "button[5.5,6.5;3,1;submit_target;Target Lock]"
-        local btn_lnc = "image_button[6.5,1.0;2,1;b_launch.png;submit_launch;Launch;0;1;b_launch_press.png]"
+        local btn_lnc_clr = (mode_index > 1 and "^[colorize:black:150") or ''
+        local btn_lnc = "image_button[6.5,1.0;2,1;b_launch.png" .. btn_lnc_clr ..
+                            ";submit_launch;Launch;0;1;b_launch_press.png" .. btn_lnc_clr .. "]"
 
         -- "list[current_player;main;0,5;8,4;]" .. "listring[current_player;main]" .. 
         formspec = "formspec_version[8]" .. "size[9.5,8]" .. "label[0.2,0.3;" .. machine_desc:format(tier) .. "]" ..
-                       fsetup .. input_field .. btn_tgt .. btn_lnc .. input_delay .. input_count
+                       fsetup .. input_field .. btn_tgt .. btn_lnc .. input_delay ..
+                       ((ltier == "lv" and input_count) or input_mode)
     end
 
     if data.upgrade then

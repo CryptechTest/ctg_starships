@@ -327,10 +327,10 @@ local function setup_projectile_register(tier)
             y = 0
         }}
     }
-    local radius = 2
+    local radius = 1.5
     local spread = 1
     if tier == 'mv' then
-        radius = 3
+        radius = 2.6
         spread = 0.5 
     elseif tier == 'hv' then
         radius = 4

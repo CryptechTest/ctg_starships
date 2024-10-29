@@ -16,7 +16,7 @@ function ship_weapons.register_targeting_computer(custom_data)
 
     local modname = data.modname
     local machine_name = data.machine_name
-    local machine_desc = data.machine_desc
+    local machine_desc = data.machine_desc --data.tier .. " " .. data.machine_desc
     local lmachine_name = string.lower(machine_name)
 
     local active_groups = {
@@ -295,11 +295,11 @@ function ship_weapons.register_targeting_computer(custom_data)
 
     minetest.register_node(modname .. ":" .. lmachine_name .. "", {
         description = machine_desc,
-        tiles = {lmachine_name .. "_top.png", lmachine_name .. "_side.png", lmachine_name .. "_side.png",
-                 lmachine_name .. "_side.png", lmachine_name .. "_side.png", lmachine_name .. "_side.png"},
+        tiles = {"lv_target_computer_top.png", "lv_target_computer_side.png", "lv_target_computer_side.png",
+                 "lv_target_computer_side.png", "lv_target_computer_side.png", "lv_target_computer_side.png"},
         param = "light",
         paramtype2 = "facedir",
-        light_source = 3,
+        light_source = 4,
         drop = modname .. ":" .. lmachine_name,
         groups = active_groups,
         legacy_facedir_simple = true,
