@@ -195,7 +195,7 @@ function ship_cargo.get_protector(pos, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_cargo:protect2")
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_cargo:shield_protect")
 
     if #nodes == 1 then
         return nodes[1]
