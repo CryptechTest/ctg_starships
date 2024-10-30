@@ -354,6 +354,7 @@ function ship_weapons.register_targeting_computer(custom_data)
                 end
             },
             effector = {
+                rules = technic.digilines.rules_allfaces,
                 action = function()
                 end
             }

@@ -670,6 +670,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
                 end
             },
             effector = {
+                rules = technic.digilines.rules_allfaces,
                 action = ship_weapons.targeting_computer_adv_digiline_effector
             }
         }
