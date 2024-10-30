@@ -127,6 +127,9 @@ local function do_strike_ship(pos, dish_pos, mode, ltier)
     local meta = minetest.get_meta(pos)
     local meta_dish = minetest.get_meta(dish_pos)
     local range = meta_dish:get_int("range")
+    if range > 80 then
+        range = 80
+    end
     -------------------------------------------------------
     -- strike launch to target object
     local proj_def = {
