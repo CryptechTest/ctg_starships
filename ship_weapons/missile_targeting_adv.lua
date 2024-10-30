@@ -100,11 +100,11 @@ end
 local function find_ship(pos, r)
     local nodes = minetest.find_nodes_in_area({
         x = pos.x - r,
-        y = (pos.y - r) + 2,
+        y = (pos.y - r),
         z = pos.z - r
     }, {
         x = pos.x + r,
-        y = (pos.y + r) + 2,
+        y = (pos.y + r),
         z = pos.z + r
     }, {"group:jumpdrive"})
     return nodes
@@ -113,11 +113,11 @@ end
 local function find_ship_protect(pos, r)
     local nodes = minetest.find_nodes_in_area({
         x = pos.x - r,
-        y = (pos.y - r) + 2,
+        y = (pos.y - r),
         z = pos.z - r
     }, {
         x = pos.x + r,
-        y = (pos.y + r) + 2,
+        y = (pos.y + r),
         z = pos.z + r
     }, {"group:ship_protector"})
     return nodes
