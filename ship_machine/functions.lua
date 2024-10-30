@@ -599,7 +599,8 @@ local function check_engines_charged(pos, size)
         end
     elseif #nodes > 2 then
         local charged = 0
-        for _, eng in pairs(nodes) do
+        for _, node in pairs(nodes) do
+            local eng = minetest.get_meta(node)
             local charge = eng:get_int('charge')
             local charge_max = eng:get_int('charge_max')
             local charged = false
