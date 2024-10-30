@@ -176,10 +176,10 @@ end
 ship_weapons.register_targeting_dish({
     tier = "LV",
     demand = {200, 180, 150},
-    range = 72
+    range = 96
 });
 ship_weapons.register_targeting_dish({
     tier = "MV",
     demand = {700, 670, 640},
-    range = 80 -- max distance is 80  or volume of 4096000 nodes...
+    range = 128 -- max distance is 160...  and a volume of 4096000 nodes...
 });

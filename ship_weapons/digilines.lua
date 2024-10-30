@@ -123,6 +123,8 @@ ship_weapons.targeting_dish_digiline_effector = function(pos, node, channel, msg
                 command = "dish_pos",
                 dish_pos = minetest.serialize(pos)
             })
+            local dir = ship_weapons.get_port_direction(pos);
+            meta:set_string("dish_dir", minetest.serialize(dir))
         end
     end
 

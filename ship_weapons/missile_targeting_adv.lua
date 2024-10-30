@@ -11,6 +11,9 @@ local function round(v)
 end
 
 local function check_path(origin, pos_target)
+    if (not pos_target) then
+        return -1
+    end
     local bClear = 0;
     local ray = minetest.raycast(origin, pos_target, true, false)
     for pointed_thing in ray do
@@ -29,8 +32,9 @@ local function check_path(origin, pos_target)
     return bClear
 end
 
-local function do_strike_obj(pos, dish_pos, mode, ltier)
+local function do_strike_obj(pos, mode, ltier)
     local meta = minetest.get_meta(pos)
+    local dish_pos = minetest.deserialize(meta:get_string("dish_pos")) or nil
     local meta_dish = minetest.get_meta(dish_pos)
     local range = meta_dish:get_int("range")
     -------------------------------------------------------
@@ -97,17 +101,8 @@ local function do_strike_obj(pos, dish_pos, mode, ltier)
     return nTargetCount
 end
 
-local function find_ship(pos, r)
-    local nodes = minetest.find_nodes_in_area({
-        x = pos.x - r,
-        y = (pos.y - r),
-        z = pos.z - r
-    }, {
-        x = pos.x + r,
-        y = (pos.y + r),
-        z = pos.z + r
-    }, {"group:jumpdrive"})
-    return nodes
+local function find_ship(pos, d, r)
+    return schemlib.func.find_nodes_large(pos, r, {"group:jumpdrive"}, {limit = 5, dir = d})
 end
 
 local function find_ship_protect(pos, r)
@@ -123,12 +118,20 @@ local function find_ship_protect(pos, r)
     return nodes
 end
 
-local function do_strike_ship(pos, dish_pos, mode, ltier)
+local function do_strike_ship(pos, mode, ltier)
     local meta = minetest.get_meta(pos)
+    local dish_pos = minetest.deserialize(meta:get_string("dish_pos")) or nil
+    if not dish_pos then
+        return 0
+    end
     local meta_dish = minetest.get_meta(dish_pos)
+    local dish_dir = minetest.deserialize(meta_dish:get_string("dish_dir")) or nil
+    if not dish_dir then
+        return 0
+    end
     local range = meta_dish:get_int("range")
-    if range > 80 then
-        range = 80
+    if range > 79 * 2 then
+        range = 79 * 2
     end
     -------------------------------------------------------
     -- strike launch to target object
@@ -138,7 +141,7 @@ local function do_strike_ship(pos, dish_pos, mode, ltier)
     }
     local bFoundTarget = false
     local nTargetCount = 0
-    local nodes = find_ship(dish_pos, range)
+    local nodes = find_ship(dish_pos, dish_dir, range)
     local protects = find_ship_protect(dish_pos, 72)
     local our_ship = nil
     for _, node in pairs(protects) do
@@ -158,7 +161,7 @@ local function do_strike_ship(pos, dish_pos, mode, ltier)
         if nTargetCount >= 1 then
             break
         end
-        local node_pos = node
+        local node_pos = node.pos
         -- check for line of sight...
         local nodes_in_path = check_path(dish_pos, node_pos)
         if node_pos and nodes_in_path < 48 then
@@ -204,7 +207,6 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
     local data = custom_data or {}
 
     data.speed = 1
-    data.range = 72
     data.demand = {50, 45, 40}
     data.tier = (custom_data and custom_data.tier) or "MV"
     data.typename = (custom_data and custom_data.typename) or "target_computer"
@@ -592,13 +594,13 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
             if attack_mode == 1 then
 
             elseif attack_mode == 2 and dish_pos then
-                if do_strike_obj(pos, dish_pos, attack_mode, ltier) == 0 then
-                    do_strike_ship(pos, dish_pos, attack_mode, ltier)
+                if do_strike_obj(pos, attack_mode, ltier) == 0 then
+                    do_strike_ship(pos, attack_mode, ltier)
                 end
             elseif attack_mode == 3 and dish_pos then
-                do_strike_obj(pos, dish_pos, attack_mode, ltier)
+                do_strike_obj(pos, attack_mode, ltier)
             elseif attack_mode == 4 and dish_pos then
-                do_strike_ship(pos, dish_pos, attack_mode, ltier)
+                do_strike_ship(pos, attack_mode, ltier)
             end
 
             meta:set_int("src_time", meta:get_int("src_time") - round(time_scl * 10))
