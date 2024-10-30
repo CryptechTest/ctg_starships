@@ -603,15 +603,15 @@ local function check_engines_charged(pos, size)
             local eng = minetest.get_meta(node)
             local charge = eng:get_int('charge')
             local charge_max = eng:get_int('charge_max')
-            local charged = false
+            local _charged = false
             if (charge >= charge_max) then
-                charged = true
+                _charged = true
             end
-            if charged then
+            if _charged then
                 charged = charged + 1;
             end
         end
-        return charged > 2
+        return charged >= 2
     end
     return false
 end
