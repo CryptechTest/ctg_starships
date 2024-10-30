@@ -124,7 +124,6 @@ local function register_projectile(def)
                     maxsize = 3,
                     texture = def.trail_particle_smoke,
                     glow = 3,
-
                 })
                 --Sparks Effect
                 minetest.add_particlespawner({
@@ -178,7 +177,7 @@ local function register_projectile(def)
                     local vel = vector.add(vector.multiply(velo, 5), veln) / 6
                     self.object:setvelocity(vel)
                 end
-                if (dist_delta < 1) then
+                if (dist_delta < 1.8) then
                     --self.node_hit = true 
                     if def.on_timeout then
                         def.on_timeout(self, self.target_pos)
@@ -493,6 +492,20 @@ function ship_weapons.launch_projectile(custom_def, operator, origin, target, ob
         flare_glow = 14,
         delay = custom_def.delay or 3
     }
+    local spark_texture = {
+        name = "ctg_spark.png",
+        blend = "alpha",
+        scale = 1,
+        alpha = 1.0,
+        alpha_tween = {1, 0.2},
+        scale_tween = {{
+            x = 0.75,
+            y = 0.75
+        }, {
+            x = 0,
+            y = 0
+        }}
+    }
 
     local proj_name = 'ship_weapons:'..tier..'_ship_missile'    
     local projectile_speed = custom_def.projectile_speed or 2
@@ -505,7 +518,7 @@ function ship_weapons.launch_projectile(custom_def, operator, origin, target, ob
     local originpos = origin
     --Get port position to use based on facing
     local dir = ship_weapons.get_port_direction(origin)
-    local vel = vector.multiply(dir, 20)
+    local vel = vector.multiply(dir, 16)
     --Set projectile port origin position
     local pos = {x=originpos.x+dir.x*spawndist, y=originpos.y+dir.y*spawndist, z=originpos.z+dir.z*spawndist}
 
@@ -527,7 +540,6 @@ function ship_weapons.launch_projectile(custom_def, operator, origin, target, ob
                         y=((dir.y+ship_weapons.get_spread(spread))*projectile_speed)+vel.y,
                         z=((dir.z+ship_weapons.get_spread(spread))*projectile_speed)+vel.z})
         obj:setacceleration({x=0, y=projectile_gravity, z=0})
-        --obj:setyaw(user:get_look_yaw()+math.pi)
     end
         
     --Fire flash
@@ -539,6 +551,28 @@ function ship_weapons.launch_projectile(custom_def, operator, origin, target, ob
         vertical = false,
         texture = def.flare,
         glow = def.flare_glow,
+    })
+    
+    local r = 0.25
+    local s_vel = vector.multiply(dir, 6)
+    local s_vel_min = vector.subtract(s_vel, {x=math.random(-r,r), y=math.random(-r,r), z=math.random(-r,r)})
+    local s_vel_max = vector.add(s_vel, {x=math.random(-r,r), y=math.random(-r,r), z=math.random(-r,r)})
+    local s_pos = {x=originpos.x+dir.x*0.7, y=originpos.y+dir.y*0.7, z=originpos.z+dir.z*0.7}
+    minetest.add_particlespawner({
+        amount = 32,
+        time = 0.175,
+        minpos = {x=s_pos.x-0.01, y=s_pos.y-0.01, z=s_pos.z-0.01},
+        maxpos = {x=s_pos.x+0.01, y=s_pos.y+0.01, z=s_pos.z+0.01},
+        minvel = s_vel_min,
+        maxvel = s_vel_max,
+        minacc = {x=-0.25, y=-0.28, z=-0.25},
+        maxacc = {x=0.25, y=0.28, z=0.25},
+        minexptime = 0.3,
+        maxexptime = 1.2,
+        minsize = 0.7,
+        maxsize = 1,
+        texture = spark_texture,
+        glow = 14,
     })
 
     --Fire sound
