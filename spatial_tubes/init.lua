@@ -322,19 +322,19 @@ function spatial_tubes.register_machine(data)
             -- get destination from metadata
             local exit = nil
             if meta:get_string("exit") ~= nil then
-                exit = minetest.deserialize(meta:get_string("exit"))
+                exit = minetest.deserialize(meta:get_string("exit")) or nil
             end
             if exit == nil and meta:get_string("sta_exit") ~= nil then
-                exit = meta:get_string("sta_exit")
+                exit = meta:get_string("sta_exit") or nil
             end
 
             -- check if charged..
             if not needs_charge(pos) then
                 meta:set_int(tier .. "_EU_demand", machine_demand_idle)
                 meta:set_int("src_time", 0)
-                if exit then
+                if exit ~= nil then
                     technic.swap_node(pos, machine_node .. "_active")
-                    local dest = (meta:get_string("sta_exit") ~= nil and "\n" .. "Transport to: " .. exit) or ""
+                    local dest = (meta:get_string("sta_exit") ~= nil and type(exit) ~= "table" and "\n" .. "Transport to: " .. exit) or ""
                     meta:set_string("infotext", machine_desc_tier .. S(" Ready - Charged") .. dest)
                     meta:set_int("ready", 1)
                 else
