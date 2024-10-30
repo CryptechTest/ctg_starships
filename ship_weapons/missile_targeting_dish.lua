@@ -94,7 +94,7 @@ function ship_weapons.register_targeting_dish(custom_data)
     end
 
     minetest.register_node(node_name, {
-        description = "Targeting Antenna Dish",
+        description = machine_desc,
         tiles = {"ctg_" .. ltier .. "_target_dish_side.png^[transformR90",
                  "ctg_" .. ltier .. "_target_dish_side.png^[transformFXR90", "ctg_" .. ltier .. "_target_dish_side.png",
                  "ctg_" .. ltier .. "_target_dish_side.png^[transformFX", "ctg_" .. ltier .. "_target_dish_back.png",
@@ -140,7 +140,7 @@ function ship_weapons.register_targeting_dish(custom_data)
         connect_sides = connect_sides,
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             local meta = minetest.get_meta(pos)
-            meta:set_string("infotext", "Targeting Antenna")
+            meta:set_string("infotext", machine_desc)
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
             return technic.machine_after_dig_node
