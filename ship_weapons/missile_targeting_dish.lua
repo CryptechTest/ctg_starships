@@ -156,7 +156,7 @@ function ship_weapons.register_targeting_dish(custom_data)
 
         on_punch = function(pos, node, puncher)
         end,
-        
+
         technic_run = run,
 
         digiline = {
@@ -175,11 +175,11 @@ end
 
 ship_weapons.register_targeting_dish({
     tier = "LV",
-    demand =  {200, 180, 150},
-    range = 90
+    demand = {200, 180, 150},
+    range = 72
 });
 ship_weapons.register_targeting_dish({
-    tier = "MV",    
-    demand =  {700, 670, 640},
-    range = 117
+    tier = "MV",
+    demand = {700, 670, 640},
+    range = 80 -- max distance is 80  or volume of 4096000 nodes...
 });
