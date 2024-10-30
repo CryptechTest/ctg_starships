@@ -243,14 +243,20 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         local node = minetest.get_node(pos)
         local meta = minetest.get_meta(pos)
 
-        local enabled = false
+        local enabled = meta:get_int("enabled") == 1
         if fields.toggle then
-            if meta:get_int("enabled") == 1 then
+            if enabled then
                 meta:set_int("enabled", 0)
+                enabled = false
             else
                 meta:set_int("enabled", 1)
                 enabled = true
             end
+        end
+        if not enabled then
+            local formspec = ship_weapons.update_formspec(data, meta)
+            meta:set_string("formspec", formspec)
+            return
         end
 
         local attack_mode = meta:get_int("attack_mode")
@@ -568,6 +574,11 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
 
             if not powered then
                 meta:set_string("infotext", machine_desc_tier .. S(" - Not Powered"))
+                return
+            end
+
+            if not enabled then
+                meta:set_string("infotext", machine_desc_tier .. S(" - Disabled"))
                 return
             end
 

@@ -98,6 +98,29 @@ ship_weapons.targeting_computer_adv_digiline_effector = function(pos, node, chan
         return
     end
 
+    if msg.command == "enable" then
+        local meta = minetest.get_meta(pos)
+        meta:set_int("enabled", 1)
+    end
+
+    if msg.command == "disable" then
+        local meta = minetest.get_meta(pos)
+        meta:set_int("enabled", 0)
+    end
+
+    if msg.command == "attack_mode_set" then
+        local meta = minetest.get_meta(pos)
+        meta:set_int("attack_mode", msg.mode)
+    end
+
+    if msg.command == "attack_mode_get" then
+        local meta = minetest.get_meta(pos)
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, set_channel .. "_reply", {
+            command = "attack_mode_get",
+            mode = meta:get_int("attack_mode")
+        })
+    end
+
     if msg.command == "dish_pos" then
         local meta = minetest.get_meta(pos)
         meta:set_string("dish_pos", msg.dish_pos)
