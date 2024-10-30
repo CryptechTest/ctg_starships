@@ -150,7 +150,7 @@ function ship_weapons.register_targeting_dish(custom_data)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
             -- local inv = meta:get_inventory()
-            meta:set_int("enabled", 1)
+            meta:set_int("enabled", 0)
             meta:set_int("range", data.range)
         end,
 

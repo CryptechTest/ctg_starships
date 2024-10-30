@@ -779,6 +779,7 @@ function ship_weapons.register_missile_tower(data)
                 end
             },
             effector = {
+                rules = technic.digilines.rules_allfaces,
                 action = data.digiline_effector
             }
         },
@@ -826,6 +827,7 @@ function ship_weapons.register_missile_tower(data)
                 end
             },
             effector = {
+                rules = technic.digilines.rules_allfaces,
                 action = data.digiline_effector
             }
         },
@@ -873,6 +875,7 @@ function ship_weapons.register_missile_tower(data)
                 end
             },
             effector = {
+                rules = technic.digilines.rules_allfaces,
                 action = data.digiline_effector
             }
         },
@@ -948,6 +951,7 @@ function ship_weapons.register_missile_tower(data)
                 end
             },
             effector = {
+                rules = technic.digilines.rules_allfaces,
                 action = data.digiline_effector
             }
         },

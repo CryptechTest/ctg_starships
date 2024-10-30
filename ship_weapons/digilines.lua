@@ -26,7 +26,7 @@ ship_weapons.missile_tower_digiline_effector = function(pos, node, channel, msg)
         if inv_src then
             count = inv_src:get_count()
         end
-        digilines.receptor_send(pos, digilines.rules.default, channel, {
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, channel, {
             command = msg.command .. "_ack",
             ready = meta:get_int("ready"),
             missile_count = count
@@ -47,7 +47,7 @@ ship_weapons.missile_tower_digiline_effector = function(pos, node, channel, msg)
         -- Update digiline data...
         meta:set_string("digiline_data", minetest.serialize(digiline_data))
 
-        digilines.receptor_send(pos, digilines.rules.default, channel, {
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, channel, {
             command = msg.command .. "_ack"
         })
     end
@@ -65,7 +65,7 @@ ship_weapons.missile_tower_digiline_effector = function(pos, node, channel, msg)
         -- Update digiline data...
         meta:set_string("digiline_data", minetest.serialize(digiline_data))
 
-        digilines.receptor_send(pos, digilines.rules.default, channel, {
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, channel, {
             command = msg.command .. "_ack"
         })
     end
@@ -81,7 +81,7 @@ ship_weapons.missile_tower_digiline_effector = function(pos, node, channel, msg)
         -- Update digiline data...
         meta:set_string("digiline_data", minetest.serialize(digiline_data))
 
-        digilines.receptor_send(pos, digilines.rules.default, channel, {
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, channel, {
             command = msg.command .. "_ack"
         })
     end
@@ -119,7 +119,7 @@ ship_weapons.targeting_dish_digiline_effector = function(pos, node, channel, msg
         local meta = minetest.get_meta(pos)
         if (meta:get_int("enabled") == 1) then
             meta:set_int("pinged", 1)
-            digilines.receptor_send(pos, digilines.rules.default, "targeting_computer_adv", {
+            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "targeting_computer_adv", {
                 command = "dish_pos",
                 dish_pos = minetest.serialize(pos)
             })

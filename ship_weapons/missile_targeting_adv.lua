@@ -57,7 +57,7 @@ local function do_strike_obj(pos, dish_pos, mode, ltier)
                     if ent.type == "monster" and (mode == 5) then
                         bFoundTarget = true;
                         nTargetCount = nTargetCount + 1
-                        digilines.receptor_send(pos, digilines.rules.default, "missile_tower", {
+                        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
                             command = "targeting_set",
                             target_entry = {
                                 pos = obj_pos
@@ -71,7 +71,7 @@ local function do_strike_obj(pos, dish_pos, mode, ltier)
                 if name ~= meta:get_string("owner") --[[and not ship_weapons.is_member(meta, name)]] then
                     bFoundTarget = true;
                     nTargetCount = nTargetCount + 1
-                    digilines.receptor_send(pos, digilines.rules.default, "missile_tower", {
+                    digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
                         command = "targeting_set",
                         target_entry = {
                             pos = obj_pos
@@ -83,7 +83,7 @@ local function do_strike_obj(pos, dish_pos, mode, ltier)
     end
     if bFoundTarget then
         meta:set_int("firing", 1)
-        digilines.receptor_send(pos, digilines.rules.default, "missile_tower", {
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
             command = "targeting_launch",
             launch_entry = {
                 count = 1,
@@ -171,7 +171,7 @@ local function do_strike_ship(pos, dish_pos, mode, ltier)
             if name ~= meta:get_string("owner") and not ship_weapons.is_member(our_ship.meta, name) then
                 bFoundTarget = true;
                 nTargetCount = nTargetCount + 1
-                digilines.receptor_send(pos, digilines.rules.default, "missile_tower", {
+                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
                     command = "targeting_set",
                     target_entry = {
                         pos = target_pos
@@ -182,7 +182,7 @@ local function do_strike_ship(pos, dish_pos, mode, ltier)
     end
     if bFoundTarget then
         meta:set_int("firing", 1)
-        digilines.receptor_send(pos, digilines.rules.default, "missile_tower", {
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
             command = "targeting_launch",
             launch_entry = {
                 count = 1,
@@ -534,7 +534,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         if dish_ping == 0 then
             meta:set_int("dish_ping", 30)
             meta:set_string("dish_pos", nil)
-            digilines.receptor_send(pos, digilines.rules.default, "targeting_dish", {
+            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "targeting_dish", {
                 command = "pos_self"
             })
         end
