@@ -32,17 +32,31 @@ local function check_path(origin, pos_target)
     return bClear
 end
 
+local function find_ship(pos, d, r)
+    return schemlib.func.find_nodes_large(pos, r, {"group:jumpdrive"}, {limit = 5, dir = d})
+end
+
+local function find_ship_protect(pos, r)
+    local nodes = minetest.find_nodes_in_area({
+        x = pos.x - r,
+        y = pos.y - r,
+        z = pos.z - r
+    }, {
+        x = pos.x + r,
+        y = pos.y + r,
+        z = pos.z + r
+    }, {"group:ship_protector"})
+    return nodes
+end
+
 local function do_strike_obj(pos, mode, ltier)
     local meta = minetest.get_meta(pos)
+    local ship_pos = find_ship_protect(pos, 72)
     local dish_pos = minetest.deserialize(meta:get_string("dish_pos")) or nil
     local meta_dish = minetest.get_meta(dish_pos)
     local range = meta_dish:get_int("range")
     -------------------------------------------------------
     -- strike launch to target object
-    local proj_def = {
-        delay = 7,
-        tier = ltier
-    }
     local bFoundTarget = false
     local nTargetCount = 0
     local objs = minetest.get_objects_inside_radius(dish_pos, range + 0.251)
@@ -69,10 +83,11 @@ local function do_strike_obj(pos, mode, ltier)
                         })
                     end
                 end
-            elseif obj:is_player() and (mode == 2 or mode == 3) then
+            elseif obj:is_player() and (mode == 2 or mode == 3) and #ship_pos > 0 then
                 local name = obj:get_player_name()
+                local ship_meta = minetest.get_meta(ship_pos[1])
                 -- players
-                if name ~= meta:get_string("owner") --[[and not ship_weapons.is_member(meta, name)]] then
+                if name ~= ship_meta:get_string("owner") and not ship_weapons.is_member(ship_meta, name) then
                     bFoundTarget = true;
                     nTargetCount = nTargetCount + 1
                     digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
@@ -101,23 +116,6 @@ local function do_strike_obj(pos, mode, ltier)
     return nTargetCount
 end
 
-local function find_ship(pos, d, r)
-    return schemlib.func.find_nodes_large(pos, r, {"group:jumpdrive"}, {limit = 5, dir = d})
-end
-
-local function find_ship_protect(pos, r)
-    local nodes = minetest.find_nodes_in_area({
-        x = pos.x - r,
-        y = (pos.y - r),
-        z = pos.z - r
-    }, {
-        x = pos.x + r,
-        y = (pos.y + r),
-        z = pos.z + r
-    }, {"group:ship_protector"})
-    return nodes
-end
-
 local function do_strike_ship(pos, mode, ltier)
     local meta = minetest.get_meta(pos)
     local dish_pos = minetest.deserialize(meta:get_string("dish_pos")) or nil
@@ -135,10 +133,6 @@ local function do_strike_ship(pos, mode, ltier)
     end
     -------------------------------------------------------
     -- strike launch to target object
-    local proj_def = {
-        delay = 8,
-        tier = ltier
-    }
     local bFoundTarget = false
     local nTargetCount = 0
     local nodes = find_ship(dish_pos, dish_dir, range)
