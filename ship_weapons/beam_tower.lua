@@ -716,15 +716,17 @@ function ship_weapons.register_beam_tower(data)
                             end
 
                         elseif ent.name:match("_ship_missile_projectile") then
-                            if math.random(1, 8) == 1 then
-                                bFoundTarget = true;
-                                break
-                            end
-                            if ship_weapons.strike_effect(pos, obj_pos, ltier) then
-                                local hp = obj:get_hp()
-                                obj:set_hp(hp - 5)
-                                bFoundTarget = true;
-                                nTargetCount = nTargetCount + 1
+                            if ent.owner:get_player_name() ~= meta:get_string("owner") and not ship_weapons.is_member(meta, ent.owner:get_player_name()) then
+                                if math.random(1, 5) == 1 then
+                                    bFoundTarget = true;
+                                    break
+                                end
+                                if ship_weapons.strike_effect(pos, obj_pos, ltier) then
+                                    local hp = obj:get_hp()
+                                    obj:set_hp(hp - 5)
+                                    bFoundTarget = true;
+                                    nTargetCount = nTargetCount + 1
+                                end
                             end
 
                         elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
