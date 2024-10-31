@@ -20,6 +20,21 @@ function ship_weapons.damage_aoe(damage, puncher, pos, radius)
     end
 end
 
+local function is_atmos(name)
+    if name == "air" then
+        return true
+    elseif name == "vacuum:vacuum" then
+        return true
+    elseif name == "vacuum:atmos_thin" then
+        return true
+    elseif name == "vacuum:atmos_thick" then
+        return true
+    elseif name == ":asteroid:atmos" then
+        return true
+    end
+    return false
+end
+
 --Utility projectile registration function
 local function register_projectile(def)
 
@@ -197,7 +212,7 @@ local function register_projectile(def)
             local target = ray:next()
             if target and target.type == "node" then
                 local node = minetest.get_node_or_nil(minetest.get_pointed_thing_position(target, false))
-                if node and minetest.registered_nodes[node.name] and (minetest.registered_nodes[node.name].walkable or
+                if node and minetest.registered_nodes[node.name] and (minetest.registered_nodes[node.name].walkable and not is_atmos(node.name) or
                 def.liquids_stop and minetest.registered_nodes[node.name].liquidtype ~= "none") then
                     if def.aoe then
                         ship_weapons.damage_aoe(def.damage, self.owner, target.intersection_point, def.aoe_radius)
