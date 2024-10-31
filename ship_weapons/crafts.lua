@@ -63,3 +63,27 @@ minetest.register_craft({
     output = "ship_weapons:target_computer_adv",
     recipe = {{gls, glw, hid}, {dia, tgt, adv}, {pls, mca, hid}}
 })
+
+local mis = "bweapons_hitech_pack:missile_launcher"
+local sst = "ctg_airs:stainless_steel_block_embedded_tube"
+local tub = "pipeworks:tube_1"
+local dtb = "pipeworks:digiline_conductor_tube_1"
+local ltb = "ctg_airs:aluminum_block_embedded_tube"
+local atb = "pipeworks:accelerator_tube_1"
+local lmt = "ship_weapons:lv_missile_tower"
+local mmt = "ship_weapons:mv_missile_tower"
+
+minetest.register_craft({
+    output = "ship_weapons:lv_missile_tower",
+    recipe = {{tub, mis, tub}, {sst, mis, sst}, {tub, mis, tub}}
+})
+
+minetest.register_craft({
+    output = "ship_weapons:mv_missile_tower",
+    recipe = {{dtb, mis, tub}, {ltb, lmt, ltb}, {tub, mis, dtb}}
+})
+
+minetest.register_craft({
+    output = "ship_weapons:hv_missile_tower",
+    recipe = {{dtb, mis, dtb}, {atb, mmt, atb}, {dtb, mis, dtb}}
+})
