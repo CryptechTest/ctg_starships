@@ -177,7 +177,8 @@ local function entity_physics(pos, radius, drops)
 				local luaobj = obj:get_luaentity()
 
 				-- object might have disappeared somehow
-				if luaobj and not luaobj.name:match("_ship_missile_projectile") then
+				if luaobj and not luaobj.name:match("_ship_missile_projectile") and
+						not luaobj.name:match("_tower_display") then
 					local do_damage = true
 					local do_knockback = true
 					local entity_drops = {}
