@@ -85,7 +85,6 @@ ship_machine.apply_gravity = function(_pos, grav)
                                     last_check = os.clock(),
                                     distance = dist
                                 }
-                                minetest.log(dump(players_near_gen[name]))
                             end
                         end
                     end
