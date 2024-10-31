@@ -369,11 +369,10 @@ minetest.register_node("ship_parts:lightbar_white", {
 		}
 	},
 	selection_box = {
-		type = "wallmounted",
-		wallmounted = {
+		type = "fixed",
+		fixed = {
             {-0.3125, -0.5, -0.125, 0.3125, -0.375, 0.125}, -- NodeBox1
 			{-0.125, -0.5, -0.3125, 0.125, -0.375, 0.3125}, -- NodeBox2
-			--{-0.1875, -0.5, -0.1875, 0.1875, -0.3125, 0.1875}, -- NodeBox3
 		}
 	},
 	groups = {cracky=1, dig_generic = 3, leaky = 1},
@@ -400,11 +399,100 @@ minetest.register_node("ship_parts:lightbar_blue", {
 		}
 	},
 	selection_box = {
-		type = "wallmounted",
-		wallmounted = {
+		type = "fixed",
+		fixed = {
             {-0.3125, -0.5, -0.125, 0.3125, -0.375, 0.125}, -- NodeBox1
 			{-0.125, -0.5, -0.3125, 0.125, -0.375, 0.3125}, -- NodeBox2
-			--{-0.1875, -0.5, -0.1875, 0.1875, -0.3125, 0.1875}, -- NodeBox3
+		}
+	},
+	groups = {cracky=1, dig_generic = 3, leaky = 1},
+	is_ground_content = false,
+	sounds = scifi_nodes.node_sound_glass_defaults()
+})
+
+minetest.register_node("ship_parts:light_dot_white", {
+	description = "Node Light Dot White",
+	tiles = {
+		"ctg_light_white.png",
+	},
+	drawtype = "nodebox",
+	paramtype = "light",
+	paramtype2 = "wallmounted",
+	sunlight_propagates = true,
+	light_source = minetest.LIGHT_MAX - 2,
+	node_box = {
+		type = "fixed",
+		fixed = {
+			{-0.125, -0.5, -0.171875, 0.125, -0.34375, 0.171875}, -- base1
+			{-0.171875, -0.5, -0.125, 0.171875, -0.34375, 0.125}, -- base2
+			{-0.125, -0.34375, -0.125, 0.125, -0.25, 0.125}, -- top1
+			{-0.0625, -0.25, -0.0625, 0.0625, -0.21875, 0.0625}, -- top2
+		}
+	},
+	selection_box = {
+		type = "fixed",
+		fixed = {
+            {-0.1875, -0.5, -0.1875, 0.1875, -0.1875, 0.1875}, -- sel_box
+		}
+	},
+	groups = {cracky=1, dig_generic = 3, leaky = 1},
+	is_ground_content = false,
+	sounds = scifi_nodes.node_sound_glass_defaults()
+})
+
+minetest.register_node("ship_parts:light_dot_blue", {
+	description = "Node Light Dot Blue",
+	tiles = {
+		"ctg_light2_blue.png",
+	},
+	drawtype = "nodebox",
+	paramtype = "light",
+	paramtype2 = "wallmounted",
+	sunlight_propagates = true,
+	light_source = minetest.LIGHT_MAX - 2,
+	node_box = {
+		type = "fixed",
+		fixed = {
+			{-0.125, -0.5, -0.171875, 0.125, -0.34375, 0.171875}, -- base1
+			{-0.171875, -0.5, -0.125, 0.171875, -0.34375, 0.125}, -- base2
+			{-0.125, -0.34375, -0.125, 0.125, -0.25, 0.125}, -- top1
+			{-0.0625, -0.25, -0.0625, 0.0625, -0.21875, 0.0625}, -- top2
+		}
+	},
+	selection_box = {
+		type = "fixed",
+		fixed = {
+            {-0.1875, -0.5, -0.1875, 0.1875, -0.1875, 0.1875}, -- sel_box
+		}
+	},
+	groups = {cracky=1, dig_generic = 3, leaky = 1},
+	is_ground_content = false,
+	sounds = scifi_nodes.node_sound_glass_defaults()
+})
+
+minetest.register_node("ship_parts:light_dot_red", {
+	description = "Node Light Dot Red",
+	tiles = {
+		"ctg_light2_red.png",
+	},
+	drawtype = "nodebox",
+	paramtype = "light",
+	paramtype2 = "wallmounted",
+	sunlight_propagates = true,
+	light_source = minetest.LIGHT_MAX - 2,
+	node_box = {
+		type = "fixed",
+		fixed = {
+			{-0.125, -0.5, -0.171875, 0.125, -0.34375, 0.171875}, -- base1
+			{-0.171875, -0.5, -0.125, 0.171875, -0.34375, 0.125}, -- base2
+			{-0.125, -0.34375, -0.125, 0.125, -0.25, 0.125}, -- top1
+			{-0.0625, -0.25, -0.0625, 0.0625, -0.21875, 0.0625}, -- top2
+		}
+	},
+	selection_box = {
+		type = "fixed",
+		fixed = {
+            {-0.1875, -0.5, -0.1875, 0.1875, -0.1875, 0.1875}, -- sel_box
 		}
 	},
 	groups = {cracky=1, dig_generic = 3, leaky = 1},
