@@ -1,12 +1,12 @@
-
 local square = math.sqrt;
 local get_distance = function(a, b)
     local x, y, z = a.x - b.x, a.y - b.y, a.z - b.z
     return square(x * x + y * y + z * z)
 end
 
+local check_time = 3
 local gen_grav = 0.92
-local gen_dist = 64
+local gen_dist = 100
 local players_near_gen = {}
 
 ship_machine.apply_gravity = function(_pos, grav)
@@ -33,7 +33,14 @@ ship_machine.apply_gravity = function(_pos, grav)
             if player then
                 local name = player:get_player_name()
                 local pos = player:get_pos()
+                local current = players_near_gen[name] or nil
                 if pos.y > 1000 then
+                    if current then
+                        local t_delta = os.clock() - current.last_check
+                        if t_delta >= check_time then
+                            current.gravity = 0
+                        end
+                    end
                     -- center node
                     local pos_center = {
                         x = _pos.x,
@@ -41,7 +48,7 @@ ship_machine.apply_gravity = function(_pos, grav)
                         z = _pos.z
                     }
                     -- check if beyond lessor y
-                    if not (pos.y - 1 < _pos.y and get_distance(_pos, pos_center) >= 13) then
+                    if not (pos.y - 1 < _pos.y and get_distance(_pos, pos_center) >= 32) then
                         -- get node below
                         local pos_below_1 = {
                             x = pos.x,
@@ -62,13 +69,24 @@ ship_machine.apply_gravity = function(_pos, grav)
                         local below_1_vac = minetest.get_item_group(below_1_node.name, "vacuum")
                         local below_2_vac = minetest.get_item_group(below_2_node.name, "vacuum")
 
+                        local cur_grav = otherworlds.gravity.get(player)
                         local dist = get_distance(_pos, pos)
-                        local dist_mod = dist * 0.005 -- modifier based on distance
-                        local new_grav = g_grav - dist_mod -- subtract modifier from gravity
+                        local scalor = 0.001 -- scaler for modifier
+                        local dist_mod = (dist ^ 2) * scalor * 0.2 -- modifier based on distance
+                        local max_grav = math.min(g_grav - dist_mod, 1)
+                        local new_grav = math.max(max_grav, cur_grav) -- subtract modifier from gravity
 
-                        if (below_1_atmos == 0 or below_2_atmos == 0) or (below_1_vac == 0 or below_2_vac == 0) then
-                            otherworlds.gravity.xset(player, new_grav)
-                            players_near_gen[name] = player
+                        if (below_1_atmos == 0 or below_2_atmos == 0) and (below_1_vac == 0 or below_2_vac == 0) then
+                            if not current or new_grav > current.gravity then
+                                otherworlds.gravity.xset(player, new_grav)
+                                players_near_gen[name] = {
+                                    player = player,
+                                    gravity = new_grav,
+                                    last_check = os.clock(),
+                                    distance = dist
+                                }
+                                minetest.log(dump(players_near_gen[name]))
+                            end
                         end
                     end
                 end
@@ -82,7 +100,7 @@ local timer = 0
 minetest.register_globalstep(function(dtime)
     timer = timer + dtime
 
-    if timer < 2 then
+    if timer < 3 then
         return
     end
 
@@ -93,7 +111,7 @@ minetest.register_globalstep(function(dtime)
         local pos = player:get_pos()
         local current = players_near_gen[name] or nil
 
-        local node = minetest.find_node_near(pos, gen_dist, "group:gravity_gen")
+        local node = minetest.find_node_near(pos, gen_dist * 0.5, "group:gravity_gen")
 
         if node then
             -- center node
@@ -107,12 +125,13 @@ minetest.register_globalstep(function(dtime)
                 -- nearby grav gen..
                 otherworlds.gravity.reset(player)
                 players_near_gen[name] = nil
-            elseif current ~= nil and pos.y - 1 < node.y and get_distance(node, pos_center) >= 5 then
-                -- check if beyond lessor y
-                otherworlds.gravity.reset(player)
-                players_near_gen[name] = nil
             elseif (current == nil) then
-                players_near_gen[name] = player
+                players_near_gen[name] = {
+                    player = player,
+                    gravity = 0,
+                    last_check = os.clock(),
+                    distance = 0
+                }
             end
         elseif current ~= nil then
             otherworlds.gravity.reset(player)
