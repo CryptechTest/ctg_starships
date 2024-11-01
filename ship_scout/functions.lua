@@ -116,8 +116,7 @@ function ship_scout.engine_do_jump(pos, dest, size, jump_callback, dest_offset)
     local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
 
     if #nodes == 1 then
-        ship_machine.perform_jump(nodes[1], dest, size, jump_callback, dest_offset)
-        return
+        return ship_machine.perform_jump(nodes[1], dest, size, jump_callback, dest_offset)
     end
 
     jump_callback(-3)

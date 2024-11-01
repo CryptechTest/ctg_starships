@@ -669,12 +669,14 @@ local function do_jump(pos, dest, size, jcb, offset)
     })
 
     if check_engines_charged(pos, size) == true then
-        digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', {
-            command = 'jumping'
-        })
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_prepare')
         local dist = vector.distance(pos, dest)
         engines_charged_spend(pos, dist, size)
         ship_machine.transport_jumpship(pos, dest, size, owner, offset)
+        digilines.receptor_send(dest, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_complete')
+        minetest.after(20, function()
+            digilines.receptor_send(dest, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_complete')
+        end)
         jcb(1)
         return
     end
