@@ -145,10 +145,16 @@ function ship_engine.register_engine(data)
         end
         while true do
             local enabled = meta:get_int("enabled") == 1
-            local has_mese = ship_engine.get_mese(inv:get_list("src"), false) ~= nil
             local chrg = meta:get_int('last_input_type')
             local xclear = meta:get_int("exhaust_clear") >= 1
 
+            if not powered then
+                technic.swap_node(pos, machine_node)
+                meta:set_string("infotext", machine_desc_tier .. S(" Not Powered"))
+                return
+            end
+
+            local has_mese = ship_engine.get_mese(inv:get_list("src"), false) ~= nil
             if (not enabled) then
                 technic.swap_node(pos, machine_node)
                 meta:set_string("infotext", machine_desc_tier .. S(" Disabled"):format())
@@ -175,7 +181,7 @@ function ship_engine.register_engine(data)
             end
 
             if not has_mese then
-                digilines.receptor_send(pos, digilines.rules.default, "ship_engine", "request_mese")
+                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine", "request_mese")
             end
 
             local needs_charge = ship_engine.needs_charge(pos)
@@ -247,12 +253,6 @@ function ship_engine.register_engine(data)
 
             meta:set_int(tier .. "_EU_demand", machine_demand[EU_upgrade + 1])
             meta:set_string("infotext", machine_desc_tier .. S(" Active - Charging"))
-
-            if not powered then
-                technic.swap_node(pos, machine_node)
-                meta:set_string("infotext", machine_desc_tier .. S(" Not Powered"))
-                return
-            end
 
             if meta:get_int("src_time") < round(time_scl * 10) then
                 if not powered then
