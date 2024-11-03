@@ -742,6 +742,9 @@ function ship_weapons.register_missile_tower(data)
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
             remove_attached(pos)
+            if data.tube then
+                pipeworks.after_dig(pos)
+            end
             return technic.machine_after_dig_node
         end,
         -- on_rotate = screwdriver.disallow,
@@ -808,6 +811,9 @@ function ship_weapons.register_missile_tower(data)
             end
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
+            if data.tube then
+                pipeworks.after_dig(pos)
+            end
             remove_attached(pos)
             return technic.machine_after_dig_node
         end,

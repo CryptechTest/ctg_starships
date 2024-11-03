@@ -625,6 +625,26 @@ function ship_machine.register_chem_lab(custom_data)
         drawtype = "nodebox",
         paramtype = "light",
 
+        node_box = {
+            type = "fixed",
+            fixed = {
+                {-0.46875, -0.5, -0.46875, 0.5, 0.46875, 0.5}, -- base
+                {0.0625, -0.5, -0.5, 0.5, 0.5, -0.4375}, -- front_r
+                {-0.5, -0.5, -0.5, 0.5, -0.125, -0.4375}, -- front_bottom
+                {-0.5, -0.5, 0.0625, -0.4375, 0.5, 0.5}, -- left
+                {-0.5, -0.5, -0.5, -0.4375, -0.125, 0.5}, -- left_bottom
+                {0.0625, 0.4375, -0.46875, 0.5, 0.5, 0.5}, -- top_0
+                {-0.4375, 0.4375, 0.0625, 0.0625, 0.5, 0.5}, -- top_1
+                {-0.1875, 0.4375, -0.1875, 0.0625, 0.5, 0.0625}, -- top_m
+            }
+        },
+        selection_box = {
+            type = "fixed",
+            fixed = {
+                {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5}, -- col_base
+            }
+        },
+
         sounds = default.node_sound_metal_defaults(),
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             if data.tube then
@@ -673,8 +693,8 @@ function ship_machine.register_chem_lab(custom_data)
                 end
             },
             effector = {
-                action = function()
-                end
+                rules = technic.digilines.rules_allfaces,
+                action = ship_machine.chem_lab_digiline_effector
             }
         }
     })
@@ -695,6 +715,26 @@ function ship_machine.register_chem_lab(custom_data)
         legacy_facedir_simple = true,
         drawtype = "nodebox",
         paramtype = "light",
+        
+        node_box = {
+            type = "fixed",
+            fixed = {
+                {-0.46875, -0.5, -0.46875, 0.5, 0.46875, 0.5}, -- base
+                {0.0625, -0.5, -0.5, 0.5, 0.5, -0.4375}, -- front_r
+                {-0.5, -0.5, -0.5, 0.5, -0.125, -0.4375}, -- front_bottom
+                {-0.5, -0.5, 0.0625, -0.4375, 0.5, 0.5}, -- left
+                {-0.5, -0.5, -0.5, -0.4375, -0.125, 0.5}, -- left_bottom
+                {0.0625, 0.4375, -0.46875, 0.5, 0.5, 0.5}, -- top_0
+                {-0.4375, 0.4375, 0.0625, 0.0625, 0.5, 0.5}, -- top_1
+                {-0.1875, 0.4375, -0.1875, 0.0625, 0.5, 0.0625}, -- top_m
+            }
+        },
+        selection_box = {
+            type = "fixed",
+            fixed = {
+                {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5}, -- col_base
+            }
+        },
 
         sounds = default.node_sound_metal_defaults(),
         after_place_node = function(pos, placer, itemstack, pointed_thing)
@@ -724,8 +764,8 @@ function ship_machine.register_chem_lab(custom_data)
                 end
             },
             effector = {
-                action = function()
-                end
+                rules = technic.digilines.rules_allfaces,
+                action = ship_machine.chem_lab_digiline_effector
             }
         }
     })
