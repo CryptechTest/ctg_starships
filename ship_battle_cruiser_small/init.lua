@@ -3,7 +3,7 @@ local S = minetest.get_translator(minetest.get_current_modname())
 ship_battle_cruiser_small = {}
 
 ship_battle_cruiser_small.size = {
-    w = 28,
+    w = 30,
     h = 16,
     l = 18
 }
