@@ -480,7 +480,7 @@ function ship_weapons.register_missile_tower(data)
     local run = function(pos, node)
         local meta = minetest.get_meta(pos)
         local owner = meta:get_string("owner")
-        local operator = minetest.get_player_by_name(owner);
+        --local operator = minetest.get_player_by_name(owner);
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
 
@@ -581,7 +581,7 @@ function ship_weapons.register_missile_tower(data)
                                            calculateNewPoint(pos, dir, digiline_data.power, digiline_data.pitch,
                             digiline_data.yaw)
                     -- minetest.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
-                    if ship_weapons.missile_launch(proj_def, operator, pos, target_pos, nil) then
+                    if ship_weapons.missile_launch(proj_def, owner, pos, target_pos, nil) then
                         bFoundTarget = true;
                     end
                     if bFoundTarget then
@@ -621,7 +621,7 @@ function ship_weapons.register_missile_tower(data)
                                 -- objects...
                                 local item1 = obj:get_luaentity().itemstring
                                 -- local obj2 = minetest.add_entity(exit, "__builtin:item")
-                                if ship_weapons.missile_strike(proj_def, operator, pos, obj_pos, obj) then
+                                if ship_weapons.missile_strike(proj_def, owner, pos, obj_pos, obj) then
                                     bFoundTarget = true;
                                     nTargetCount = nTargetCount + 1
                                 end
@@ -629,7 +629,7 @@ function ship_weapons.register_missile_tower(data)
                             elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
                                 -- monsters
                                 if ent.type == "monster" and (attack_type == 2 or attack_type == 3 or attack_type == 5) then
-                                    if ship_weapons.missile_strike(proj_def, operator, pos, obj_pos, obj) then
+                                    if ship_weapons.missile_strike(proj_def, owner, pos, obj_pos, obj) then
                                         bFoundTarget = true;
                                         nTargetCount = nTargetCount + 1
                                     end
@@ -639,7 +639,7 @@ function ship_weapons.register_missile_tower(data)
                             local name = obj:get_player_name()
                             -- players
                             if name ~= meta:get_string("owner") and not ship_weapons.is_member(meta, name) then
-                                if ship_weapons.missile_strike(proj_def, operator, pos, obj_pos, obj) then
+                                if ship_weapons.missile_strike(proj_def, owner, pos, obj_pos, obj) then
                                     bFoundTarget = true;
                                     nTargetCount = nTargetCount + 1
                                 end
