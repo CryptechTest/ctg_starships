@@ -15,7 +15,6 @@ dofile(default_path .. DIR_DELIM .. "digilines.lua")
 dofile(default_path .. DIR_DELIM .. "functions.lua")
 dofile(default_path .. DIR_DELIM .. "shipyard_bay.lua")
 dofile(default_path .. DIR_DELIM .. "shipyard.lua")
-dofile(default_path .. DIR_DELIM .. "protect.lua")
 dofile(default_path .. DIR_DELIM .. "chest.lua")
 
 
@@ -24,5 +23,7 @@ ship_machine.register_jumpship({
     machine_name = "jump_drive",
     machine_desc = "Jump Drive - Shipyard Station",
     typename = "jump_drive",
-    size = shipyard.size
+    do_protect = true,
+    size = shipyard.size,
+    hp = 200000,
 })

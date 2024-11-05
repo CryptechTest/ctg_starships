@@ -14,14 +14,14 @@ local default_path = minetest.get_modpath("ship_cargo")
 dofile(default_path .. DIR_DELIM .. "functions.lua")
 dofile(default_path .. DIR_DELIM .. "digilines.lua")
 dofile(default_path .. DIR_DELIM .. "cargo_cruiser.lua")
-dofile(default_path .. DIR_DELIM .. "protect.lua")
 
 ship_cargo.register_cruiser({
     typename = "ship_cargo",
     modname = "ship_cargo",
     machine_name = "cruiser",
     jump_dist = 8000,
-    size = ship_cargo.size
+    size = ship_cargo.size,
+    hp = 25000,
 });
 
 if minetest.get_modpath("ship_machine") then
@@ -30,6 +30,8 @@ if minetest.get_modpath("ship_machine") then
         machine_name = "jump_drive_cargo_cruiser",
         machine_desc = "Jump Drive Allocator",
         typename = "jump_drive",
-        size = ship_cargo.size
+        do_protect = true,
+        size = ship_cargo.size,
+        hp = 25000,
     })
 end

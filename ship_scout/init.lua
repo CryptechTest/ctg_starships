@@ -19,14 +19,14 @@ local default_path = minetest.get_modpath("ship_scout")
 dofile(default_path .. DIR_DELIM .. "functions.lua")
 dofile(default_path .. DIR_DELIM .. "digilines.lua")
 dofile(default_path .. DIR_DELIM .. "scout.lua")
-dofile(default_path .. DIR_DELIM .. "protect.lua")
 
 ship_scout.register_scout({
     typename = "ship_scout",
     modname = "ship_scout",
     machine_name = "scout",
     jump_dist = 2000,
-    size = ship_scout.proto_size
+    size = ship_scout.proto_size,
+    hp = 5000,
 });
 
 if minetest.get_modpath("ship_machine") then
@@ -47,6 +47,8 @@ if minetest.get_modpath("ship_machine") then
         machine_name = "jump_drive_scout",
         machine_desc = "Jump Drive Allocator",
         typename = "jump_drive",
-        size = ship_scout.proto_size
+        do_protect = true,
+        size = ship_scout.proto_size,
+        hp = 5000,
     })
 end

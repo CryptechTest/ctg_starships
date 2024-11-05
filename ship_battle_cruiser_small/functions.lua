@@ -5,8 +5,9 @@ local function round(v)
 end
 
 function ship_battle_cruiser_small.update_formspec(pos, data, loc, ready, message)
+    local meta = minetest.get_meta(pos)
     local machine_name = data.machine_name
-    local machine_desc = "Starship Navigation Interface"
+    local machine_desc = data.machine_desc .. " - Navigation Interface"
     local typename = data.typename
     local tier = data.tier
     local ltier = string.lower(tier)
@@ -24,6 +25,18 @@ function ship_battle_cruiser_small.update_formspec(pos, data, loc, ready, messag
     if typename == 'ship_battle_cruiser_small' then
 
         local bg = "image[0,0.5;9.78,6.5;starfield_2.png]image[5,3.25;2.2,0.88;bg2.png]"
+
+        local combat_migration_done = meta:get_int("combat_ready") and meta:get_int("combat_ready") > 0 or false
+        local combat_migration = combat_migration_done == false and "button[4,5;3,1;submit_migr;Combat Migration]" or ""
+
+        local shipp = ship_battle_cruiser_small.get_protector(pos, data.size)
+        local ship_meta = minetest.get_meta(shipp)
+
+        local ship_hp_max = ship_meta:get_int("hp_max") or 1000
+        local ship_hp = ship_meta:get_int("hp") or 1000
+        local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
+        local hp_tag = "image[5.0,1.2;2.2,0.9;bg2.png]" .. "label[5.1,1.2;Hit Points]"
+        local hit_points = hp_tag .. "label[5.5,1.5;"..tostring(ship_hp_prcnt).."%]"
 
         local icon_fan = "image[5,1;1,1;icon_fan.png]"
         local icon_env = "image[6,1;1,1;icon_life_support.png]"
@@ -88,13 +101,12 @@ function ship_battle_cruiser_small.update_formspec(pos, data, loc, ready, messag
         if is_deepspace then
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. img_ship .. img_hole_1 ..
-                           img_hole_2 .. img_hole_3 .. img_hole_4 .. nav_label .. icon_fan .. icon_env .. icon_eng ..
-                           icon_lit .. busy .. message
+                           img_hole_2 .. img_hole_3 .. img_hole_4 .. nav_label .. hit_points .. busy .. combat_migration .. message
         else
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav --[[.. btn_doc]] .. img_ship ..
-                           coords_label .. input_field .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit ..
-                           busy .. message
+                           coords_label .. input_field .. nav_label .. hit_points ..
+                           busy .. combat_migration .. message
         end
     end
 

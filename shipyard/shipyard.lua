@@ -14,6 +14,7 @@ function shipyard.register_shipyard()
     data.machine_name = "shipyard"
     data.jump_dist = 15000
     data.size = shipyard.size;
+    data.hp = 200000
 
     local modname = "shipyard"
     local ltier = string.lower(data.tier)
@@ -42,6 +43,22 @@ function shipyard.register_shipyard()
         local node = minetest.get_node(pos)
         local meta = minetest.get_meta(pos)
 
+        if fields.submit_migr then
+            local shipp = shipyard.get_protector(pos, data.size)
+            if shipp then
+                meta:set_int("combat_ready", 1)
+                local ship_meta = minetest.get_meta(shipp)
+                ship_meta:set_int("combat_ready", 1)
+                ship_meta:set_int("hp_max", data.hp)
+                ship_meta:set_int("hp", data.hp)
+            end
+            local ready = meta:get_int("travel_ready")
+            local message = "Combat Ready!"
+            local formspec = shipyard.update_formspec(pos, data, 0, ready, message)
+            meta:set_string("formspec", formspec)
+            return
+        end
+
         local enabled = false
         if fields.toggle then
             if meta:get_int("enabled") == 1 then
@@ -55,7 +72,7 @@ function shipyard.register_shipyard()
         if fields.protector then
             local prot_loc = shipyard.get_protector(pos, data.size)
             if prot_loc then
-                shipyard.rightclick(prot_loc, sender)
+                minetest.registered_nodes[minetest.get_node(prot_loc).name].on_rightclick(prot_loc, node, sender, nil)
             end
             return
         end
@@ -261,7 +278,7 @@ function shipyard.register_shipyard()
         on_punch = function(pos, node, puncher)
             local drive_loc = shipyard.get_jumpdrive(pos, data.size)
             if drive_loc then
-                shipyard.punch(drive_loc, node, puncher)
+                minetest.registered_nodes[minetest.get_node(drive_loc).name].on_punch(drive_loc, node, puncher)
             end
         end,
         --[[can_dig = function(pos, player)

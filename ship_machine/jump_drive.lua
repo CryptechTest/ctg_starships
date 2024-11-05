@@ -1,26 +1,17 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
-local time_scl = 50
-
 local function round(v)
     return math.floor(v + 0.5)
 end
 
-local function needs_charge(pos)
-    local meta = minetest.get_meta(pos)
-    local charge = meta:get_int("charge")
-    local charge_max = meta:get_int("charge_max")
-    return charge < charge_max
-end
-
 function ship_machine.register_jumpship(data)
-    --data.modname = "ship_machine"
+    -- data.modname = "ship_machine"
     -- data.machine_name = "jump_drive"
     -- data.machine_desc = "Jump Drive Allocator"
     -- data.typename = "jump_drive"
-    data.jump_distance = 1
-    data.speed = 1
-    data.tier = "LV"
+
+    data.tier = data.tier or "LV"
+    data.hp = data.hp or 1000
 
     local texture_active = {
         image = data.machine_name .. "_active.png",
@@ -62,11 +53,12 @@ function ship_machine.register_jumpship(data)
             return technic.machine_after_dig_node
         end,
         on_rotate = screwdriver.disallow,
-        --can_dig = technic.machine_can_dig,
+        -- can_dig = technic.machine_can_dig,
         can_dig = function(pos, player)
             local is_admin = player:get_player_name() == "squidicuzz"
             return player and is_admin
         end,
+        --on_blast = function() end,
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
@@ -89,13 +81,13 @@ function ship_machine.register_jumpship(data)
                 return
             end
             local meta = minetest.get_meta(pos)
-            if fields.setup then            
+            if fields.setup then
                 local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
                 meta:set_string("formspec", formspec)
             end
             local is_admin = sender:get_player_name() == "squidicuzz"
             if not is_admin then
-                --meta:set_string("formspec", '')
+                -- meta:set_string("formspec", '')
                 return
             end
             local node = minetest.get_node(pos)
@@ -181,4 +173,12 @@ function ship_machine.register_jumpship(data)
             }
         }
     })
+
+    if data.do_protect then
+        ship_machine.register_jumpship_protect({
+            modname = data.modname,
+            size = data.size,
+            hp = data.hp
+        })
+    end
 end

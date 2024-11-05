@@ -34,7 +34,9 @@ minetest.register_node("ship_machine:coolant_source", {
     liquidtype = "source",
     liquid_alternative_flowing = "ship_machine:coolant_flowing",
     liquid_alternative_source = "ship_machine:coolant_source",
+	liquid_renewable = false,
     liquid_viscosity = 3,
+	liquid_range = 1,
     post_effect_color = {
         a = 103,
         r = 254,
@@ -88,7 +90,9 @@ minetest.register_node("ship_machine:coolant_flowing", {
     liquidtype = "flowing",
     liquid_alternative_flowing = "ship_machine:coolant_flowing",
     liquid_alternative_source = "ship_machine:coolant_source",
+	liquid_renewable = false,
     liquid_viscosity = 3,
+	liquid_range = 1,
     post_effect_color = {
         a = 103,
         r = 254,

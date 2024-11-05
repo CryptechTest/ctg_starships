@@ -5,8 +5,9 @@ local function round(v)
 end
 
 function shipyard.update_formspec(pos, data, loc, ready, message)
+    local meta = minetest.get_meta(pos)
     local machine_name = data.machine_name
-    local machine_desc = "Starship Navigation Interface"
+    local machine_desc = data.machine_desc .. " - Navigation Interface"
     local typename = data.typename
     local tier = data.tier
     local ltier = string.lower(tier)
@@ -17,6 +18,9 @@ function shipyard.update_formspec(pos, data, loc, ready, message)
     if typename == 'shipyard' then
 
         local bg = "image[0,0.5;9.78,6.5;starfield_2.png]image[5,3.25;2.2,0.88;bg2.png]"
+
+        local combat_migration_done = meta:get_int("combat_ready") > 0 or 0
+        local combat_migration = (combat_migration_done == false and "button[4,5.25;3,1;submit_migr;Combat Migration]") or ""
 
         local icon_fan = "image[5,1;1,1;icon_fan.png]"
         local icon_env = "image[6,1;1,1;icon_life_support.png]"

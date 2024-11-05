@@ -86,6 +86,7 @@ ship_machine.register_jumpship({
     machine_name = "jump_drive",
     machine_desc = "Jump Drive Allocator",
     typename = "jump_drive",
+    do_protect = false,
     size = {
         w = 12,
         h = 12,
@@ -99,6 +100,7 @@ ship_machine.register_jumpship({
     machine_name = "jump_drive_spawn",
     machine_desc = "Jump Drive - Orbital Station",
     typename = "jump_drive_spawn",
+    do_protect = false,
     size = {
         w = 171,
         h = 56,

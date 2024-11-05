@@ -42,6 +42,22 @@ function ship_scout.register_scout(custom_data)
         local node = minetest.get_node(pos)
         local meta = minetest.get_meta(pos)
 
+        if fields.submit_migr then
+            local shipp = ship_scout.get_protector(pos, data.size)
+            if shipp then
+                meta:set_int("combat_ready", 1)
+                local ship_meta = minetest.get_meta(shipp)
+                ship_meta:set_int("combat_ready", 1)
+                ship_meta:set_int("hp_max", data.hp)
+                ship_meta:set_int("hp", data.hp)
+            end
+            local ready = meta:get_int("travel_ready")
+            local message = "Combat Ready!"
+            local formspec = ship_scout.update_formspec(pos, data, 0, ready, message)
+            meta:set_string("formspec", formspec)
+            return
+        end
+
         local jpos = ship_scout.get_jumpdrive(pos, data.size)
 
         if jpos == nil then
@@ -64,7 +80,8 @@ function ship_scout.register_scout(custom_data)
         if fields.protector then
             local prot_loc = ship_machine.get_protector(pos, data.size)
             if prot_loc then
-                ship_scout.rightclick(prot_loc, sender)
+                minetest.registered_nodes[minetest.get_node(prot_loc).name].on_rightclick(prot_loc, node, sender, nil)
+                --ship_scout.rightclick(prot_loc, sender)
             end
             return
         end
@@ -338,7 +355,7 @@ function ship_scout.register_scout(custom_data)
         on_punch = function(pos, node, puncher)
             local drive_loc = ship_scout.get_jumpdrive(pos, data.size)
             if drive_loc then
-                ship_scout.punch(drive_loc, node, puncher)
+                minetest.registered_nodes[minetest.get_node(drive_loc).name].on_punch(drive_loc, node, puncher)
             end
         end,
         --[[can_dig = function(pos, player)

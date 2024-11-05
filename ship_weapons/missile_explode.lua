@@ -13,9 +13,12 @@ minetest.register_on_mods_loaded(function()
 	for name, def in pairs(minetest.registered_nodes) do
 		cid_data[minetest.get_content_id(name)] = {
 			name = name,
+			groups = def.groups,
+			drop = def.drop,
 			drops = def.drops,
 			flammable = def.groups.flammable,
 			on_blast = def.on_blast,
+			tube = (def.tube ~= nil and true) or false,
 		}
 	end
 end)
@@ -126,30 +129,42 @@ local function destroy(drops, npos, cid, c_air, c_fire,
 	end
 end
 
-local function destroy_safe(drops, npos, cid, c_air, c_fire,
-	on_blast_queue, on_construct_queue,
-	ignore_protection, ignore_on_blast, owner)
-	if not ignore_protection and minetest.is_protected(npos, owner) then
-		--return cid
-	end
-
+local function destroy_safe(drops, npos, cid, c_air, c_fire, on_blast_queue, on_construct_queue, ignore_protection, ignore_on_blast, owner)
 	local def = cid_data[cid]
-
 	local stor = {
 		pos = npos,
-		cid = cid,
-		name = def.name
+		name = def.name,
+		param1 = nil,
+		param2 = nil,
+		tube = def.tube,
+		meta = {}
 	}
+
+	if def.groups['not_in_creative_inventory'] then
+		if def.drop then
+			stor.name = def.drop
+		end
+	end
+
+	local function get_stor(npos, sto)
+		local node = minetest.get_node(npos)
+		sto.param1 = node.param1 ~= 0 and node.param1 or nil
+		sto.param2 = node.param2 ~= 0 and node.param2 or nil
+		sto.meta = minetest.get_meta(npos):to_table()
+		return sto
+	end
 
 	if not def then
 		return c_air, nil
 	elseif not ignore_on_blast and def.on_blast then
+		stor = get_stor(npos, stor)
 		on_blast_queue[#on_blast_queue + 1] = {
 			pos = vector.new(npos),
 			on_blast = def.on_blast
 		}
 		return cid, stor
 	elseif def.flammable then
+		stor = get_stor(npos, stor)
 		on_construct_queue[#on_construct_queue + 1] = {
 			fn = basic_flame_on_construct,
 			pos = vector.new(npos)
@@ -158,6 +173,7 @@ local function destroy_safe(drops, npos, cid, c_air, c_fire,
     elseif is_atmos(def.name) then
         return c_air, nil
 	else
+		stor = get_stor(npos, stor)
 		local node_drops = minetest.get_node_drops(def.name, "")
 		for _, item in pairs(node_drops) do
 			add_drop(drops, item)
@@ -500,11 +516,11 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	end
 
 	local ship_meta = minetest.get_meta(shipp)
-	local size = {
-		w = ship_meta:get_int("p_width") or 1, 
-		l = ship_meta:get_int("p_length") or 1, 
-		h = ship_meta:get_int("p_height") or 1,
-	}
+
+	local ship_combat_ready = ship_meta:get_int("combat_ready") > 0
+	local ship_hp_max = ship_meta:get_int("hp_max") or 1000
+	local ship_hp = ship_meta:get_int("hp") or 1000
+	local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
 
 	-- perform the explosion
 	local vm = VoxelManip()
@@ -519,6 +535,8 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	local on_construct_queue = {}
 	basic_flame_on_construct = minetest.registered_nodes["fire:basic_flame"].on_construct
 
+	local dam_thres = 60
+	local hit_damage = 0
 	local n_hits = {}
 	local c_fire = minetest.get_content_id("fire:basic_flame")
 	for z = -radius, radius do
@@ -531,11 +549,16 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 			local p = {x = pos.x + x, y = pos.y + y, z = pos.z + z}
 			if cid ~= c_air and cid ~= c_ignore then
 				local n_hit = nil
-				data[vi], n_hit = destroy_safe(drops, p, cid, c_air, c_fire,
-					on_blast_queue, on_construct_queue,
-					ignore_protection, ignore_on_blast, owner)
-				if n_hit ~= nil and n_hit.name then
-					table.insert(n_hits, n_hit)
+				local dcid = nil
+				dcid, n_hit = destroy_safe(drops, p, cid, c_air, c_fire, on_blast_queue, on_construct_queue, ignore_protection, ignore_on_blast, owner)
+				if n_hit ~= nil then
+					hit_damage = hit_damage + 1
+				end
+				if ship_combat_ready and ship_hp_prcnt < dam_thres then
+					data[vi] = dcid
+					if n_hit ~= nil and n_hit.name then
+						table.insert(n_hits, n_hit)
+					end
 				end
 			end
 		end
@@ -544,23 +567,31 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	end
 	end
 
-	vm:set_data(data)
-	vm:write_to_map()
-	vm:update_map()
-	vm:update_liquids()
+	if ship_combat_ready and ship_hp_prcnt < dam_thres then
+		vm:set_data(data)
+		vm:write_to_map()
+		vm:update_map()
+		vm:update_liquids()
 
-	-- get node hit storage
-	local hits = minetest.deserialize(ship_meta:get_string("node_damage_list")) or {}
-	-- check node hit list
-	for _, hit in pairs(n_hits) do
-		local o_pos = vector.subtract(hit.pos, shipp)
-		local p_hit = {
-			pos = o_pos,
-			name = hit.name
-		}
-		table.insert(hits, p_hit)
+		-- get node hit storage
+		local hits = minetest.deserialize(ship_meta:get_string("node_damage_list")) or {}
+		-- check node hit list
+		for _, hit in pairs(n_hits) do
+			local o_pos = vector.subtract(hit.pos, shipp)
+			hit.pos = o_pos
+			table.insert(hits, hit)
+		end
+		ship_meta:set_string("node_damage_list", minetest.serialize(hits))
+
+	else
+		drops = {}
+
 	end
-	ship_meta:set_string("node_damage_list", minetest.serialize(hits))
+
+	if ship_combat_ready and ship_hp > 0 then
+		ship_hp = ship_hp - hit_damage
+		ship_meta:set_int("hp", ship_hp)
+	end
 
 	-- call check_single_for_falling for everything within 1.5x blast radius
 	for y = -radius * 1.5, radius * 1.5 do
@@ -576,19 +607,21 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	end
 	end
 
-	for _, queued_data in pairs(on_blast_queue) do
-		local dist = math.max(1, vector.distance(queued_data.pos, pos))
-		local intensity = (radius * radius) / (dist * dist)
-		local node_drops = queued_data.on_blast(queued_data.pos, intensity)
-		if node_drops then
-			for _, item in pairs(node_drops) do
-				add_drop(drops, item)
+	if ship_combat_ready and ship_hp_prcnt < dam_thres then
+		for _, queued_data in pairs(on_blast_queue) do
+			local dist = math.max(1, vector.distance(queued_data.pos, pos))
+			local intensity = (radius * radius) / (dist * dist)
+			local node_drops = queued_data.on_blast(queued_data.pos, intensity)
+			if node_drops then
+				for _, item in pairs(node_drops) do
+					add_drop(drops, item)
+				end
 			end
 		end
-	end
 
-	for _, queued_data in pairs(on_construct_queue) do
-		queued_data.fn(queued_data.pos)
+		for _, queued_data in pairs(on_construct_queue) do
+			queued_data.fn(queued_data.pos)
+		end
 	end
 
 	minetest.log("action", "MISSILE owned by " .. owner .. " detonated at " ..

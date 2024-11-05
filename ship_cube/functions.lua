@@ -5,8 +5,9 @@ local function round(v)
 end
 
 function ship_cube.update_formspec(pos, data, loc, ready, message)
+    local meta = minetest.get_meta(pos)
     local machine_name = data.machine_name
-    local machine_desc = "Starship Navigation Interface"
+    local machine_desc = data.machine_desc .. " - Navigation Interface"
     local typename = data.typename
     local tier = data.tier
     local ltier = string.lower(tier)
@@ -24,6 +25,9 @@ function ship_cube.update_formspec(pos, data, loc, ready, message)
     if typename == 'ship_cube' then
 
         local bg = "image[0,0.5;9.78,6.5;starfield_2.png]image[5,3.25;2.2,0.88;bg2.png]"
+
+        local combat_migration_done = meta:get_int("combat_ready") > 0 or 0
+        local combat_migration = not combat_migration_done and "button[4,5.25;3,1;submit_migr;Combat Migration]" or ""
 
         local icon_fan = "image[5,1;1,1;icon_fan.png]"
         local icon_env = "image[6,1;1,1;icon_life_support.png]"
@@ -89,12 +93,12 @@ function ship_cube.update_formspec(pos, data, loc, ready, message)
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. img_ship .. img_hole_1 ..
                            img_hole_2 .. img_hole_3 .. img_hole_4 .. nav_label .. icon_fan .. icon_env .. icon_eng ..
-                           icon_lit .. busy .. message
+                           icon_lit .. busy .. combat_migration .. message
         else
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav --[[.. btn_doc]] .. img_ship ..
                            coords_label .. input_field .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit ..
-                           busy .. message
+                           busy .. combat_migration .. message
         end
     end
 
