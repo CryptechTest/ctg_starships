@@ -95,9 +95,7 @@ local function add_drop(drops, item)
 end
 
 local basic_flame_on_construct -- cached value
-local function destroy(drops, npos, cid, c_air, c_fire,
-		on_blast_queue, on_construct_queue,
-		ignore_protection, ignore_on_blast, owner)
+local function destroy(drops, npos, cid, c_air, c_fire, on_blast_queue, on_construct_queue, ignore_protection, ignore_on_blast, owner)
 	if not ignore_protection and minetest.is_protected(npos, owner) then
 		return cid
 	end
@@ -589,7 +587,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	end
 
 	if ship_combat_ready and ship_hp > 0 then
-		ship_hp = ship_hp - hit_damage
+		ship_hp = ship_hp - math.floor(hit_damage * radius)
 		ship_meta:set_int("hp", ship_hp)
 	end
 
