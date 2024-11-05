@@ -36,7 +36,7 @@ function ship_battle_cruiser_small.update_formspec(pos, data, loc, ready, messag
         local ship_hp = ship_meta:get_int("hp") or 1000
         local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
         local hp_tag = "image[5.0,1.2;2.2,0.9;bg2.png]" .. "label[5.1,1.2;Hit Points]"
-        local hit_points = hp_tag .. "label[5.5,1.5;"..tostring(ship_hp_prcnt).."%]"
+        local hit_points = hp_tag .. "label[5.5,1.5;"..string.format("%.2f", ship_hp_prcnt).."%]"
 
         local icon_fan = "image[5,1;1,1;icon_fan.png]"
         local icon_env = "image[6,1;1,1;icon_life_support.png]"
