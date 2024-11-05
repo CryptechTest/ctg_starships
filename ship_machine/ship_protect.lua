@@ -417,7 +417,7 @@ local function register_ship_protect(def)
         }
     }
 
-    function def.rightclick(pos, clicker)
+    function def.rightclick(pos, node, clicker, itemstack)
         local meta = minetest.get_meta(pos)
         local name = clicker:get_player_name()
         local s = {
