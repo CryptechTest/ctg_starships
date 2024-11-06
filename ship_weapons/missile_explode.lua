@@ -264,7 +264,47 @@ local function entity_physics(pos, radius, drops)
 	end
 end
 
-local function add_effects(pos, radius, drops)
+local function add_effects_hit_shield(pos, radius)
+	minetest.add_particlespawner({
+		amount = 5,
+		time = 0.4,
+		minpos = vector.subtract(pos, radius / 2),
+		maxpos = vector.add(pos, radius / 2),
+		minvel = {x = -0.1, y = -0.1, z = -0.1},
+		maxvel = {x = 0.1, y = 0.1, z = 0.1},
+		minacc = vector.new(),
+		maxacc = vector.new(),
+		minexptime = 1.1,
+		maxexptime = 2.8,
+		minsize = radius * 3,
+		maxsize = radius * 10,
+        texture = {
+            name = "ctg_shield_hit_effect.png",
+            blend = "alpha",
+            scale = 1,
+            alpha = 0.6,
+            alpha_tween = {0.6, 0.0},
+            scale_tween = {{
+                x = 1,
+                y = 1
+            }, {
+                x = 8,
+                y = 8
+            }}
+        },
+        animation = {
+            type = "vertical_frames",
+            aspect_w = 16,
+            aspect_h = 16,
+            length = 3
+        },
+		vertical = true,
+        collisiondetection = false,
+        glow = 8,
+	})
+end
+
+local function add_effects_hit(pos, radius, drops)
 	minetest.add_particle({
 		pos = pos,
 		velocity = vector.new(),
@@ -515,10 +555,16 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 
 	local ship_meta = minetest.get_meta(shipp)
 
-	local ship_combat_ready = ship_meta:get_int("combat_ready") > 0
+	local ship_combat_ready = ship_meta:get_int("combat_ready") > 1
 	local ship_hp_max = ship_meta:get_int("hp_max") or 1000
 	local ship_hp = ship_meta:get_int("hp") or 1000
 	local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
+	
+	local ship_shield_max = ship_meta:get_int("shield_max") or 1000
+	local ship_shield = ship_meta:get_int("shield") or 1000
+	local ship_shield_prcnt = (ship_shield / ship_shield_max) * 100
+	
+	local ship_shield_hit = ship_meta:get_int("shield_hit") or 0
 
 	-- perform the explosion
 	local vm = VoxelManip()
@@ -533,7 +579,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	local on_construct_queue = {}
 	basic_flame_on_construct = minetest.registered_nodes["fire:basic_flame"].on_construct
 
-	local dam_thres = 60
+	local dam_thres = 1
 	local hit_damage = 0
 	local n_hits = {}
 	local c_fire = minetest.get_content_id("fire:basic_flame")
@@ -552,7 +598,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 				if n_hit ~= nil then
 					hit_damage = hit_damage + 1
 				end
-				if ship_combat_ready and ship_hp_prcnt < dam_thres then
+				if ship_combat_ready and ship_shield_prcnt <= dam_thres then
 					data[vi] = dcid
 					if n_hit ~= nil and n_hit.name then
 						table.insert(n_hits, n_hit)
@@ -565,7 +611,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	end
 	end
 
-	if ship_combat_ready and ship_hp_prcnt < dam_thres then
+	if ship_combat_ready and ship_shield_prcnt <= dam_thres then
 		vm:set_data(data)
 		vm:write_to_map()
 		vm:update_map()
@@ -582,13 +628,25 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 		ship_meta:set_string("node_damage_list", minetest.serialize(hits))
 
 	else
+		add_effects_hit_shield(pos, radius)
 		drops = {}
 
 	end
 
-	if ship_combat_ready and ship_hp > 0 then
-		ship_hp = ship_hp - math.floor(hit_damage * radius)
-		ship_meta:set_int("hp", ship_hp)
+	if ship_combat_ready then
+		ship_shield_hit = ship_shield_hit + math.random(1, 5)
+		ship_meta:set_int("shield_hit", ship_shield_hit)
+		if ship_shield > 0 then
+			ship_shield = ship_shield - math.floor(hit_damage * radius * 5)
+			if ship_shield <= 0 then
+				ship_shield = 0
+			end
+			ship_meta:set_int("shield", ship_shield)
+		end
+		if ship_hp > 0 and ship_shield <= 0 then
+			ship_hp = ship_hp - math.floor(hit_damage * radius * 4)
+			ship_meta:set_int("hp", ship_hp)
+		end
 	end
 
 	-- call check_single_for_falling for everything within 1.5x blast radius
@@ -605,7 +663,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	end
 	end
 
-	if ship_combat_ready and ship_hp_prcnt < dam_thres then
+	if ship_combat_ready and ship_shield_prcnt < dam_thres then
 		for _, queued_data in pairs(on_blast_queue) do
 			local dist = math.max(1, vector.distance(queued_data.pos, pos))
 			local intensity = (radius * radius) / (dist * dist)
@@ -765,7 +823,7 @@ function ship_weapons.safe_boom(pos, def)
 	if not def.disable_drops then
 		eject_drops(drops, pos, radius)
 	end
-	add_effects(pos, radius, drops)
+	add_effects_hit(pos, radius, drops)
 	minetest.log("action", "A SAFE MISSILE explosion occurred at " .. minetest.pos_to_string(pos) ..
 		" with radius " .. radius)
 end
@@ -788,7 +846,7 @@ function ship_weapons.boom(pos, def)
 	if not def.disable_drops then
 		eject_drops(drops, pos, radius)
 	end
-	add_effects(pos, radius, drops)
+	add_effects_hit(pos, radius, drops)
 	minetest.log("action", "A MISSILE explosion occurred at " .. minetest.pos_to_string(pos) ..
 		" with radius " .. radius)
 end

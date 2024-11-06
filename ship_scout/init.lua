@@ -2,16 +2,21 @@ local S = minetest.get_translator(minetest.get_current_modname())
 
 ship_scout = {}
 
-ship_scout.proto_size = {
+local ship_def = {}
+ship_def.proto_name = "Proto-Scout"
+ship_def.proto_size = {
     w = 12,
     h = 12,
     l = 15
 }
-ship_scout.size = {
+ship_def.name = "Scout"
+ship_def.size = {
     w = 15,
     h = 15,
     l = 32
 }
+ship_def.hp = 4000
+ship_def.shield = 2000
 
 -- load files
 local default_path = minetest.get_modpath("ship_scout")
@@ -25,30 +30,21 @@ ship_scout.register_scout({
     modname = "ship_scout",
     machine_name = "scout",
     jump_dist = 2000,
-    size = ship_scout.proto_size,
-    hp = 5000,
+    size = ship_def.proto_size,
+    hp = ship_def.hp,
+    shield = ship_def.shield,
 });
 
 if minetest.get_modpath("ship_machine") then
-    --[[ship_machine.register_jumpship({
-        modname = "ship_scout",
-        machine_name = "jump_drive",
-        machine_desc = "Jump Drive Allocator",
-        typename = "jump_drive",
-        size = {
-            w = 12,
-            h = 12,
-            l = 15
-        }
-    })]] --
-
     ship_machine.register_jumpship({
         modname = "ship_scout",
         machine_name = "jump_drive_scout",
         machine_desc = "Jump Drive Allocator",
         typename = "jump_drive",
         do_protect = true,
-        size = ship_scout.proto_size,
-        hp = 5000,
+        ship_name = ship_def.proto_name,
+        size = ship_def.proto_size,
+        hp = ship_def.hp,
+        shield = ship_def.shield,
     })
 end

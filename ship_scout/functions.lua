@@ -26,13 +26,30 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
 
         local bg = "image[0,0.5;9.78,6.5;starfield_2.png]image[5,3.25;2.2,0.88;bg2.png]"
 
-        local combat_migration_done = meta:get_int("combat_ready") > 0 or 0
-        local combat_migration = not combat_migration_done and "button[4,5.25;3,1;submit_migr;Combat Migration]" or ""
+        local combat_migration_done = meta:get_int("combat_ready") and meta:get_int("combat_ready") > 1 or false
+        local combat_migration = combat_migration_done == false and "button[4,5;3,1;submit_migr;Combat Migration]" or ""
 
-        local icon_fan = "image[5,1;1,1;icon_fan.png]"
-        local icon_env = "image[6,1;1,1;icon_life_support.png]"
-        local icon_eng = "image[5,2;1,1;lv_engine_front_active.png]"
-        local icon_lit = "image[6,2;1,1;icon_light.png]"
+        local shipp = ship_battle_cruiser_small.get_protector(pos, data.size)
+        local ship_meta = minetest.get_meta(shipp)
+
+        -- ship hp
+        local ship_hp_max = ship_meta:get_int("hp_max") or 1
+        local ship_hp = ship_meta:get_int("hp") or 1
+        local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
+        local hp_tag = "image[5.0,1.2;2.2,0.9;bg2.png]" .. "label[5.1,1.2;Hull Integrity]"
+        local hp_col = ship_machine.colorize_text_hp(ship_hp, ship_hp_max)
+        local hp_prcnt_col = minetest.colorize(hp_col, string.format("%.1f", ship_hp_prcnt) .. "%")
+        local hit_points = hp_tag .. "label[5.45,1.55;"..hp_prcnt_col.."]"
+        -- shield
+        local ship_shield_max = ship_meta:get_int("shield_max") or 1
+        local ship_shield = ship_meta:get_int("shield") or 1
+        local ship_shield_prcnt = (ship_shield / ship_shield_max) * 100
+        local shield_tag = "image[5.0,2.0;2.2,0.9;bg2.png]" .. "label[5.1,2.0;Shield Charge]"
+        local shield_col = ship_machine.colorize_text_hp(ship_shield, ship_shield_max)
+        local shield_prcnt_col = minetest.colorize(shield_col, string.format("%.1f", ship_shield_prcnt) .. "%")
+        local shield_points = shield_tag .. "label[5.45,2.35;"..shield_prcnt_col.."]"
+        -- refresh
+        local refresh = "image_button[5.65,-0.225;0.8,0.8;ctg_ship_refresh_btn.png;refresh;;true;false;ctg_ship_refresh_btn_press.png]"
 
         local img_ship = "image[2,2;1,1;starship_icon.png]"
         local img_hole_1 = "image_button[2,1;1,1;space_wormhole1.png;btn_hole_1;;true;false;space_wormhole2.png]" -- top
@@ -92,12 +109,12 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
         if is_deepspace then
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. img_ship .. img_hole_1 ..
-                           img_hole_2 .. img_hole_3 .. img_hole_4 .. nav_label .. icon_fan .. icon_env .. icon_eng ..
-                           icon_lit .. busy .. combat_migration .. message
+                           img_hole_2 .. img_hole_3 .. img_hole_4 .. nav_label .. hit_points .. shield_points ..
+                           busy .. combat_migration .. message
         else
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. btn_doc .. img_ship ..
-                           coords_label .. input_field .. nav_label .. icon_fan .. icon_env .. icon_eng .. icon_lit ..
+                           coords_label .. input_field .. nav_label .. hit_points .. shield_points ..
                            busy .. combat_migration .. message
         end
     end

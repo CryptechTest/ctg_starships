@@ -2,11 +2,15 @@ local S = minetest.get_translator(minetest.get_current_modname())
 
 shipyard = {}
 
-shipyard.size = {
+local ship_def = {}
+ship_def.name = "Shipyard"
+ship_def.size = {
     l = 30,
     h = 42,
     w = 72
 }
+ship_def.hp = 200000
+ship_def.shield = 100000
 
 -- load files
 local default_path = minetest.get_modpath("shipyard")
@@ -24,6 +28,8 @@ ship_machine.register_jumpship({
     machine_desc = "Jump Drive - Shipyard Station",
     typename = "jump_drive",
     do_protect = true,
-    size = shipyard.size,
-    hp = 200000,
+    ship_name = ship_def.name,
+    size = ship_def.size,
+    hp = ship_def.hp,
+    shield = ship_def.shield,
 })

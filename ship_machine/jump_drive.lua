@@ -12,6 +12,7 @@ function ship_machine.register_jumpship(data)
 
     data.tier = data.tier or "LV"
     data.hp = data.hp or 1000
+    data.shield = data.shield or 1000
 
     local texture_active = {
         image = data.machine_name .. "_active.png",
@@ -177,8 +178,10 @@ function ship_machine.register_jumpship(data)
     if data.do_protect then
         ship_machine.register_jumpship_protect({
             modname = data.modname,
+            ship_name = data.ship_name,
             size = data.size,
-            hp = data.hp
+            hp = data.hp,
+            shield = data.shield
         })
     end
 end

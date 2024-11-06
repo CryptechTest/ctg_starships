@@ -56,9 +56,17 @@ local function update_formspec(meta, data)
         end
         local progress_time = "image[5.45,4.5;2.9,1;ctg_gui_progress_bar_bg2.png^[lowpart:" .. tostring(percent) .. ":ctg_gui_progress_bar_fg2.png^[transformR270]]"
 
+        local regen_tick_max = 0
+        if ltier == "lv" then
+            regen_tick_max = 400
+        elseif ltier == "mv" then
+            regen_tick_max = 300
+        elseif  ltier == "hv" then
+            regen_tick_max = 240
+        end
         local percent2 = 0
         if meta:get_int("regen_tick") then
-            percent2 = ((50 - meta:get_int("regen_tick")) / 50) * 100
+            percent2 = ((regen_tick_max - meta:get_int("regen_tick")) / regen_tick_max) * 100
         end
         local progress_tick = "image[5.45,4.8;2.9,1;ctg_gui_progress_bar_bg.png^[lowpart:" .. tostring(percent2) .. ":ctg_gui_progress_bar_fg.png^[transformR270]]"
 
@@ -345,6 +353,13 @@ local function do_repair(src, ship, count, tier)
     if meta_ship:get_string("node_damage_list") == nil then
         return
     end
+    -- recent shield hit check
+    local shield_hit = meta_ship:get_int("shield_hit")
+    if shield_hit > 0 then
+        return
+    end
+    local regened = 0
+    -- get regen node from damage list
     local node_damage_list = minetest.deserialize(meta_ship:get_string("node_damage_list"))
     if node_damage_list and #node_damage_list > 0 then
         local d_count = #node_damage_list
@@ -373,6 +388,7 @@ local function do_repair(src, ship, count, tier)
                 spawn_particle_repair(src, tier)
                 spawn_particle_repair(ship, tier)
                 spawn_particle_repair(node_pos, tier)
+                regened = regened + 1
             else
                 table.insert(node_damage_list, node_damage)
                 i = i - 1
@@ -388,14 +404,37 @@ local function do_repair(src, ship, count, tier)
         --meta:set_int("regen_tick", 50)
         meta_ship:set_string("node_damage_list", minetest.serialize(node_damage_list))
     end
+    if regened > 0 then
+        -- regen hp
+        local ship_hp_max = meta_ship:get_int("hp_max") or 1
+        local ship_hp = meta_ship:get_int("hp") or 1
+        if tier == "lv" then
+            ship_hp = ship_hp + regened
+        elseif tier == "mv" then
+            ship_hp = ship_hp + regened
+        elseif  tier == "hv" then
+            ship_hp = ship_hp + regened
+        end
+        if ship_hp > ship_hp_max then
+            ship_hp = ship_hp_max
+        end
+        meta_ship:set_int("hp", ship_hp)
+    end
 end
 
-local function do_repair_regen(src, ship, count, tier)
+local function do_repair_regen(src, ship, tier)
     local meta = minetest.get_meta(src)
+    -- regen tick
     local tick = meta:get_int("regen_tick") or 0
-    tick = tick - 1
+    tick = tick - round(math.random(1,2))
     if tick < 0 then
-        tick = 50
+        if tier == "lv" then
+            tick = 400
+        elseif tier == "mv" then
+            tick = 300
+        elseif  tier == "hv" then
+            tick = 240
+        end
     end
     meta:set_int("regen_tick", tick)
     if tick > 0 then
@@ -405,15 +444,30 @@ local function do_repair_regen(src, ship, count, tier)
     if meta_ship:get_string("node_damage_list") == nil then
         return
     end
+    -- recent shield hit check
+    local shield_hit = meta_ship:get_int("shield_hit")
+    if shield_hit > 0 then
+        return
+    end
     -- regen hp
-    local ship_hp_max = meta:get_int("hp_max") or 1000
-	local ship_hp = meta:get_int("hp") or 1000
-    ship_hp = ship_hp + 20
+    local ship_hp_max = meta_ship:get_int("hp_max") or 1000
+	local ship_hp = meta_ship:get_int("hp") or 1000
+    local count = 1
+    if tier == "lv" then
+        ship_hp = ship_hp + 25
+        count = round(math.random(1,2))
+    elseif tier == "mv" then
+        ship_hp = ship_hp + 30
+        count = 2
+    elseif  tier == "hv" then
+        ship_hp = ship_hp + 40
+        count = 2
+    end
     if ship_hp > ship_hp_max then
         ship_hp = ship_hp_max
     end
-    meta:set_int("hp", ship_hp)
-    -- regen from damage list
+    meta_ship:set_int("hp", ship_hp)
+    -- regen node from damage list
     local node_damage_list = minetest.deserialize(meta_ship:get_string("node_damage_list"))
     if node_damage_list and #node_damage_list > 0 then
         for i = 0, count do
@@ -454,7 +508,10 @@ local function show_repair(pos, ship)
         table.insert(mats, stack)
     end
     inv:set_list("ship_repair_inv", mats)
-    return #mats > 0
+    local ship_meta = minetest.get_meta(ship)
+    local ship_hp_max = ship_meta:get_int("hp_max") or 1000
+	local ship_hp = ship_meta:get_int("hp") or 1000
+    return #mats > 0 or ship_hp < ship_hp_max
 end
 
 ----------------------------------------------------
@@ -585,6 +642,7 @@ function ship_repair.register_repair_box(custom_data)
             if ship then
                 if not show_repair(pos, ship) then
                     meta:set_int("src_time", 0)
+                    technic.swap_node(pos, machine_node)
                     break
                 end
             end
@@ -596,7 +654,11 @@ function ship_repair.register_repair_box(custom_data)
                 technic.swap_node(pos, machine_node .. "_active")
             end
 
-            if meta:get_int("src_time") % 50 == 0 then
+            if ship and powered then
+                do_repair_regen(pos, ship, ltier)
+            end
+
+            if meta:get_int("src_time") % 20 == 0 then
                 local formspec = update_formspec(meta, data)
                 meta:set_string("formspec", formspec)
             end
@@ -607,7 +669,6 @@ function ship_repair.register_repair_box(custom_data)
 
             if ship and powered then
                 do_repair(pos, ship, data.count, ltier)
-                do_repair_regen(pos, ship, 1, ltier)
             end
             
             local formspec = update_formspec(meta, data)
@@ -836,7 +897,7 @@ end
 ship_repair.register_repair_box({
     tier = "LV",
     demand = {5000, 4800, 4500},
-    speed = 1,
+    speed = 2,
     count = 3,
 });
 ship_repair.register_repair_box({

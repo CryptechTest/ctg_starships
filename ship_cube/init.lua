@@ -2,11 +2,15 @@ local S = minetest.get_translator(minetest.get_current_modname())
 
 ship_cube = {}
 
-ship_cube.size = {
+local ship_def = {}
+ship_def.name = "Cube Cruiser"
+ship_def.size = {
     w = 35,
     h = 35,
     l = 46
 }
+ship_def.hp = 20000
+ship_def.shield = 10000
 
 -- load files
 local default_path = minetest.get_modpath("ship_cube")
@@ -20,8 +24,9 @@ ship_cube.register_cruiser({
     modname = "ship_cube",
     machine_name = "cruiser",
     jump_dist = 2000,
-    size = ship_cube.size,
-    hp = 20000,
+    size = ship_def.size,
+    hp = ship_def.hp,
+    shield = ship_def.shield,
 });
 
 if minetest.get_modpath("ship_machine") then
@@ -31,7 +36,9 @@ if minetest.get_modpath("ship_machine") then
         machine_desc = "Jump Drive Allocator",
         typename = "jump_drive",
         do_protect = true,
-        size = ship_cube.size,
-        hp = 20000,
+        ship_name = ship_def.name,
+        size = ship_def.size,
+        hp = ship_def.hp,
+        shield = ship_def.shield,
     })
 end

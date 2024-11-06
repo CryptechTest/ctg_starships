@@ -91,7 +91,10 @@ ship_machine.register_jumpship({
         w = 12,
         h = 12,
         l = 15
-    }
+    },
+    ship_name = "Jumpship",
+    hp = 1000,
+    shield = 1000,
 })
 
 -- admin
@@ -105,5 +108,8 @@ ship_machine.register_jumpship({
         w = 171,
         h = 56,
         l = 219
-    }
+    },
+    ship_name = "Orbital Station",
+    hp = 1000000,
+    shield = 500000,
 })

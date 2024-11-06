@@ -46,15 +46,24 @@ function ship_battle_cruiser_small.register_cruiser(custom_data)
         if fields.submit_migr then
             local shipp = ship_battle_cruiser_small.get_protector(pos, data.size)
             if shipp then
-                meta:set_int("combat_ready", 1)
+                meta:set_int("combat_ready", 2)
                 local ship_meta = minetest.get_meta(shipp)
-                ship_meta:set_int("combat_ready", 1)
+                ship_meta:set_int("combat_ready", 2)
                 ship_meta:set_int("hp_max", data.hp)
                 ship_meta:set_int("hp", data.hp)
+                ship_meta:set_int("shield_max", data.shield)
+                ship_meta:set_int("shield", data.shield)
             end
             local ready = meta:get_int("travel_ready")
             local message = "Combat Ready!"
             local formspec = ship_battle_cruiser_small.update_formspec(pos, data, 0, ready, message)
+            meta:set_string("formspec", formspec)
+            return
+        end
+
+        if fields.refresh then
+            local ready = meta:get_int("travel_ready")
+            local formspec = ship_battle_cruiser_small.update_formspec(pos, data, 0, ready, '')
             meta:set_string("formspec", formspec)
             return
         end
@@ -211,6 +220,31 @@ function ship_battle_cruiser_small.register_cruiser(custom_data)
             end
         end]] --
 
+        if fields.submit_nav then
+            local shipp = ship_battle_cruiser_small.get_protector(pos, data.size)
+            if shipp then
+                local ship_meta = minetest.get_meta(shipp)
+                -- ship hp
+                local ship_hp_max = ship_meta:get_int("hp_max") or 1
+                local ship_hp = ship_meta:get_int("hp") or 1
+                local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
+                if ship_hp_prcnt < 25 then
+                    local message = "JUMP ERROR: Critical Damage!"
+                    local formspec = ship_battle_cruiser_small.update_formspec(pos, data, 0, 0, message)
+                    meta:set_string("formspec", formspec)
+                    return
+                end
+                -- shield hit check
+                local shield_hit = ship_meta:get_int("shield_hit") or 0
+                if shield_hit > 10 then
+                    local message = "JUMP ERROR: Target Engaged!!!"
+                    local formspec = ship_battle_cruiser_small.update_formspec(pos, data, 0, 0, message)
+                    meta:set_string("formspec", formspec)
+                    return
+                end
+            end
+        end
+
         local message = ""
         local offset = {
             x = move_x,
@@ -351,6 +385,7 @@ function ship_battle_cruiser_small.register_cruiser(custom_data)
             meta:set_string("pos_nav", "{}")
         end,
 
+        --on_rightclick = function(pos, node, clicker, itemstack, pointed_thing) end,
         on_punch = function(pos, node, puncher)
             local drive_loc = ship_battle_cruiser_small.get_protector(pos, data.size)
             if drive_loc then

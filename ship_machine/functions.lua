@@ -736,3 +736,26 @@ end
 function ship_machine.get_jump_drive(pos)
     return minetest.find_node_near(pos, 15, {"ship_machine:jump_drive"})
 end
+
+function ship_machine.colorize_text_hp(hp, hp_max)
+    local col = '#FFFFFF'
+    local qua = hp_max / 8
+    if hp <= qua then
+        col = "#FF0000"
+    elseif hp <= (qua * 2) then
+        col = "#FF3D00"
+    elseif hp <= (qua * 3) then
+        col = "#FF7A00"
+    elseif hp <= (qua * 4) then
+        col = "#FFB500"
+    elseif hp <= (qua * 5) then
+        col = "#FFFF00"
+    elseif hp <= (qua * 6) then
+        col = "#B4FF00"
+    elseif hp <= (qua * 7) then
+        col = "#00FF00"
+    elseif hp > (qua * 7) then
+        col = "#00FF50"
+    end
+    return col
+end

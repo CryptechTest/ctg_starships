@@ -13,7 +13,8 @@ function ship_weapons.damage_aoe(damage, puncher, pos, radius)
     for _,t in pairs(targs) do
         local dist=math.sqrt(((t:get_pos().x-pos.x)^2)+((t:get_pos().y-pos.y)^2)+((t:get_pos().z-pos.z)^2))
         local DistDamage=damage/math.max(dist, 1)
-        t:punch(puncher, 1.0, {
+        local player = minetest.get_player_by_name(puncher)
+        t:punch(player, 1.0, {
             full_punch_interval=1.0,
             damage_groups={fleshy=DistDamage},
         }, nil)
@@ -226,7 +227,8 @@ local function register_projectile(def)
                 if def.aoe then
                     ship_weapons.damage_aoe(def.damage, self.owner, target.intersection_point, def.aoe_radius)
                 else
-                    target.ref:punch(self.owner, 1.0, {
+                    local player = minetest.get_player_by_name(self.owner)
+                    target.ref:punch(player, 1.0, {
                     full_punch_interval=1.0,
                     damage_groups={fleshy=def.damage},
                     }, nil)

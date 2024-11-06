@@ -45,15 +45,24 @@ function ship_scout.register_scout(custom_data)
         if fields.submit_migr then
             local shipp = ship_scout.get_protector(pos, data.size)
             if shipp then
-                meta:set_int("combat_ready", 1)
+                meta:set_int("combat_ready", 2)
                 local ship_meta = minetest.get_meta(shipp)
-                ship_meta:set_int("combat_ready", 1)
+                ship_meta:set_int("combat_ready", 2)
                 ship_meta:set_int("hp_max", data.hp)
                 ship_meta:set_int("hp", data.hp)
+                ship_meta:set_int("shield_max", data.shield)
+                ship_meta:set_int("shield", data.shield)
             end
             local ready = meta:get_int("travel_ready")
             local message = "Combat Ready!"
             local formspec = ship_scout.update_formspec(pos, data, 0, ready, message)
+            meta:set_string("formspec", formspec)
+            return
+        end
+
+        if fields.refresh then
+            local ready = meta:get_int("travel_ready")
+            local formspec = ship_scout.update_formspec(pos, data, 0, ready, '')
             meta:set_string("formspec", formspec)
             return
         end

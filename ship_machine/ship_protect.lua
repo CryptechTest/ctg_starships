@@ -1,3 +1,66 @@
+
+-- local hud store
+local hud = {}
+local hud_timer = 0
+local hud_interval = 5
+
+-- temporary pos store
+local player_pos = {}
+
+-- display entity shown when protector node is punched
+minetest.register_entity("ship_machine:jump_display", {
+    physical = false,
+    collisionbox = {0, 0, 0, 0, 0, 0},
+    visual = "sprite",
+    -- wielditem seems to be scaled to 1.5 times original node size
+    visual_size = {
+        x = 0.6,
+        y = 0.6
+    },
+    pointable = false,
+    textures = {"tele_effect03.png"},
+    timer = 0,
+    glow = 5,
+    nametag = "UNKNOWN",
+    infotext = "Jumpship",
+    hp_max = 1000,
+    hp = 1000,
+    type = 0,
+
+    on_step = function(self, dtime)
+
+        self.timer = self.timer + dtime
+
+        local col
+        if self.type == 0 then
+            col = "#FFFFFF"
+        elseif self.type == 1 then
+            col = ship_machine.colorize_text_hp(self.hp, self.hp_max)
+        elseif self.type == 2 then
+            local qua = self.hp_max / 6
+            if self.hp <= qua then
+                col = "#FF000F"
+            elseif self.hp <= (qua * 2) then
+                col = "#FF7A0F"
+            elseif self.hp <= (qua * 3) then
+                col = "#FFB50F"
+            elseif self.hp <= (qua * 4) then
+                col = "#FFFF0F"
+            elseif self.hp <= (qua * 5) then
+                col = "#B4FF0F"
+            elseif self.hp > (qua * 5) then
+                col = "#00FF0F"
+            end
+        end
+        self.object:set_properties({nametag = self.nametag, nametag_color = col, infotext = self.infotext})
+
+        -- remove after set number of seconds
+        if self.timer > 10 then
+            --self.object:remove()
+        end
+    end
+})
+
 local function register_ship_protect(def)
 
     -- default support (for use with MineClone2 and other [games]
@@ -30,6 +93,7 @@ local function register_ship_protect(def)
     local hit_points = def.hp or 1000
     local modname = def.modname or "ship_machine"
     local nodename = modname .. ":" .. "shield_protect"
+    local ship_name = def.ship_name or "Jumpship"
 
     local protector_max_share_count = 12
     -- get minetest.conf settings
@@ -404,9 +468,6 @@ local function register_ship_protect(def)
         end
     end
 
-    -- temporary pos store
-    local player_pos = {}
-
     local texture_active = {
         image = "ship_protector_anim.png",
         animation = {
@@ -482,6 +543,9 @@ local function register_ship_protect(def)
             meta:set_int("combat_ready", 1)
             meta:set_int("hp_max", def.hp)
             meta:set_int("hp", def.hp)
+            meta:set_int("shield_hit", 0)
+            meta:set_int("shield_max", def.shield)
+            meta:set_int("shield", def.shield)
         end,
 
         on_use = function(itemstack, user, pointed_thing)
@@ -724,6 +788,171 @@ local function register_ship_protect(def)
         })
     end
 
+    -- name info
+    function def.register_check_tag_entity_1(meta, pos)
+        local object = nil
+        local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
+        for _, obj in pairs(objects) do
+            local ent = obj:get_luaentity()
+            if ent then
+                if ent.name == "ship_machine:jump_display" then
+                    object = obj
+                    break;
+                end
+            end
+        end
+        if object == nil then
+            object = minetest.add_entity(pos, "ship_machine:jump_display")
+        end
+        if object then
+            --local meta = minetest.get_meta(pos)
+            local ship_hp_max = meta:get_int("hp_max") or 1000
+            local ship_hp = meta:get_int("hp") or 1000
+            local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
+            local ent = object:get_luaentity()
+            if ent then
+                ent.type = 0
+                ent.hp_max = ship_hp_max
+                ent.hp = ship_hp
+                ent.nametag = ship_name
+            end
+        end
+    end
+    
+    -- hull
+    function def.register_check_tag_entity_2(meta, pos)
+        local object = nil
+        local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
+        for _, obj in pairs(objects) do
+            local ent = obj:get_luaentity()
+            if ent then
+                if ent.name == "ship_machine:jump_display" then
+                    object = obj
+                    break;
+                end
+            end
+        end
+        if object == nil then
+            object = minetest.add_entity(pos, "ship_machine:jump_display")
+        end
+        if object then
+            --local meta = minetest.get_meta(pos)
+            local ship_hp_max = meta:get_int("hp_max")
+            local ship_hp = meta:get_int("hp")
+            local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
+            local ent = object:get_luaentity()
+            if ent then
+                ent.type = 1
+                ent.hp_max = ship_hp_max
+                ent.hp = ship_hp
+                ent.nametag = "HULL\n" .. string.format("%.2f", ship_hp_prcnt) .. "%"
+            end
+        end
+    end
+    
+    -- shield
+    function def.register_check_tag_entity_3(meta, pos)
+        local object = nil
+        local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
+        for _, obj in pairs(objects) do
+            local ent = obj:get_luaentity()
+            if ent then
+                if ent.name == "ship_machine:jump_display" then
+                    object = obj
+                    break;
+                end
+            end
+        end
+        if object == nil then
+            object = minetest.add_entity(pos, "ship_machine:jump_display")
+        end
+        if object then
+            --local meta = minetest.get_meta(pos)
+            local ship_shield_max = meta:get_int("shield_max") 
+            local ship_shield = meta:get_int("shield")
+            local ship_shield_prcnt = (ship_shield / ship_shield_max) * 100
+            local ent = object:get_luaentity()
+            if ent then
+                ent.type = 2
+                ent.hp_max = ship_shield_max
+                ent.hp = ship_shield
+                ent.nametag = "SHIELD\n" .. string.format("%.2f", ship_shield_prcnt) .. "%"
+            end
+        end
+    end
+
+    function def.clear_check_tag_entity(pos)
+        local objects = minetest.get_objects_inside_radius(pos, 2) or {}
+        for _, obj in pairs(objects) do
+            local ent = obj:get_luaentity()
+            if ent then
+                if ent.name == "ship_machine:jump_display" then
+                    obj:remove()
+                end
+            end
+        end 
+    end
+
+    function def.register_check_tag_entity(pos)
+        local ship_meta = minetest.get_meta(pos)
+        local ship_combat_ready = ship_meta:get_int("combat_ready") > 1
+        if not ship_combat_ready then
+            return
+        end
+        def.clear_check_tag_entity(pos)
+        local pos1 = vector.add(pos, {x = 0, y = 1.25, z = 0})
+        local pos2 = vector.add(pos, {x = 0, y = 0, z = 0})
+        local pos3 = vector.add(pos, {x = 0, y = -1.5, z = 0})
+        def.register_check_tag_entity_1(ship_meta, pos1)
+        def.register_check_tag_entity_2(ship_meta, pos2)
+        def.register_check_tag_entity_3(ship_meta, pos3)
+    end
+
+    function def.regenerate_shield(pos)
+        local ship_meta = minetest.get_meta(pos)
+        local ship_combat_ready = ship_meta:get_int("combat_ready") > 1
+        if not ship_combat_ready then
+            return
+        end
+        if ship_meta:get_int("shield_max") == nil then
+            ship_meta:set_int("shield_max", def.shield)
+        end
+        if ship_meta:get_int("shield") == nil then
+            ship_meta:set_int("shield", def.shield)
+        end
+        if ship_meta:get_int("shield_hit") == nil then
+            ship_meta:set_int("shield_hit", 0)
+        end
+        -- detect recent shield hit
+        local shield_hit = ship_meta:get_int("shield_hit")
+        if shield_hit > 0 then
+            shield_hit = shield_hit - math.random(1, 2)
+            if shield_hit < 0 then
+                shield_hit = 0
+            end
+            ship_meta:set_int("shield_hit", shield_hit)
+            return
+        end
+        -- hull hp
+        local ship_hp_max = ship_meta:get_int("hp_max")
+        local ship_hp = ship_meta:get_int("hp")
+        local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
+        -- shield hp
+        local ship_shield_max = ship_meta:get_int("shield_max") 
+        local ship_shield = ship_meta:get_int("shield")
+        local ship_shield_prcnt = (ship_shield / ship_shield_max) * 100
+        -- shields disable below 60% hp
+        if ship_hp_prcnt >= 60 then
+            if ship_shield < ship_shield_max then
+                ship_shield = ship_shield + math.random(1, 5)
+                if ship_shield > ship_shield_max then
+                    ship_shield = ship_shield_max
+                end
+                ship_meta:set_int("shield", ship_shield)
+            end
+        end
+    end
+
     minetest.register_abm({
         label = "ship effects - jumpdrive for " .. modname,
         nodenames = {nodename},
@@ -731,6 +960,11 @@ local function register_ship_protect(def)
         chance = 3,
         min_y = vacuum.vac_heights.space.start_height,
         action = function(pos)
+
+            def.regenerate_shield(pos)
+
+            --def.clear_check_tag_entity(pos)
+            --def.register_check_tag_entity(pos)
 
             def.do_particles(pos, 7)
 
@@ -740,10 +974,6 @@ local function register_ship_protect(def)
     ----------------------------------------------------
     ----------------------------------------------------
     ----------------------------------------------------
-
-    local hud = {}
-    local hud_timer = 0
-    local hud_interval = 5
 
     if hud_interval > 0 then
         minetest.register_globalstep(function(dtime)
