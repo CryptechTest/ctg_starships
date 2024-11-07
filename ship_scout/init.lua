@@ -33,6 +33,7 @@ ship_scout.register_scout({
     size = ship_def.proto_size,
     hp = ship_def.hp,
     shield = ship_def.shield,
+    machine_desc = "Proto-Scout"
 });
 
 if minetest.get_modpath("ship_machine") then

@@ -12,6 +12,7 @@ function shipyard.register_shipyard()
     data.modname = "shipyard"
     data.tier = "LV"
     data.machine_name = "shipyard"
+    data.machine_desc = "Shipyard"
     data.jump_dist = 15000
     data.size = shipyard.size;
     data.hp = 200000
@@ -19,7 +20,7 @@ function shipyard.register_shipyard()
     local modname = "shipyard"
     local ltier = string.lower(data.tier)
     local machine_name = data.machine_name
-    local machine_desc = "Shipyard"
+    local machine_desc = data.machine_desc or "Shipyard"
     local lmachine_name = string.lower(machine_name)
 
     local active_groups = {

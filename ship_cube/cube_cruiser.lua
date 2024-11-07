@@ -12,6 +12,7 @@ function ship_cube.register_cruiser(custom_data)
     data.modname = custom_data.modname or "ship_cube"
     data.tier = custom_data.tier or "HV"
     data.machine_name = custom_data.machine_name
+    data.machine_desc = custom_data.machine_desc or "Cube Cruiser"
     data.jump_dist = custom_data.jumpdist or 7600
     data.size = custom_data.size;
 

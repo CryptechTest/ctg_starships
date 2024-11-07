@@ -12,6 +12,7 @@ function ship_scout.register_scout(custom_data)
     data.modname = custom_data.modname or "ship_scout"
     data.tier = custom_data.tier or "LV"
     data.machine_name = custom_data.machine_name
+    data.machine_desc = custom_data.machine_desc or "Scout"
     data.jump_dist = custom_data.jumpdist or 2000
     data.size = custom_data.size;
 
