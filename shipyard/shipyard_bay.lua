@@ -137,7 +137,7 @@ local function register_assembler_bay(data)
                     
                     local prot_pos = vector.add(core_pos, {x = 0, y = 2, z = 0})
                     minetest.set_node(prot_pos, {
-                        name = "ship_scout:protect2"
+                        name = "ship_scout:shield_protect"
                     })
                     local prot_meta = minetest.get_meta(prot_pos);
                     prot_meta:set_string("owner", op)
@@ -195,7 +195,7 @@ local function register_assembler_bay(data)
                     
                     local prot_pos = vector.add(core_pos, {x = 0, y = 2, z = 0})
                     minetest.set_node(prot_pos, {
-                        name = "ship_scout:protect2"
+                        name = "ship_scout:shield_protect"
                     })
                     local prot_meta = minetest.get_meta(prot_pos);
                     prot_meta:set_string("owner", op)

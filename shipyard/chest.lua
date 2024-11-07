@@ -23,7 +23,7 @@ shipyard.can_access_crate = function(clicker, pos)
         x = pos.x + s.w,
         y = pos.y + s.h,
         z = pos.z + s.l
-    }, {"shipyard:protect2", "ship_scout:protect2"}) -- "shipyard:protect2",
+    }, {"shipyard:shield_protect", "ship_scout:shield_protect"}) -- "shipyard:protect2",
 
     local isValid = false
     for n = 1, #prots do
@@ -31,7 +31,7 @@ shipyard.can_access_crate = function(clicker, pos)
 			break;
 		end
         local node = minetest.get_node(prots[n])
-        if node.name == "ship_scout:protect2" then
+        if node.name == "ship_scout:shield_protect" then
             local meta = minetest.get_meta(prots[n])
             local owner = meta:get_string("owner") or ""
 
@@ -48,7 +48,7 @@ shipyard.can_access_crate = function(clicker, pos)
                 x = pos.x + sc.w,
                 y = pos.y + sc.h,
                 z = pos.z + sc.l
-            }, {"ship_scout:protect2"})
+            }, {"ship_scout:shield_protect"})
 
             if #childArea > 0 then
                 -- node change and clicker is owner

@@ -186,7 +186,7 @@ function ship_scout.register_scout(custom_data)
                     local bay_center = vector.add(bay, offset);
                     -- local bmeta = minetest.get_meta(bay)
                     local bnode = minetest.get_node(bay_center)
-                    if bnode.name ~= "ship_scout:protect2" and bnode.name == "vacuum:vacuum" then
+                    if bnode.name ~= "ship_scout:shield_protect" and bnode.name == "vacuum:vacuum" then
                         if bay_center.x < jpos.x then
                             move_x = bay_center.x - jpos.x
                         else

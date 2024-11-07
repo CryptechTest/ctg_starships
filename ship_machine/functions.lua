@@ -725,7 +725,27 @@ function ship_machine.get_protector(pos, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_scout:protect2")
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_scout:shield_protect")
+
+    if #nodes == 1 then
+        return nodes[1]
+    end
+    return nil
+end
+
+function ship_machine.get_ship_protector(pos, size, name)
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, name)
 
     if #nodes == 1 then
         return nodes[1]

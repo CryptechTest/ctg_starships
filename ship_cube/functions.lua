@@ -29,7 +29,7 @@ function ship_cube.update_formspec(pos, data, loc, ready, message)
         local combat_migration_done = meta:get_int("combat_ready") and meta:get_int("combat_ready") > 1 or false
         local combat_migration = combat_migration_done == false and "button[4,5;3,1;submit_migr;Combat Migration]" or ""
 
-        local shipp = ship_battle_cruiser_small.get_protector(pos, data.size)
+        local shipp = ship_cube.get_protector(pos, data.size)
         local ship_meta = minetest.get_meta(shipp)
 
         -- ship hp
@@ -215,7 +215,7 @@ function ship_cube.get_protector(pos, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_cube:protect2")
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_cube:shield_protect")
 
     if #nodes == 1 then
         return nodes[1]
