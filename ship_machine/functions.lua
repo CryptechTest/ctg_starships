@@ -759,3 +759,22 @@ function ship_machine.colorize_text_hp(hp, hp_max)
     end
     return col
 end
+
+function ship_machine.update_ship_owner_all(pos, size, new_owner)
+    local s = size
+    local nodes = minetest.find_nodes_in_area({
+        x = pos.x - s.w,
+        y = pos.y - s.h,
+        z = pos.z - s.l
+    }, {
+        x = pos.x + s.w,
+        y = pos.y + s.h,
+        z = pos.z + s.l
+    })
+	for _, p in pairs(nodes) do
+		local meta = minetest.get_meta(p)
+        if meta and meta:get_string("owner") ~= nil then
+            meta:set_string("owner", new_owner)
+        end
+	end
+end

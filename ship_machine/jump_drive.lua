@@ -110,6 +110,7 @@ function ship_machine.register_jumpship(data)
                     local meta2 = minetest.get_meta(prot)
                     meta2:set_string("owner", owner_name)
                     meta2:set_string("infotext", S("Protection (owned by @1)", meta2:get_string("owner")))
+                    ship_machine.update_ship_owner_all(pos, data.size, owner_name)
                 end
             end
             local move_x = 0

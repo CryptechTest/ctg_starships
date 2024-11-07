@@ -127,63 +127,69 @@ local function destroy(drops, npos, cid, c_air, c_fire, on_blast_queue, on_const
 	end
 end
 
-local function destroy_safe(drops, npos, cid, c_air, c_fire, on_blast_queue, on_construct_queue, ignore_protection, ignore_on_blast, owner)
-	local def = cid_data[cid]
-
-	if def.groups['ship_protector'] then
-		return cid, nil
-	end
-	if def.groups['jumpdrive'] then
-		return cid, nil
-	end
-
-	local stor = {
-		pos = npos,
+local function get_stor(npos, def)
+	local level = def.groups['level'] or 0
+	local metal = def.groups['metal'] or 0
+	local sto = {
+		pos = vector.new(npos),
 		name = def.name,
 		param1 = nil,
 		param2 = nil,
 		tube = def.tube,
-		meta = {}
+		meta = {},
+		groups = {
+			level = level,
+			metal = metal
+		}
 	}
-
-	if def.groups['not_in_creative_inventory'] then
-		if def.drop then
-			stor.name = def.drop
-		end
+	if def.groups['not_in_creative_inventory'] and def.drop then
+		sto.name = def.drop
 	end
+	local node = minetest.get_node(npos)
+	sto.param1 = node.param1 ~= 0 and node.param1 or nil
+	sto.param2 = node.param2 ~= 0 and node.param2 or nil
+	local meta = minetest.get_meta(npos)
+	sto.meta = meta ~= nil and meta:to_table() or {}
+	return sto
+end
 
-	local function get_stor(npos, sto)
-		local node = minetest.get_node(npos)
-		sto.param1 = node.param1 ~= 0 and node.param1 or nil
-		sto.param2 = node.param2 ~= 0 and node.param2 or nil
-		sto.meta = minetest.get_meta(npos):to_table()
-		return sto
-	end
-
+local function destroy_safe(drops, npos, cid, c_air, c_fire, on_blast_queue, on_construct_queue, ignore_protection, ignore_on_blast, owner)
+	
+	local stor = nil
+	local def = cid_data[cid]
 	if not def then
-		return c_air, nil
-	elseif not ignore_on_blast and def.on_blast then
-		stor = get_stor(npos, stor)
+		return c_air, stor
+	elseif is_atmos(def.name) then
+        return cid, stor
+	end
+
+	if def.groups['ship_protector'] then
+		return cid, stor
+	elseif def.groups['jumpdrive'] then
+		-- TODO: handle this???
+		return cid, stor
+	end
+
+	if not ignore_on_blast and def.on_blast then
 		on_blast_queue[#on_blast_queue + 1] = {
 			pos = vector.new(npos),
 			on_blast = def.on_blast
 		}
+		stor = get_stor(npos, def)
 		return cid, stor
 	elseif def.flammable then
-		stor = get_stor(npos, stor)
 		on_construct_queue[#on_construct_queue + 1] = {
 			fn = basic_flame_on_construct,
 			pos = vector.new(npos)
 		}
+		stor = get_stor(npos, def)
 		return c_fire, stor
-    elseif is_atmos(def.name) then
-        return c_air, nil
 	else
-		stor = get_stor(npos, stor)
 		local node_drops = minetest.get_node_drops(def.name, "")
 		for _, item in pairs(node_drops) do
 			add_drop(drops, item)
 		end
+		stor = get_stor(npos, def)
 		return c_air, stor
 	end
 end
@@ -509,10 +515,37 @@ local function find_ship_protect(pos)
 	return prot
 end
 
+local function calc_node_damage(n_hit, dist, hp)
+	if n_hit == nil then
+		return 0
+	end
+	local d = dist > 1 and math.random(0, dist) or 1
+	if d < 1 then
+		return 1 -- don't break node
+	end
+	local level = n_hit.groups.level
+	local metal = n_hit.groups.metal
+	local ta = level + metal
+	if ta > 0 then
+		local r = math.random(0, ta)
+		if r > 1.5 then
+			return 1 -- don't break node
+		end
+	end
+	if metal > 0 then
+		return 2
+	end
+	return 3
+end
+
 local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_blast, owner, explode_center)
 	pos = vector.round(pos)
+	local drops = {}
 	-- scan for nearby ship protection shields
 	local shipp = find_ship_protect(pos)
+	if not shipp then
+		return drops, radius, 0
+	end
 	-- scan for adjacent TNT nodes first, and enlarge the explosion
 	local vm1 = VoxelManip()
 	local p1 = vector.subtract(pos, 2)
@@ -527,7 +560,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	local c_vac = minetest.get_content_id("vacuum:vacuum")
 	local c_air = minetest.CONTENT_AIR
 	local c_ignore = minetest.CONTENT_IGNORE
-	local drops = {}
+
 	-- make sure we still have explosion even when centre node isnt tnt related
 	if explode_center then
 		count = 1
@@ -603,10 +636,10 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 				local n_hit = nil
 				local dcid = nil
 				dcid, n_hit = destroy_safe(drops, p, cid, c_air, c_fire, on_blast_queue, on_construct_queue, ignore_protection, ignore_on_blast, owner)
-				if n_hit ~= nil then
-					hit_damage = hit_damage + 1
-				end
-				if ship_combat_ready and ship_shield_prcnt <= dam_thres then
+				local d_delta = vector.distance(shipp, p)
+				local h_damage = calc_node_damage(n_hit, d_delta, ship_hp_prcnt)
+				hit_damage = hit_damage + h_damage
+				if ship_combat_ready and ship_shield_prcnt <= dam_thres and h_damage > 1 then
 					data[vi] = dcid
 					if n_hit ~= nil and n_hit.name then
 						table.insert(n_hits, n_hit)
@@ -645,14 +678,14 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 		ship_shield_hit = ship_shield_hit + math.random(1, 3)
 		ship_meta:set_int("shield_hit", ship_shield_hit)
 		if ship_shield > 0 then
-			ship_shield = ship_shield - math.floor(hit_damage * 4 + radius)
+			ship_shield = ship_shield - math.floor(hit_damage * 5 + radius + 0.5)
 			if ship_shield <= 0 then
 				ship_shield = 0
 			end
 			ship_meta:set_int("shield", ship_shield)
 		end
 		if ship_hp > 0 and ship_shield <= 0 then
-			ship_hp = ship_hp - math.floor(hit_damage * 3 + radius)
+			ship_hp = ship_hp - math.floor(hit_damage * 3 + radius + 0.5)
 			ship_meta:set_int("hp", ship_hp)
 		end
 	end
@@ -691,7 +724,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	minetest.log("action", "MISSILE owned by " .. owner .. " detonated at " ..
 		minetest.pos_to_string(pos) .. " with radius " .. radius)
 
-	return drops, radius
+	return drops, radius, ship_shield_prcnt
 end
 
 local function missile_explode(pos, radius, ignore_protection, ignore_on_blast, owner, explode_center)
@@ -810,7 +843,7 @@ local function missile_explode(pos, radius, ignore_protection, ignore_on_blast, 
 	minetest.log("action", "MISSILE owned by " .. owner .. " detonated at " ..
 		minetest.pos_to_string(pos) .. " with radius " .. radius)
 
-	return drops, radius
+	return drops, radius, 0
 end
 
 function ship_weapons.safe_boom(pos, def)
@@ -820,11 +853,17 @@ function ship_weapons.safe_boom(pos, def)
 	local meta = minetest.get_meta(pos)
 	local owner = meta:get_string("owner")
 	
-	local sound = def.sound or "tnt_explode"
-	minetest.sound_play(sound, {pos = pos, gain = 2.5,
-			max_hear_distance = math.min(def.radius * 20, 128)}, true)
-	local drops, radius = missile_safe_explode(pos, def.radius, def.ignore_protection,
+	-- do misiile explode
+	local drops, radius, shield = missile_safe_explode(pos, def.radius, def.ignore_protection,
 			def.ignore_on_blast, owner, true)
+
+	local pitch = 1
+	if shield > 0 then
+		pitch = 1.2 + (shield * 0.01)
+	end
+	local sound = def.sound or "tnt_explode"
+	minetest.sound_play(sound, {pos = pos, gain = 2.5, pitch = pitch,
+			max_hear_distance = math.min(def.radius * 20, 128)}, true)
 	-- append entity drops
 	local damage_radius = (radius / math.max(1, def.radius)) * def.damage_radius
 	entity_physics(pos, damage_radius, drops)
@@ -843,11 +882,13 @@ function ship_weapons.boom(pos, def)
 	local meta = minetest.get_meta(pos)
 	local owner = meta:get_string("owner")
 
+	-- do misiile explode
+	local drops, radius, shield = missile_explode(pos, def.radius, def.ignore_protection,
+			def.ignore_on_blast, owner, true)
+
 	local sound = def.sound or "tnt_explode"
 	minetest.sound_play(sound, {pos = pos, gain = 2.5,
 			max_hear_distance = math.min(def.radius * 20, 128)}, true)
-	local drops, radius = missile_explode(pos, def.radius, def.ignore_protection,
-			def.ignore_on_blast, owner, true)
 	-- append entity drops
 	local damage_radius = (radius / math.max(1, def.radius)) * def.damage_radius
 	entity_physics(pos, damage_radius, drops)

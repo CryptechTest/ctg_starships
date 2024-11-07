@@ -1,8 +1,4 @@
 
--- local hud store
-local hud = {}
-local hud_timer = 0
-local hud_interval = 5
 
 -- temporary pos store
 local player_pos = {}
@@ -975,6 +971,11 @@ local function register_ship_protect(def)
     ----------------------------------------------------
     ----------------------------------------------------
 
+    -- local hud store
+    local hud = {}
+    local hud_timer = 0
+    local hud_interval = 5
+
     if hud_interval > 0 then
         minetest.register_globalstep(function(dtime)
 
@@ -993,20 +994,26 @@ local function register_ship_protect(def)
 
                 local protectors = minetest.find_nodes_in_area({
                     x = pos.x - def.protector.size.w,
-                    y = pos.y - def.protector.size.h,
+                    y = pos.y - def.protector.size.h - 2,
                     z = pos.z - def.protector.size.l
                 }, {
                     x = pos.x + def.protector.size.w,
-                    y = pos.y + def.protector.size.h,
+                    y = pos.y + def.protector.size.h - 2,
                     z = pos.z + def.protector.size.l
-                }, {modname .. ":jump_drive"})
+                }, {nodename})
 
                 if #protectors > 0 then
                     local npos = protectors[1]
                     local meta = minetest.get_meta(npos)
                     local nodeowner = meta:get_string("owner")
 
-                    hud_text = S("Owner: @1", nodeowner)
+                    local hp = ''
+                    --if meta:get_int("hp") then
+                        --local prcnt = meta:get_int("hp") / meta:get_int("hp_max") * 100
+                        --hp = "\nHull: " .. prcnt .. "%"
+                    --end
+
+                    hud_text = def.ship_name .. "\n" .. S("Owner: @1", nodeowner) .. hp
                 end
 
                 if not hud[name] then
