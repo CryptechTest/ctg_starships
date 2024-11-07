@@ -155,6 +155,21 @@ end
 ----------------------------------------------------
 ----------------------------------------------------
 
+local function is_atmos_node(name)
+    if name == "air" then
+        return true
+    elseif name == "vacuum:vacuum" then
+        return true
+    elseif name == "vacuum:atmos_thin" then
+        return true
+    elseif name == "vacuum:atmos_thick" then
+        return true
+    elseif name == "asteroid:atmos" then
+        return true
+    end
+    return false
+end
+
 local function is_atmos(cid)
     if cid == minetest.CONTENT_AIR then
         return true
@@ -409,11 +424,11 @@ local function do_repair(src, ship, count, tier)
         local ship_hp_max = meta_ship:get_int("hp_max") or 1
         local ship_hp = meta_ship:get_int("hp") or 1
         if tier == "lv" then
-            ship_hp = ship_hp + regened
+            ship_hp = ship_hp + regened + 2
         elseif tier == "mv" then
-            ship_hp = ship_hp + regened
+            ship_hp = ship_hp + regened + 2
         elseif  tier == "hv" then
-            ship_hp = ship_hp + regened
+            ship_hp = ship_hp + regened + 3
         end
         if ship_hp > ship_hp_max then
             ship_hp = ship_hp_max
@@ -454,13 +469,13 @@ local function do_repair_regen(src, ship, tier)
 	local ship_hp = meta_ship:get_int("hp") or 1000
     local count = 1
     if tier == "lv" then
-        ship_hp = ship_hp + 25
+        ship_hp = ship_hp + 40
         count = round(math.random(1,2))
     elseif tier == "mv" then
-        ship_hp = ship_hp + 30
+        ship_hp = ship_hp + 50
         count = 2
     elseif  tier == "hv" then
-        ship_hp = ship_hp + 40
+        ship_hp = ship_hp + 60
         count = 2
     end
     if ship_hp > ship_hp_max then

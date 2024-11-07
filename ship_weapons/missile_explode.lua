@@ -129,6 +129,14 @@ end
 
 local function destroy_safe(drops, npos, cid, c_air, c_fire, on_blast_queue, on_construct_queue, ignore_protection, ignore_on_blast, owner)
 	local def = cid_data[cid]
+
+	if def.groups['ship_protector'] then
+		return cid, nil
+	end
+	if def.groups['jumpdrive'] then
+		return cid, nil
+	end
+
 	local stor = {
 		pos = npos,
 		name = def.name,
@@ -266,7 +274,7 @@ end
 
 local function add_effects_hit_shield(pos, radius)
 	minetest.add_particlespawner({
-		amount = 5,
+		amount = 5 + math.floor(radius + 0.5),
 		time = 0.4,
 		minpos = vector.subtract(pos, radius / 2),
 		maxpos = vector.add(pos, radius / 2),
@@ -275,9 +283,9 @@ local function add_effects_hit_shield(pos, radius)
 		minacc = vector.new(),
 		maxacc = vector.new(),
 		minexptime = 1.1,
-		maxexptime = 2.8,
-		minsize = radius * 3,
-		maxsize = radius * 10,
+		maxexptime = 2.6,
+		minsize = radius * 4,
+		maxsize = radius * 6,
         texture = {
             name = "ctg_shield_hit_effect.png",
             blend = "alpha",
@@ -298,9 +306,9 @@ local function add_effects_hit_shield(pos, radius)
             aspect_h = 16,
             length = 3
         },
-		vertical = true,
+		vertical = false,
         collisiondetection = false,
-        glow = 8,
+        glow = 10,
 	})
 end
 
@@ -347,7 +355,7 @@ local function add_effects_hit(pos, radius, drops)
         glow = 3,
 	})
 	minetest.add_particlespawner({
-		amount = 16,
+		amount = 20,
 		time = 0.7,
 		minpos = vector.subtract(pos, radius / 3),
 		maxpos = vector.add(pos, radius / 3),
@@ -634,17 +642,17 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	end
 
 	if ship_combat_ready then
-		ship_shield_hit = ship_shield_hit + math.random(1, 5)
+		ship_shield_hit = ship_shield_hit + math.random(1, 3)
 		ship_meta:set_int("shield_hit", ship_shield_hit)
 		if ship_shield > 0 then
-			ship_shield = ship_shield - math.floor(hit_damage * radius * 5)
+			ship_shield = ship_shield - math.floor(hit_damage * 4 + radius)
 			if ship_shield <= 0 then
 				ship_shield = 0
 			end
 			ship_meta:set_int("shield", ship_shield)
 		end
 		if ship_hp > 0 and ship_shield <= 0 then
-			ship_hp = ship_hp - math.floor(hit_damage * radius * 4)
+			ship_hp = ship_hp - math.floor(hit_damage * 3 + radius)
 			ship_meta:set_int("hp", ship_hp)
 		end
 	end

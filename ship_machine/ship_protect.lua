@@ -941,8 +941,8 @@ local function register_ship_protect(def)
         local ship_shield_max = ship_meta:get_int("shield_max") 
         local ship_shield = ship_meta:get_int("shield")
         local ship_shield_prcnt = (ship_shield / ship_shield_max) * 100
-        -- shields disable below 60% hp
-        if ship_hp_prcnt >= 60 then
+        -- shields disable below 40% hp
+        if ship_hp_prcnt >= 40 then
             if ship_shield < ship_shield_max then
                 ship_shield = ship_shield + math.random(1, 5)
                 if ship_shield > ship_shield_max then

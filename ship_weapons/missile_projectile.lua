@@ -343,14 +343,17 @@ local function setup_projectile_register(tier)
             y = 0
         }}
     }
-    local radius = 1.5
+    local radius = 1.57
     local spread = 1
+    local speed = 9
     if tier == 'mv' then
-        radius = 2.6
-        spread = 0.5 
+        radius = 2.1
+        spread = 0.5
+        speed  = 10
     elseif tier == 'hv' then
-        radius = 4
+        radius = 2.52
         spread = 0.25
+        speed = 11
     end
     local def = { 
         name = modname .. ':' .. tier .. '_ship_missile',
@@ -372,7 +375,7 @@ local function setup_projectile_register(tier)
         trail_particle_glow = 14,
         reload_sound = "bweapons_hitech_pack_missile_launcher_reload",
         reload_sound_gain = 0.25,
-        projectile_speed = 9,
+        projectile_speed = speed,
         projectile_gravity = 0,
         projectile_timeout = 1600,
         projectile_texture = "ctg_"..tier.."_missile_entity.png",

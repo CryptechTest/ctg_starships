@@ -246,8 +246,8 @@ function ship_weapons.register_targeting_computer(custom_data)
                 isNumError = true
             end
         end
-        if delay > 300 then
-            delay = 300
+        if delay > 30 then
+            delay = 30
         elseif delay < 0 then
             delay = 0
         end
