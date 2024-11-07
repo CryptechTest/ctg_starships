@@ -203,7 +203,7 @@ function ship_scout.get_jumpdrive(pos, size)
     return nil
 end
 
-function ship_cube.get_protector(pos, size)
+function ship_scout.get_protector(pos, size)
     local pos1 = vector.subtract(pos, {
         x = size.w,
         y = size.h,
