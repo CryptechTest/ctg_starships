@@ -725,7 +725,7 @@ function ship_machine.get_protector(pos, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_scout:shield_protect")
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:ship_protector")
 
     if #nodes == 1 then
         return nodes[1]
@@ -754,7 +754,7 @@ function ship_machine.get_ship_protector(pos, size, name)
 end
 
 function ship_machine.get_jump_drive(pos)
-    return minetest.find_node_near(pos, 15, {"ship_machine:jump_drive"})
+    return minetest.find_node_near(pos, 15, {"group:jumpdrive"})
 end
 
 function ship_machine.colorize_text_hp(hp, hp_max)
@@ -782,19 +782,30 @@ end
 
 function ship_machine.update_ship_owner_all(pos, size, new_owner)
     local s = size
-    local nodes = minetest.find_nodes_in_area({
-        x = pos.x - s.w,
-        y = pos.y - s.h,
-        z = pos.z - s.l
-    }, {
-        x = pos.x + s.w,
-        y = pos.y + s.h,
-        z = pos.z + s.l
-    })
-	for _, p in pairs(nodes) do
-		local meta = minetest.get_meta(p)
-        if meta and meta:get_string("owner") ~= nil then
-            meta:set_string("owner", new_owner)
+    for y = pos.y - s.w, pos.y + s.w do
+        for x = pos.x - s.w, pos.x + s.w do
+            for z = pos.z - s.w, pos.z + s.w do
+                local p = {x = x, y = y, z = z}
+                local meta = minetest.get_meta(p)
+                if meta and meta:get_string("owner") and meta:get_string("owner") ~= "" then
+                    meta:set_string("owner", new_owner)
+                end
+            end
         end
-	end
+    end
+end
+
+function ship_machine.update_ship_members_clear(pos, size)
+    local s = size
+    for y = pos.y - s.w, pos.y + s.w do
+        for x = pos.x - s.w, pos.x + s.w do
+            for z = pos.z - s.w, pos.z + s.w do
+                local p = {x = x, y = y, z = z}
+                local meta = minetest.get_meta(p)
+                if meta and meta:get_string("members") and meta:get_string("members") ~= "" then
+                    meta:set_string("members", "")
+                end
+            end
+        end
+    end
 end

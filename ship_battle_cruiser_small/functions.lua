@@ -51,6 +51,25 @@ function ship_battle_cruiser_small.update_formspec(pos, data, loc, ready, messag
         -- refresh
         local refresh = "image_button[5.65,-0.225;0.8,0.8;ctg_ship_refresh_btn.png;refresh;;true;false;ctg_ship_refresh_btn_press.png]"
 
+        -- damage warning
+        local d_warn_bg = "image[0.42,5.1;5.2,0.74;bg2.png]"
+        local damage_warn = ""
+        if ship_hp_prcnt < 10 then
+            local d_mes = "Critical Damage - Defense Offline!"
+            damage_warn = d_warn_bg .. "label[0.5,5.2;" .. minetest.colorize('#f02618', d_mes) .. "]"
+        elseif ship_hp_prcnt < 40 then
+            local d_mes = "Severe Damage - Shield Offline!"
+            damage_warn = d_warn_bg .. "label[0.5,5.2;" .. minetest.colorize('#f04a18', d_mes) .. "]"
+        elseif ship_meta:get_int("shield_hit") > 0 then
+            local d_mes = "Hostile Warning - Recent Attack!"
+            damage_warn = d_warn_bg .. "label[0.5,5.2;" .. minetest.colorize('#f0ac18', d_mes) .. "]"
+        end
+        -- ship owner seize
+        local ship_owner = ""
+        if ship_hp_prcnt < 10 then
+            ship_owner = "button[5,5.0;2.5,1;submit_ctl;Seize Control]"
+        end
+
         -- ship navs
         local img_ship = "image[2,2;1,1;starship_icon.png]"
         local img_hole_1 = "image_button[2,1;1,1;space_wormhole1.png;btn_hole_1;;true;false;space_wormhole2.png]" -- top
@@ -110,11 +129,13 @@ function ship_battle_cruiser_small.update_formspec(pos, data, loc, ready, messag
         if is_deepspace then
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. img_ship .. img_hole_1 ..
-                           img_hole_2 .. img_hole_3 .. img_hole_4 .. nav_label .. hit_points .. shield_points .. busy .. combat_migration .. refresh .. message
+                           img_hole_2 .. img_hole_3 .. img_hole_4 .. damage_warn .. ship_owner ..
+                           nav_label .. hit_points .. shield_points .. busy .. combat_migration .. refresh .. message
         else
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav --[[.. btn_doc]] .. img_ship ..
                            coords_label .. input_field .. nav_label .. hit_points .. shield_points ..
+                           damage_warn .. ship_owner ..
                            busy .. combat_migration .. refresh .. message
         end
     end

@@ -43,6 +43,28 @@ function ship_cargo.register_cruiser(custom_data)
         local node = minetest.get_node(pos)
         local meta = minetest.get_meta(pos)
 
+        if fields.submit_ctl then
+            if (sender and sender:is_player() and sender:get_player_name() ~= meta:get_string("owner")) then
+                local new_owner = sender:get_player_name()
+                local prot = ship_machine.get_protector(pos, data.size)
+                if prot then
+                    local meta2 = minetest.get_meta(prot)
+                    meta2:set_string("owner", new_owner)
+                    meta2:set_string("infotext", S("Protection (owned by @1)", new_owner))
+                    ship_machine.update_ship_owner_all(pos, data.size, new_owner)
+                    ship_machine.update_ship_members_clear(pos, data.size)
+                    local message = "Systems Updated!"
+                    local formspec = ship_cargo.update_formspec(pos, data, 0, 0, message)
+                    meta:set_string("formspec", formspec)
+                end
+                return
+            end
+        end
+
+        if minetest.is_protected(pos, sender) then
+            return
+        end
+
         if fields.submit_migr then
             local shipp = ship_cargo.get_protector(pos, data.size)
             if shipp then
