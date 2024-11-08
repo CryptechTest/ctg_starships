@@ -859,7 +859,9 @@ function ship_weapons.safe_boom(pos, def)
 
 	local pitch = 1
 	if shield > 0 then
-		pitch = 1.2 + (shield * 0.01)
+		pitch = 1.0 + (shield * 0.01)
+		minetest.sound_play("ctg_shield_hit", {pos = pos, gain = 1.5, pitch = math.random(0.3,0.5),
+				max_hear_distance = math.min(def.radius * 20, 128)}, true)
 	end
 	local sound = def.sound or "tnt_explode"
 	minetest.sound_play(sound, {pos = pos, gain = 2.5, pitch = pitch,
