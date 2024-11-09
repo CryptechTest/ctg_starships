@@ -512,9 +512,6 @@ function ship_weapons.register_beam_tower(data)
                         is_visible = true
                     })
                     break
-                else
-                    minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_tower_display")
-                    break
                 end
             end
         end
@@ -599,6 +596,24 @@ function ship_weapons.register_beam_tower(data)
         end
     end
 
+    local function check_display(pos)
+        local found_display = false
+        local objs = minetest.get_objects_inside_radius(pos, 0.25)
+        for _, obj in pairs(objs) do
+            if obj:get_luaentity() then
+                local ent = obj:get_luaentity()
+                if ent.name == "ship_weapons:" .. ltier .. "_tower_display" then
+                    found_display = true
+                    break;
+                end
+            end
+        end
+        if not found_display then
+            minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_tower_display")
+            minetest.get_node_timer(pos):start(30)
+        end
+    end
+
     -------------------------------------------------------
     -------------------------------------------------------
     -- technic run
@@ -633,6 +648,10 @@ function ship_weapons.register_beam_tower(data)
         end
         if data.tube then
             technic.handle_machine_pipeworks(pos, tube_upgrade)
+        end
+
+        if meta:get_int("broken") == 0 and meta:get_int("last_hit") <= 0 then
+            check_display(pos)
         end
 
         local powered = eu_input >= machine_demand_active[EU_upgrade + 1]
@@ -1122,9 +1141,23 @@ function ship_weapons.register_beam_tower(data)
         },
         hp_max = 10,
         textures = {"ship_weapons:" .. ltier .. "_tower_display_node"},
-        glow = 3,
+        glow = 8,
 
         infotext = "HP: " .. data.hp .. "/" .. data.hp .. "",
+
+        timer = 1,
+        on_step = function(self, dtime)
+            self.timer = self.timer + 1
+            if self.timer < 3 then
+                return
+            end
+            self.timer = 0
+            local pos = self.object:get_pos()
+            local node = minetest.get_node(pos)
+            if node and not node.name:match(ltier .. "_" .. tmachine_name) then
+                self.object:remove()
+            end
+        end,
 
         on_death = function(self, killer)
             technic.swap_node(self.pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
