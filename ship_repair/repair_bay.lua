@@ -35,7 +35,8 @@ end)
 ----------------------------------------------------
 ----------------------------------------------------
 
-local function update_formspec(meta, data)
+local function update_formspec(pos, data)
+    local meta = minetest.get_meta(pos)
     local machine_desc = data.tier .. " " .. data.machine_desc
     local typename = data.typename
     local tier = data.tier
@@ -72,18 +73,13 @@ local function update_formspec(meta, data)
 
         local label = "label[0,3.0;Materials Required]"
 
-        formspec = "size[8,10;]" .. 
-                    "list[current_name;src;0,1;8,2;]" .. "list[current_name;ship_repair_inv;0,3.5;5,2;]listring[current_name;ship_repair_inv]" ..
-                    "list[current_player;main;0,6;8,4;]" .. "label[0,0;" .. machine_desc:format(tier) .. "]" .. 
-                    "listring[current_player;main]" .. "listring[current_player;main]" .. 
-                     "button[5.5,3.5;2.5,1;toggle;" .. btnName .. "]" .. label .. progress_time .. progress_tick
-    end
-
-    if data.upgrade then
-        formspec = formspec .. "list[current_name;upgrade1;1,3;1,1;]" .. "list[current_name;upgrade2;2,3;1,1;]" ..
-                       "label[1,4;" .. S("Upgrade Slots") .. "]" .. "listring[current_name;upgrade1]" ..
-                       "listring[current_player;main]" .. "listring[current_name;upgrade2]" ..
-                       "listring[current_player;main]"
+        local spos = pos.x .. "," .. pos.y .. "," .. pos.z
+        local nodemeta = "nodemeta:" .. spos
+        formspec = "size[8,10;]" ..
+                    "list["..nodemeta..";src;0,1;8,2;]" .. "list[current_player;main;0,6;8,4;]" ..
+                    "list[current_name;ship_repair_inv;0,3.5;5,2;]" .. "label[0,0;" .. machine_desc:format(tier) .. "]" ..
+                    "listring["..nodemeta..";src]" .. "listring[current_player;main]" ..
+                    "button[5.5,3.5;2.5,1;toggle;" .. btnName .. "]" .. label .. progress_time .. progress_tick
     end
     return formspec
 end
@@ -255,10 +251,19 @@ local function detect_resources_repair(pos)
     local node_damage_list = minetest.deserialize(meta:get_string("node_damage_list"))
     if node_damage_list and #node_damage_list > 0 then
         for _, node in ipairs(node_damage_list) do
-            materials[node.name] = (materials[node.name] or 0) + 1
-            count = count + 1
-            if #materials >= 10 then
-                break;
+            local name = node.name
+            if node.drop and node.drop ~= '' then
+                name = node.drop
+            end
+            if name then
+                if not materials[name] then
+                    materials[name] = 0
+                end
+                materials[name] = (materials[name] or 0) + 1
+                count = count + 1
+                if #materials >= 10 then
+                    break;
+                end
             end
         end
     end
@@ -362,6 +367,25 @@ local function get_material(items, name, take)
     end
 end
 
+local function repair_replace_node(pos, def)
+    minetest.set_node(pos, {name = def.name, param1 = def.param1, param2 = def.param2})
+    if def.meta then
+        minetest.get_meta(pos):from_table(def.meta)
+    end
+    if def.invs then
+        local inventory = minetest.get_meta(pos):get_inventory()
+        for i, s in pairs(def.invs) do
+            inventory:set_size(i, s)
+            inventory:set_list(i, {})
+        end
+    end
+    if def.tube then
+        minetest.after(0, function()
+            pipeworks.after_place(pos)
+        end)
+    end
+end
+
 local function do_repair(src, ship, count, tier)
     local meta = minetest.get_meta(src)
     local meta_ship = minetest.get_meta(ship)
@@ -383,37 +407,33 @@ local function do_repair(src, ship, count, tier)
         for i = 0, count do
             -- get a node damage entry
             local node_damage = table.remove(node_damage_list, 1)
-            -- get material inputs
-            local inputs = get_material(inv:get_list("src"), node_damage.name, true)
-            if inputs ~= nil then
-                local node_pos = vector.add(ship, node_damage.pos)
-                -- Set the node back to original state
-                minetest.set_node(node_pos, {name = node_damage.name, param1 = node_damage.param1, param2 = node_damage.param2})
-                if node_damage.meta then
-                    minetest.get_meta(node_pos):from_table(node_damage.meta)
+            if node_damage and node_damage.name then
+                local cid = minetest.get_content_id(node_damage.name)
+                local def = cid_data[cid]
+                -- get material inputs
+                local inputs = get_material(inv:get_list("src"), node_damage.name, true)
+                if inputs ~= nil and def then
+                    local node_pos = vector.add(ship, node_damage.pos)
+                    -- Set the node back to original state
+                    repair_replace_node(node_pos, node_damage)
+                    -- update the inputs inventory
+                    inv:set_list("src", inputs)
+                    -- add particle effects
+                    spawn_particle_repair(src, tier)
+                    spawn_particle_repair(ship, tier)
+                    spawn_particle_repair(node_pos, tier)
+                    regened = regened + 1
+                elseif def then
+                    table.insert(node_damage_list, node_damage)
+                    i = i - 1
+                    skips = skips + 1
                 end
-                if node_damage.tube then
-                    minetest.after(0, function()
-                        pipeworks.after_place(node_pos)
-                    end)
+                if skips >= d_count then
+                    break;
                 end
-                -- update the inputs inventory
-                inv:set_list("src", inputs)
-                -- add particle effects
-                spawn_particle_repair(src, tier)
-                spawn_particle_repair(ship, tier)
-                spawn_particle_repair(node_pos, tier)
-                regened = regened + 1
-            else
-                table.insert(node_damage_list, node_damage)
-                i = i - 1
-                skips = skips + 1
-            end
-            if skips >= d_count then
-                break;
-            end
-            if #node_damage_list <= 0 then
-                break;
+                if #node_damage_list <= 0 then
+                    break;
+                end
             end
         end
         --meta:set_int("regen_tick", 50)
@@ -488,23 +508,21 @@ local function do_repair_regen(src, ship, tier)
         for i = 0, count do
             -- get a node damage entry
             local node_damage = table.remove(node_damage_list, 1)
-            local node_pos = vector.add(ship, node_damage.pos)
-            -- Set the node back to original state
-            minetest.set_node(node_pos, {name = node_damage.name, param1 = node_damage.param1, param2 = node_damage.param2})
-            if node_damage.meta then
-                minetest.get_meta(node_pos):from_table(node_damage.meta)
-            end
-            if node_damage.tube then
-                minetest.after(0, function()
-                    pipeworks.after_place(node_pos)
-                end)
-            end
-            -- add particle effects
-            spawn_particle_repair(src, tier)
-            spawn_particle_repair(ship, tier)
-            spawn_particle_repair(node_pos, tier)
-            if #node_damage_list <= 0 then
-                break;
+            if node_damage and node_damage.name then
+                local cid = minetest.get_content_id(node_damage.name)
+                local def = cid_data[cid]
+                local node_pos = vector.add(ship, node_damage.pos)
+                if def then
+                    -- Set the node back to original state
+                    repair_replace_node(node_pos, node_damage)
+                    -- add particle effects
+                    spawn_particle_repair(src, tier)
+                    spawn_particle_repair(ship, tier)
+                    spawn_particle_repair(node_pos, tier)
+                    if #node_damage_list <= 0 then
+                        break;
+                    end
+                end
             end
         end
         meta_ship:set_string("node_damage_list", minetest.serialize(node_damage_list))
@@ -577,7 +595,8 @@ function ship_repair.register_repair_box(custom_data)
     end
 
     local tube = {
-        input_inventory = 'dst',
+        source_inventory = 'src',
+        input_inventory = 'src',
         insert_object = function(pos, node, stack, direction)
             local meta = minetest.get_meta(pos)
             local inv = meta:get_inventory()
@@ -637,16 +656,18 @@ function ship_repair.register_repair_box(custom_data)
         end
         while true do
             local enabled = meta:get_int("enabled") == 1
-            if not enabled then
-                meta:set_int(tier .. "_EU_demand", 0)
-                technic.swap_node(pos, machine_node)
-                break
-            end
 
             meta:set_int(tier .. "_EU_demand", machine_demand_idle)
 
             if not powered then
                 meta:set_string("infotext", machine_desc_tier .. S(" - Not Powered"))
+                technic.swap_node(pos, machine_node)
+                break
+            end
+
+            if not enabled then
+                meta:set_string("infotext", machine_desc_tier .. S(" - Offline"))
+                meta:set_int(tier .. "_EU_demand", 0)
                 technic.swap_node(pos, machine_node)
                 break
             end
@@ -673,8 +694,8 @@ function ship_repair.register_repair_box(custom_data)
                 do_repair_regen(pos, ship, ltier)
             end
 
-            if meta:get_int("src_time") % 20 == 0 then
-                local formspec = update_formspec(meta, data)
+            if meta:get_int("src_time") % 40 == 0 then
+                local formspec = update_formspec(pos, data)
                 meta:set_string("formspec", formspec)
             end
 
@@ -686,7 +707,7 @@ function ship_repair.register_repair_box(custom_data)
                 do_repair(pos, ship, data.count, ltier)
             end
             
-            local formspec = update_formspec(meta, data)
+            local formspec = update_formspec(pos, data)
             meta:set_string("formspec", formspec)
 
             meta:set_int("src_time", 0)
@@ -707,7 +728,7 @@ function ship_repair.register_repair_box(custom_data)
                 meta:set_int("enabled", 1)
             end
         end
-        local formspec = update_formspec(meta, data)
+        local formspec = update_formspec(pos, data)
         meta:set_string("formspec", formspec)
     end
     
@@ -806,7 +827,7 @@ function ship_repair.register_repair_box(custom_data)
             local inv = meta:get_inventory()
             inv:set_size("src", 16)
             inv:set_size("ship_repair_inv", 10)
-            local formspec = update_formspec(meta, data)
+            local formspec = update_formspec(pos, data)
             meta:set_string("formspec", formspec)
         end,
 

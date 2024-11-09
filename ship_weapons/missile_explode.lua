@@ -127,29 +127,69 @@ local function destroy(drops, npos, cid, c_air, c_fire, on_blast_queue, on_const
 	end
 end
 
+local function deepcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepcopy(orig_key)] = deepcopy(orig_value)
+        end
+        setmetatable(copy, deepcopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+
 local function get_stor(npos, def)
-	local level = def.groups['level'] or 0
-	local metal = def.groups['metal'] or 0
 	local sto = {
 		pos = vector.new(npos),
 		name = def.name,
+		groups = {},
+		drop = nil,
 		param1 = nil,
 		param2 = nil,
-		tube = def.tube,
-		meta = {},
-		groups = {
-			level = level,
-			metal = metal
-		}
+		meta = nil,
+		invs = nil,
+		tube = nil,
 	}
 	if def.groups['not_in_creative_inventory'] and def.drop then
-		sto.name = def.drop
+		sto.drop = def.drop
+	end
+	if def.tube then
+		sto.tube = true
+	end
+	if def.groups then
+		if def.groups['metal'] then
+			sto.groups.metal = def.groups['metal']
+		end
+		if def.groups['level'] then
+			sto.groups.metal = def.groups['level']
+		end
 	end
 	local node = minetest.get_node(npos)
 	sto.param1 = node.param1 ~= 0 and node.param1 or nil
 	sto.param2 = node.param2 ~= 0 and node.param2 or nil
-	local meta = minetest.get_meta(npos)
-	sto.meta = meta ~= nil and meta:to_table() or {}
+    local has_meta = {}
+    local meta_positions = minetest.find_nodes_with_meta(npos, npos)
+    for i = 1, #meta_positions do
+        has_meta[minetest.hash_node_position(meta_positions[i])] = true
+    end
+	if has_meta[minetest.hash_node_position(npos)] then
+		sto.meta = {}
+		local meta = minetest.get_meta(npos)
+		sto.meta.fields = meta:to_table().fields
+		local inv = meta:get_inventory()
+		if inv then
+			local inv_t = meta:to_table().inventory
+			local invs = {}
+			for k,v in pairs(inv_t) do
+				invs[k] = #v
+			end
+			sto.invs = invs
+		end
+	end
 	return sto
 end
 
@@ -519,17 +559,20 @@ local function calc_node_damage(n_hit, dist, hp)
 	if n_hit == nil then
 		return 0
 	end
+	if n_hit.on_blast then
+		return 2
+	end
 	local d = dist > 1 and math.random(0, dist) or 1
 	if d < 1 then
-		return 1 -- don't break node
+		return 1
 	end
-	local level = n_hit.groups.level
-	local metal = n_hit.groups.metal
+	local level = n_hit.groups['level'] or 0
+	local metal = n_hit.groups['metal'] or 0
 	local ta = level + metal
 	if ta > 0 then
 		local r = math.random(0, ta)
 		if r > 1.5 then
-			return 1 -- don't break node
+			return 1
 		end
 	end
 	if metal > 0 then
@@ -639,7 +682,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 				local d_delta = vector.distance(shipp, p)
 				local h_damage = calc_node_damage(n_hit, d_delta, ship_hp_prcnt)
 				hit_damage = hit_damage + h_damage
-				if ship_combat_ready and ship_shield_prcnt <= dam_thres and h_damage > 1 then
+				if ship_combat_ready and ship_shield_prcnt <= dam_thres and h_damage > 0 then
 					data[vi] = dcid
 					if n_hit ~= nil and n_hit.name then
 						table.insert(n_hits, n_hit)
@@ -657,37 +700,9 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 		vm:write_to_map()
 		vm:update_map()
 		vm:update_liquids()
-
-		-- get node hit storage
-		local hits = minetest.deserialize(ship_meta:get_string("node_damage_list")) or {}
-		-- check node hit list
-		for _, hit in pairs(n_hits) do
-			local o_pos = vector.subtract(hit.pos, shipp)
-			hit.pos = o_pos
-			table.insert(hits, hit)
-		end
-		ship_meta:set_string("node_damage_list", minetest.serialize(hits))
-
 	else
 		add_effects_hit_shield(pos, radius)
 		drops = {}
-
-	end
-
-	if ship_combat_ready then
-		ship_shield_hit = ship_shield_hit + math.random(1, 3)
-		ship_meta:set_int("shield_hit", ship_shield_hit)
-		if ship_shield > 0 then
-			ship_shield = ship_shield - math.floor(hit_damage * 5 + radius + 0.5)
-			if ship_shield <= 0 then
-				ship_shield = 0
-			end
-			ship_meta:set_int("shield", ship_shield)
-		end
-		if ship_hp > 0 and ship_shield <= 0 then
-			ship_hp = ship_hp - math.floor(hit_damage * 3 + radius + 0.5)
-			ship_meta:set_int("hp", ship_hp)
-		end
 	end
 
 	-- call check_single_for_falling for everything within 1.5x blast radius
@@ -709,6 +724,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 			local dist = math.max(1, vector.distance(queued_data.pos, pos))
 			local intensity = (radius * radius) / (dist * dist)
 			local node_drops = queued_data.on_blast(queued_data.pos, intensity)
+			local n_hit = queued_data.stor
 			if node_drops then
 				for _, item in pairs(node_drops) do
 					add_drop(drops, item)
@@ -718,6 +734,43 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 
 		for _, queued_data in pairs(on_construct_queue) do
 			queued_data.fn(queued_data.pos)
+		end
+	end
+
+	if ship_combat_ready and ship_shield_prcnt <= dam_thres and #n_hits > 0 then
+		-- get node hit storage
+		local hits = minetest.deserialize(ship_meta:get_string("node_damage_list")) or {}
+		-- check node hit list
+		for _, n_hit in pairs(n_hits) do
+			local o_pos = vector.subtract(n_hit.pos, shipp)
+			local hit = {
+				pos = o_pos,
+				name = n_hit.name,
+				drop = n_hit.drop,
+				param1 = n_hit.param1,
+				param2 = n_hit.param2,
+				meta = n_hit.meta,
+				invs = n_hit.invs,
+				tube = n_hit.tube
+			}
+			table.insert(hits, hit)
+		end
+		ship_meta:set_string("node_damage_list", minetest.serialize(hits))
+	end
+
+	if ship_combat_ready then
+		ship_shield_hit = ship_shield_hit + math.random(1, 3)
+		ship_meta:set_int("shield_hit", ship_shield_hit)
+		if ship_shield > 0 then
+			ship_shield = ship_shield - math.floor(hit_damage * 5 + radius + 0.5)
+			if ship_shield <= 0 then
+				ship_shield = 0
+			end
+			ship_meta:set_int("shield", ship_shield)
+		end
+		if ship_hp > 0 and ship_shield <= 0 then
+			ship_hp = ship_hp - math.floor(hit_damage * 3 + radius + 0.5)
+			ship_meta:set_int("hp", ship_hp)
 		end
 	end
 
@@ -860,7 +913,7 @@ function ship_weapons.safe_boom(pos, def)
 	local pitch = 1
 	if shield > 0 then
 		pitch = 1.0 + (shield * 0.01)
-		minetest.sound_play("ctg_shield_hit", {pos = pos, gain = 1.5, pitch = math.random(0.3,0.5),
+		minetest.sound_play("ctg_shield_hit", {pos = pos, gain = 1.5, pitch = math.random(0.25,0.35),
 				max_hear_distance = math.min(def.radius * 20, 128)}, true)
 	end
 	local sound = def.sound or "tnt_explode"
