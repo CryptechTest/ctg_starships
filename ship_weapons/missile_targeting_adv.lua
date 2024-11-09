@@ -538,7 +538,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
 
         if dish_ping == 0 then
             meta:set_int("dish_ping", 30)
-            meta:set_string("dish_pos", nil)
+            meta:set_string("dish_pos", '')
             digilines.receptor_send(pos, technic.digilines.rules_allfaces, "targeting_dish", {
                 command = "pos_self"
             })
@@ -664,7 +664,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
             meta:set_float("target_pitch", 0.0)
             meta:set_float("target_yaw", 0.0)
             meta:set_int("dish_ping", 0)
-            meta:set_string("dish_pos", nil)
+            meta:set_string("dish_pos", '')
         end,
 
         on_punch = function(pos, node, puncher)
