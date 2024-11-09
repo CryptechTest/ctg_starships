@@ -191,7 +191,7 @@ local function register_projectile(def)
                                 y=((target_delta.y+ship_weapons.get_spread(def.spread))*def.projectile_speed),
                                 z=((target_delta.z+ship_weapons.get_spread(def.spread))*def.projectile_speed)}
                     local vel = vector.add(vector.multiply(velo, 5), veln) / 6
-                    self.object:setvelocity(vel)
+                    self.object:set_velocity(vel)
                 end
                 if (dist_delta < 1.8) then
                     --self.node_hit = true 
@@ -228,10 +228,12 @@ local function register_projectile(def)
                     ship_weapons.damage_aoe(def.damage, self.owner, target.intersection_point, def.aoe_radius)
                 else
                     local player = minetest.get_player_by_name(self.owner)
-                    target.ref:punch(player, 1.0, {
-                    full_punch_interval=1.0,
-                    damage_groups={fleshy=def.damage},
-                    }, nil)
+                    if player then
+                        target.ref:punch(player, 1.0, {
+                        full_punch_interval=1.0,
+                        damage_groups={fleshy=def.damage},
+                        }, nil)
+                    end
                 end
                 if def.on_hit then
                     def.on_hit(self, target)
@@ -556,10 +558,10 @@ function ship_weapons.launch_projectile(custom_def, operator, origin, target, ob
         obj:get_luaentity().target_delay = def.delay
         obj:get_luaentity().object_target = object_target
         --Combine velocity with launch velocity
-        obj:setvelocity({x=((dir.x+ship_weapons.get_spread(spread))*projectile_speed)+vel.x,
+        obj:set_velocity({x=((dir.x+ship_weapons.get_spread(spread))*projectile_speed)+vel.x,
                         y=((dir.y+ship_weapons.get_spread(spread))*projectile_speed)+vel.y,
                         z=((dir.z+ship_weapons.get_spread(spread))*projectile_speed)+vel.z})
-        obj:setacceleration({x=0, y=projectile_gravity, z=0})
+        obj:set_acceleration({x=0, y=projectile_gravity, z=0})
     end
         
     --Fire flash
