@@ -216,6 +216,7 @@ local function destroy_safe(drops, npos, cid, c_air, c_fire, on_blast_queue, on_
 			on_blast = def.on_blast
 		}
 		stor = get_stor(npos, def)
+		stor.on_blast = true
 		return cid, stor
 	elseif def.flammable then
 		on_construct_queue[#on_construct_queue + 1] = {
@@ -563,7 +564,7 @@ local function calc_node_damage(n_hit, dist, hp)
 		return 2
 	end
 	local d = dist > 1 and math.random(0, dist) or 1
-	if d < 1 then
+	if d < 3 then
 		return 1
 	end
 	local level = n_hit.groups['level'] or 0
@@ -683,9 +684,14 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 				local h_damage = calc_node_damage(n_hit, d_delta, ship_hp_prcnt)
 				hit_damage = hit_damage + h_damage
 				if ship_combat_ready and ship_shield_prcnt <= dam_thres and h_damage > 0 then
-					data[vi] = dcid
-					if n_hit ~= nil and n_hit.name then
-						table.insert(n_hits, n_hit)
+					if n_hit.on_blast or math.random(0, ship_hp_prcnt) < 20 then
+						data[vi] = dcid
+						if n_hit ~= nil and n_hit.name then
+							table.insert(n_hits, n_hit)
+						end
+					else
+						hit_damage = hit_damage + 1
+						data[vi] = cid
 					end
 				end
 			end

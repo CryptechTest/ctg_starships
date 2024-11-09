@@ -598,13 +598,15 @@ function ship_weapons.register_beam_tower(data)
 
     local function check_display(pos)
         local found_display = false
-        local objs = minetest.get_objects_inside_radius(pos, 0.25)
+        local objs = minetest.get_objects_inside_radius(pos, 0.5)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
                 if ent.name == "ship_weapons:" .. ltier .. "_tower_display" then
+                    if found_display then
+                        obj:remove()
+                    end
                     found_display = true
-                    break;
                 end
             end
         end

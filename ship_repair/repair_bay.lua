@@ -427,7 +427,7 @@ local function do_repair(src, ship, count, tier)
                     spawn_particle_repair(src, tier)
                     spawn_particle_repair(ship, tier)
                     spawn_particle_repair(node_pos, tier)
-                    regened = regened + 2
+                    regened = regened + 5
                 elseif def then
                     table.insert(node_damage_list, node_damage)
                     i = i - 1
