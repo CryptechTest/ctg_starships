@@ -411,7 +411,12 @@ local function do_repair(src, ship, count, tier)
                 local cid = minetest.get_content_id(node_damage.name)
                 local def = cid_data[cid]
                 -- get material inputs
-                local inputs = get_material(inv:get_list("src"), node_damage.name, true)
+                local inputs = nil
+                if node_damage.drop then
+                    inputs = get_material(inv:get_list("src"), node_damage.drop, true)
+                else
+                    inputs = get_material(inv:get_list("src"), node_damage.name, true)
+                end
                 if inputs ~= nil and def then
                     local node_pos = vector.add(ship, node_damage.pos)
                     -- Set the node back to original state
@@ -422,7 +427,7 @@ local function do_repair(src, ship, count, tier)
                     spawn_particle_repair(src, tier)
                     spawn_particle_repair(ship, tier)
                     spawn_particle_repair(node_pos, tier)
-                    regened = regened + 1
+                    regened = regened + 2
                 elseif def then
                     table.insert(node_damage_list, node_damage)
                     i = i - 1
@@ -444,11 +449,11 @@ local function do_repair(src, ship, count, tier)
         local ship_hp_max = meta_ship:get_int("hp_max") or 1
         local ship_hp = meta_ship:get_int("hp") or 1
         if tier == "lv" then
-            ship_hp = ship_hp + regened + 2
+            ship_hp = ship_hp + regened + 5
         elseif tier == "mv" then
-            ship_hp = ship_hp + regened + 2
+            ship_hp = ship_hp + regened + 6
         elseif  tier == "hv" then
-            ship_hp = ship_hp + regened + 3
+            ship_hp = ship_hp + regened + 7
         end
         if ship_hp > ship_hp_max then
             ship_hp = ship_hp_max
