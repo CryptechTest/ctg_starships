@@ -6,7 +6,7 @@ local ship_def = {}
 ship_def.name = "Battle Cruiser Small"
 ship_def.size = {
     w = 30,
-    h = 16,
+    h = 10,
     l = 18
 }
 ship_def.hp = 5000
