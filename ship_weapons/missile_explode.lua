@@ -190,7 +190,7 @@ local function get_stor(npos, def)
 			sto.invs = invs
 		end
 	end
-	return sto
+	return deepcopy(sto)
 end
 
 local function destroy_safe(drops, npos, cid, c_air, c_fire, on_blast_queue, on_construct_queue, ignore_protection, ignore_on_blast, owner)
