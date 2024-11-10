@@ -130,13 +130,13 @@ function ship_cube.update_formspec(pos, data, loc, ready, message)
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. img_ship .. img_hole_1 ..
                            img_hole_2 .. img_hole_3 .. img_hole_4 .. damage_warn .. ship_owner ..
                            nav_label .. hit_points .. shield_points ..
-                           busy .. combat_migration .. message
+                           busy .. combat_migration .. refresh .. message
         else
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav --[[.. btn_doc]] .. img_ship ..
                            coords_label .. input_field .. nav_label .. hit_points .. shield_points ..
                            damage_warn .. ship_owner ..
-                           busy .. combat_migration .. message
+                           busy .. combat_migration .. refresh .. message
         end
     end
 
