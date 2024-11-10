@@ -4,12 +4,12 @@ local function isInteger(str)
     return tonumber(str) ~= nil
 end
 
-function ship_scout.register_scout(custom_data)
+function ship_raider.register_scout(custom_data)
 
     local data = custom_data or {}
 
-    data.typename = custom_data.typename or "ship_scout"
-    data.modname = custom_data.modname or "ship_scout"
+    data.typename = custom_data.typename or "ship_raider"
+    data.modname = custom_data.modname or "ship_raider"
     data.tier = custom_data.tier or "LV"
     data.machine_name = custom_data.machine_name
     data.machine_desc = custom_data.machine_desc or "Scout"
@@ -31,7 +31,7 @@ function ship_scout.register_scout(custom_data)
         level = 1,
         starship = 1,
         jumpship = 1,
-        ship_scout = 1,
+        ship_raider = 1,
         ship_jumps = 1,
         not_in_creative_inventory = 1
     }
@@ -54,7 +54,7 @@ function ship_scout.register_scout(custom_data)
                     ship_machine.update_ship_owner_all(pos, data.size, new_owner)
                     ship_machine.update_ship_members_clear(pos, data.size)
                     local message = "Systems Updated!"
-                    local formspec = ship_scout.update_formspec(pos, data, 0, 0, message)
+                    local formspec = ship_raider.update_formspec(pos, data, 0, 0, message)
                     meta:set_string("formspec", formspec)
                 end
                 return
@@ -66,7 +66,7 @@ function ship_scout.register_scout(custom_data)
         end
 
         if fields.submit_migr then
-            local shipp = ship_scout.get_protector(pos, data.size)
+            local shipp = ship_raider.get_protector(pos, data.size)
             if shipp then
                 meta:set_int("combat_ready", 2)
                 local ship_meta = minetest.get_meta(shipp)
@@ -78,23 +78,23 @@ function ship_scout.register_scout(custom_data)
             end
             local ready = meta:get_int("travel_ready")
             local message = "Combat Ready!"
-            local formspec = ship_scout.update_formspec(pos, data, 0, ready, message)
+            local formspec = ship_raider.update_formspec(pos, data, 0, ready, message)
             meta:set_string("formspec", formspec)
             return
         end
 
         if fields.refresh then
             local ready = meta:get_int("travel_ready")
-            local formspec = ship_scout.update_formspec(pos, data, 0, ready, '')
+            local formspec = ship_raider.update_formspec(pos, data, 0, ready, '')
             meta:set_string("formspec", formspec)
             return
         end
 
-        local jpos = ship_scout.get_jumpdrive(pos, data.size)
+        local jpos = ship_raider.get_jumpdrive(pos, data.size)
 
         if jpos == nil then
             local message = "Jump Drive not found..."
-            local formspec = ship_scout.update_formspec(pos, data, 0, 0, message)
+            local formspec = ship_raider.update_formspec(pos, data, 0, 0, message)
             meta:set_string("formspec", formspec)
             return
         end
@@ -113,7 +113,7 @@ function ship_scout.register_scout(custom_data)
             local prot_loc = ship_machine.get_protector(pos, data.size)
             if prot_loc then
                 minetest.registered_nodes[minetest.get_node(prot_loc).name].on_rightclick(prot_loc, node, sender, nil)
-                --ship_scout.rightclick(prot_loc, sender)
+                --ship_raider.rightclick(prot_loc, sender)
             end
             return
         end
@@ -146,7 +146,7 @@ function ship_scout.register_scout(custom_data)
         local locked = meta:get_int("travel_ready") == 1
         if locked then
             local formspec =
-                ship_scout.update_formspec(pos, data, loc, false, "Interface lockout!\nAllocator is busy...")
+                ship_raider.update_formspec(pos, data, loc, false, "Interface lockout!\nAllocator is busy...")
             meta:set_string("formspec", formspec)
             return
         end
@@ -208,7 +208,7 @@ function ship_scout.register_scout(custom_data)
                     local bay_center = vector.add(bay, offset);
                     -- local bmeta = minetest.get_meta(bay)
                     local bnode = minetest.get_node(bay_center)
-                    if bnode.name ~= "ship_scout:shield_protect" and bnode.name == "vacuum:vacuum" then
+                    if bnode.name ~= "ship_raider:shield_protect" and bnode.name == "vacuum:vacuum" then
                         if bay_center.x < jpos.x then
                             move_x = bay_center.x - jpos.x
                         else
@@ -227,7 +227,7 @@ function ship_scout.register_scout(custom_data)
                         fields.submit_nav = true
                         bFound = true;
                         message = "Docking bay found!"
-                        local formspec = ship_scout.update_formspec(pos, data, loc, 1, message)
+                        local formspec = ship_raider.update_formspec(pos, data, loc, 1, message)
                         meta:set_string("formspec", formspec)
                         break
                     end
@@ -236,7 +236,7 @@ function ship_scout.register_scout(custom_data)
 
             if not bFound then
                 message = "Docking bay not found..."
-                local formspec = ship_scout.update_formspec(pos, data, loc, 0, message)
+                local formspec = ship_raider.update_formspec(pos, data, loc, 0, message)
                 meta:set_string("formspec", formspec)
                 return;
             end
@@ -248,7 +248,7 @@ function ship_scout.register_scout(custom_data)
             y = move_y,
             z = move_z
         }
-        local ncount, dest = ship_scout.get_jump_dest(jpos, offset, data.size)
+        local ncount, dest = ship_raider.get_jump_dest(jpos, offset, data.size)
         local panel_dest = vector.add(pos, offset)
 
         if ncount == 0 and dest == nil then
@@ -276,7 +276,7 @@ function ship_scout.register_scout(custom_data)
             meta:set_int("travel_ready", 0)
             message = "Jump destination beyond engine abilities..."
         elseif fields.submit_nav and ((is_deepspace and loc ~= "0") or (not is_deepspace)) then
-            local formspec = ship_scout.update_formspec(pos, data, loc, false, "Preparing Jump...")
+            local formspec = ship_raider.update_formspec(pos, data, loc, false, "Preparing Jump...")
             meta:set_string("formspec", formspec)
 
             local function jump_callback(j)
@@ -287,17 +287,17 @@ function ship_scout.register_scout(custom_data)
                     meta:set_int("travel_ready", 1)
                     message = "Jump actuality establishing route..."
                     local ready = meta:get_int("travel_ready")
-                    local formsp = ship_scout.update_formspec(pos, data, loc, ready, message)
+                    local formsp = ship_raider.update_formspec(pos, data, loc, ready, message)
                     meta:set_string("formspec", formsp)
                     minetest.after(3.5, function()
                         local metad = minetest.get_meta(panel_dest)
-                        local formspec_old = ship_scout.update_formspec(panel_dest, data, loc, false, "Jump Complete!")
+                        local formspec_old = ship_raider.update_formspec(panel_dest, data, loc, false, "Jump Complete!")
                         meta:set_string("formspec", formspec_old)
-                        local formspec_new = ship_scout.update_formspec(panel_dest, data, loc, false, "Jump Complete!")
+                        local formspec_new = ship_raider.update_formspec(panel_dest, data, loc, false, "Jump Complete!")
                         metad:set_string("formspec", formspec_new)
                         metad:set_int("travel_ready", 0)
                         minetest.after(5, function()
-                            local formspec_rdy = ship_scout.update_formspec(panel_dest, data, loc, false, "Ready...")
+                            local formspec_rdy = ship_raider.update_formspec(panel_dest, data, loc, false, "Ready...")
                             metad:set_string("formspec", formspec_rdy)
                         end)
                     end)
@@ -317,12 +317,12 @@ function ship_scout.register_scout(custom_data)
                 end
 
                 local ready = meta:get_int("travel_ready")
-                local formspec = ship_scout.update_formspec(pos, data, loc, ready, message)
+                local formspec = ship_raider.update_formspec(pos, data, loc, ready, message)
                 meta:set_string("formspec", formspec)
             end
 
             -- async jump with callback
-            ship_scout.engine_do_jump(pos, dest, data.size, jump_callback, offset)
+            ship_raider.engine_do_jump(pos, dest, data.size, jump_callback, offset)
 
             return
         elseif fields.submit_nav and not changed then
@@ -334,7 +334,7 @@ function ship_scout.register_scout(custom_data)
         end
 
         local ready = meta:get_int("travel_ready")
-        local formspec = ship_scout.update_formspec(pos, data, loc, ready, message)
+        local formspec = ship_raider.update_formspec(pos, data, loc, ready, message)
         meta:set_string("formspec", formspec)
     end
 
@@ -378,14 +378,14 @@ function ship_scout.register_scout(custom_data)
             meta:set_int("dest_dir", 0)
             meta:set_int("jump_dist", data.jump_dist)
             meta:set_int("travel_ready", 0)
-            meta:set_string("formspec", ship_scout.update_formspec(pos, data, "0", false, ''))
+            meta:set_string("formspec", ship_raider.update_formspec(pos, data, "0", false, ''))
             meta:set_string("pos_nav", "{}")
             meta:set_string("pos_eng1", "{}")
             meta:set_string("pos_eng2", "{}")
         end,
 
         on_punch = function(pos, node, puncher)
-            local drive_loc = ship_scout.get_jumpdrive(pos, data.size)
+            local drive_loc = ship_raider.get_jumpdrive(pos, data.size)
             if drive_loc then
                 minetest.registered_nodes[minetest.get_node(drive_loc).name].on_punch(drive_loc, node, puncher)
             end
@@ -402,7 +402,7 @@ function ship_scout.register_scout(custom_data)
                 end
             },
             effector = {
-                action = ship_scout.scout_digiline_effector
+                action = ship_raider.scout_digiline_effector
             }
         }
     })
