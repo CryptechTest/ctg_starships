@@ -1133,21 +1133,23 @@ function ship_weapons.register_beam_tower(data)
 
     -- display entity shown for tower hit effect
     minetest.register_entity("ship_weapons:" .. ltier .. "_tower_display", {
-        physical = false,
-        collisionbox = {-0.75, -0.75, -0.75, 0.75, 0.75, 0.75},
-        visual = "wielditem",
-        -- wielditem seems to be scaled to 1.5 times original node size
-        visual_size = {
-            x = 0.67,
-            y = 0.67
+        initial_properties = {
+            physical = false,
+            collisionbox = {-0.75, -0.75, -0.75, 0.75, 0.75, 0.75},
+            visual = "wielditem",
+            -- wielditem seems to be scaled to 1.5 times original node size
+            visual_size = {
+                x = 0.67,
+                y = 0.67
+            },
+            hp_max = 10,
+            textures = {"ship_weapons:" .. ltier .. "_tower_display_node"},
+            glow = 8,
+            infotext = "HP: " .. data.hp .. "/" .. data.hp .. "",
         },
-        hp_max = 10,
-        textures = {"ship_weapons:" .. ltier .. "_tower_display_node"},
-        glow = 8,
-
-        infotext = "HP: " .. data.hp .. "/" .. data.hp .. "",
 
         timer = 1,
+
         on_step = function(self, dtime)
             self.timer = self.timer + 1
             if self.timer < 3 then
@@ -1162,7 +1164,8 @@ function ship_weapons.register_beam_tower(data)
         end,
 
         on_death = function(self, killer)
-            technic.swap_node(self.pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
+            local pos = self.object:get_pos()
+            technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
             minetest.get_node_timer(self.pos):start(30)
             local meta = minetest.get_meta(self.pos)
             meta:set_int("broken", 1)
