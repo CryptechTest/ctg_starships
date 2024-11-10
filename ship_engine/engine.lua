@@ -147,6 +147,11 @@ function ship_engine.register_engine(data)
             local enabled = meta:get_int("enabled") == 1
             local chrg = meta:get_int('last_input_type')
             local xclear = meta:get_int("exhaust_clear") >= 1
+            local needs_charge = ship_engine.needs_charge(pos)
+
+            if needs_charge then
+                meta:set_int(tier .. "_EU_demand", machine_demand[1])
+            end
 
             if not powered then
                 technic.swap_node(pos, machine_node)
@@ -183,8 +188,6 @@ function ship_engine.register_engine(data)
             if not has_mese then
                 digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine", "request_mese")
             end
-
-            local needs_charge = ship_engine.needs_charge(pos)
 
             if meta:get_int('last_input_type') > 0 then
                 meta:set_int(tier .. "_EU_supply", data.supply)
