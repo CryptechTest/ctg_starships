@@ -5,8 +5,8 @@ ship_raider = {}
 local ship_def_raider = {
     size = {
         w = 12,
-        h = 12,
-        l = 15
+        h = 5,
+        l = 7
     },
     name = "Raider",
     hp = 1000,
