@@ -679,7 +679,8 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 			if cid ~= c_air and cid ~= c_ignore then
 				local n_hit = nil
 				local dcid = nil
-				dcid, n_hit = destroy_safe(drops, p, cid, c_air, c_fire, on_blast_queue, on_construct_queue, ignore_protection, ignore_on_blast, owner)
+				local n_drops = {}
+				dcid, n_hit = destroy_safe(n_drops, p, cid, c_air, c_fire, on_blast_queue, on_construct_queue, ignore_protection, ignore_on_blast, owner)
 				local d_delta = vector.distance(shipp, p)
 				local h_damage = calc_node_damage(n_hit, d_delta, ship_hp_prcnt)
 				hit_damage = hit_damage + h_damage
@@ -688,6 +689,9 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 						data[vi] = dcid
 						if n_hit ~= nil and n_hit.name then
 							table.insert(n_hits, n_hit)
+						end
+						for _, item in pairs(n_drops) do
+							add_drop(drops, item)
 						end
 					else
 						hit_damage = hit_damage + 1
