@@ -492,6 +492,7 @@ local function register_ship_protect(def)
         if minetest.is_protected(pos, puncher:get_player_name()) then
             return
         end
+        pos = vector.subtract(pos, vector.new(0,2,0))
         minetest.add_entity(pos, modname .. ":display")
     end
 
