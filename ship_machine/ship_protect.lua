@@ -995,11 +995,11 @@ local function register_ship_protect(def)
 
                 local protectors = minetest.find_nodes_in_area({
                     x = pos.x - def.protector.size.w,
-                    y = pos.y - def.protector.size.h - 2,
+                    y = (pos.y - def.protector.size.h) - 2,
                     z = pos.z - def.protector.size.l
                 }, {
                     x = pos.x + def.protector.size.w,
-                    y = pos.y + def.protector.size.h - 2,
+                    y = (pos.y + def.protector.size.h) - 2,
                     z = pos.z + def.protector.size.l
                 }, {nodename})
 

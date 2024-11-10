@@ -8,6 +8,7 @@ function ship_scout.register_scout(custom_data)
 
     local data = custom_data or {}
 
+    data.min_dist = custom_data.min_dist or 49
     data.typename = custom_data.typename or "ship_scout"
     data.modname = custom_data.modname or "ship_scout"
     data.tier = custom_data.tier or "LV"
@@ -260,7 +261,7 @@ function ship_scout.register_scout(custom_data)
         elseif isNumError then
             meta:set_int("travel_ready", 0)
             message = "Must input a valid number..."
-        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < 99 and not fields.submit_dock then
+        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < data.min_dist and not fields.submit_dock then
             meta:set_int("travel_ready", 0)
             message = "Jump distance below engine range..."
         elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < 41 and fields.submit_dock then
