@@ -139,7 +139,10 @@ function ship_engine.register_engine(data)
             technic.handle_machine_pipeworks(pos, tube_upgrade)
         end
 
-        local powered = eu_input >= machine_demand[EU_upgrade + 1]
+        local has_mese = ship_engine.get_mese(inv:get_list("src"), false) ~= nil
+        local needs_charge = ship_engine.needs_charge(pos)
+
+        local powered = needs_charge and eu_input >= machine_demand[EU_upgrade + 1] or true
         if powered == true or meta:get_int('last_input_type') > 0 then
             meta:set_int("src_time", meta:get_int("src_time") + round(data.speed * 10))
         end
@@ -147,19 +150,17 @@ function ship_engine.register_engine(data)
             local enabled = meta:get_int("enabled") == 1
             local chrg = meta:get_int('last_input_type')
             local xclear = meta:get_int("exhaust_clear") >= 1
-            local needs_charge = ship_engine.needs_charge(pos)
 
             if needs_charge then
                 meta:set_int(tier .. "_EU_demand", machine_demand[1])
             end
 
-            if not powered then
+            if not powered and chrg ~= 0 then
                 technic.swap_node(pos, machine_node)
                 meta:set_string("infotext", machine_desc_tier .. S(" Not Powered"))
                 return
             end
 
-            local has_mese = ship_engine.get_mese(inv:get_list("src"), false) ~= nil
             if (not enabled) then
                 technic.swap_node(pos, machine_node)
                 meta:set_string("infotext", machine_desc_tier .. S(" Disabled"):format())
@@ -204,7 +205,6 @@ function ship_engine.register_engine(data)
                 meta:set_int("src_tick", 0)
             end
 
-            technic.swap_node(pos, machine_node .. "_active")
             local item_percent = ((meta:get_int("src_time") / round(time_scl * 10)) * 100)
             if meta:get_int("src_tick") <= 0 then
                 time_scl = time_tick * 1
@@ -263,6 +263,10 @@ function ship_engine.register_engine(data)
                     meta:set_int(tier .. "_EU_supply", 0)
                     meta:set_string("infotext", machine_desc_tier .. S(" Unpowered"))
                     return
+                end
+                technic.swap_node(pos, machine_node .. "_active")
+                if meta:get_int("src_tick") >= tick_scl then
+                    meta:set_int("src_tick", 0)
                 end
                 return
             end
@@ -347,6 +351,7 @@ function ship_engine.register_engine(data)
             meta:set_int("charge_max", data.charge_max)
             meta:set_int("demand", data.demand[1])
             meta:set_int("src_tick", 0)
+            meta:set_int("exhaust_clear", 1)
             local charge_max = meta:get_int("charge_max")
             local charge = meta:get_int("charge")
             local eu_input = meta:get_int(tier .. "_EU_input")
@@ -410,11 +415,6 @@ function ship_engine.register_engine(data)
         tube = data.tube and tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_glass_defaults(),
-        after_place_node = function(pos, placer, itemstack, pointed_thing)
-            if data.tube then
-                pipeworks.after_place(pos)
-            end
-        end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
             return technic.machine_after_dig_node
         end,
@@ -427,29 +427,6 @@ function ship_engine.register_engine(data)
                     return true
                 end
             end
-        end,
-
-        on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
-            meta:set_string("infotext", "Starship Engine")
-            meta:set_int("tube_time", 0)
-            local inv = meta:get_inventory()
-            inv:set_size("src", 1)
-            inv:set_size("dst", 1)
-            inv:set_size("upgrade1", 1)
-            inv:set_size("upgrade2", 1)
-            meta:set_int("enabled", 1)
-            meta:set_int("charge", 0)
-            meta:set_int("charge_max", data.charge_max)
-            meta:set_int("demand", data.demand[1])
-            local charge_max = meta:get_int("charge_max")
-            local charge = meta:get_int("charge")
-            local eu_input = meta:get_int(tier .. "_EU_input")
-            local eu_supply = meta:get_int(tier .. "_EU_supply")
-            local formspec = ship_engine.update_formspec(data, false, true, false, 0, charge, charge_max, eu_input,
-                eu_supply, meta:get_int("src_tick"), tick_scl)
-            meta:set_string("formspec", formspec)
         end,
 
         on_rotate = screwdriver.disallow,
@@ -705,7 +682,6 @@ function ship_engine.register_engine_core(data)
             meta:set_int("charge_max", data.charge_max)
             meta:set_int("demand", data.demand[1])
             meta:set_int("jump_ready", 0)
-            meta:set_int("exhaust_clear", 0)
             local formspec = ship_engine.update_formspec(data, false, false)
             meta:set_string("formspec", formspec)
         end,
