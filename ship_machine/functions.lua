@@ -657,25 +657,14 @@ local function do_jump(pos, dest, size, jcb, offset)
     local meta = minetest.get_meta(pos)
     local owner = meta:get_string("owner")
 
-    local pos1 = vector.subtract(dest, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-    local pos2 = vector.add(dest, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-
     if check_engines_charged(pos, size) == true then
         digilines.receptor_send(pos, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_prepare')
         local dist = vector.distance(pos, dest)
         engines_charged_spend(pos, dist, size)
         ship_machine.transport_jumpship(pos, dest, size, owner, offset)
-        digilines.receptor_send(dest, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_complete')
-        minetest.after(20, function()
-            digilines.receptor_send(dest, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_complete')
+        local drv = vector.add(pos, offset)
+        minetest.after(8, function()
+            digilines.receptor_send(drv, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_complete')
         end)
         jcb(1)
         return
