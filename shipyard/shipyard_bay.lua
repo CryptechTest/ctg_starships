@@ -30,7 +30,7 @@ end
 local function load_schematic_ship_shell(pos, filename)
     local default_path = minetest.get_modpath("shipyard")
     -- load the schematic from file..
-    local lmeta = schemlib.load_emitted_file({
+    local lmeta = schem_lib.load_emitted_file({
         filename = filename,
         origin = {
             x = pos.x,

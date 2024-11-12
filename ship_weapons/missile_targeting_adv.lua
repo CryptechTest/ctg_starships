@@ -33,7 +33,7 @@ local function check_path(origin, pos_target)
 end
 
 local function find_ship(pos, d, r)
-    return schemlib.func.find_nodes_large(pos, r, {"group:jumpdrive"}, {limit = 5, dir = d})
+    return schem_lib.func.find_nodes_large(pos, r, {"group:jumpdrive"}, {limit = 5, dir = d})
 end
 
 local function find_ship_protect(pos, r)

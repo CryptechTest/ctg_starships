@@ -409,7 +409,7 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
     }
     local ship_name = "jumpship_1_" .. owner
     -- save to cache
-    local sdata = schemlib.emit({
+    local sdata = schem_lib.emit({
         filename = ship_name,
         owner = owner,
         ttl = 300, -- ???
@@ -430,13 +430,13 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
 
     if save then
         -- load the schematic from file..
-        local lmeta = schemlib.load_emitted({
+        local lmeta = schem_lib.load_emitted({
             filename = ship_name,
             moveObj = true
         })
     else
         -- load the schematic from cache..
-        local count, ver, lmeta = schemlib.process_emitted(nil, nil, sdata, true)
+        local count, ver, lmeta = schem_lib.process_emitted(nil, nil, sdata, true)
 
         ship_machine.move_offline_players(pos, offset)
 
@@ -523,7 +523,7 @@ function ship_machine.save_jumpship(pos, size, player, ship_name)
     }
     local owner = player:get_player_name()
     -- save to cache
-    local sdata = schemlib.emit({
+    local sdata = schem_lib.emit({
         filename = ship_name,
         owner = owner,
         ttl = 300,
@@ -542,7 +542,7 @@ end
 
 function ship_machine.load_jumpship(pos, player, ship_name)
     -- load the schematic from file..
-    local lmeta = schemlib.load_emitted({
+    local lmeta = schem_lib.load_emitted({
         filename = ship_name,
         origin = {
             x = pos.x,
@@ -687,13 +687,13 @@ end
 function ship_machine.perform_jump(pos, dest, size, jcb, offset)
 
     local area_clear = true
-    if not schemlib.func.check_dest_clear(pos, dest, size) then
+    if not schem_lib.func.check_dest_clear(pos, dest, size) then
         area_clear = false
     end
 
     minetest.after(2, function()
         if not area_clear then
-            area_clear = schemlib.func.check_dest_clear(pos, dest, size)
+            area_clear = schem_lib.func.check_dest_clear(pos, dest, size)
             if not area_clear then
                 jcb(-1)
                 return

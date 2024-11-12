@@ -9,7 +9,7 @@ local default_path = minetest.get_modpath("orbital_station")
 
 local function load_orbital(pos)
     -- load the schematic from file..
-    local lmeta = schemlib.load_emitted_file({
+    local lmeta = schem_lib.load_emitted_file({
         filename = "spawn_station",
         origin = {
             x = pos.x,
