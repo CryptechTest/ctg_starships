@@ -316,8 +316,8 @@ function ship_machine.move_offline_players(drive, offset)
         if lpos then
             local npos = vector.add(lpos, offset);
             ship_machine.locations[p] = npos
-            --minetest.log("updated loc for player " .. p)
-        else 
+            -- minetest.log("updated loc for player " .. p)
+        else
             contents[p] = false
         end
         ship_machine.save_locations();
@@ -714,15 +714,31 @@ function ship_machine.get_protector(pos, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:ship_protector")
+    local prots = minetest.find_nodes_in_area(pos1, pos2, "group:ship_protector")
 
-    if #nodes == 1 then
-        return nodes[1]
+    local prot = nil
+    for _, p in pairs(prots) do
+        local ship_meta = minetest.get_meta(p)
+        local _size = {
+            w = ship_meta:get_int("p_width") or 10,
+            l = ship_meta:get_int("p_length") or 10,
+            h = ship_meta:get_int("p_height") or 10
+        }
+        if pos.x <= p.x + _size.w and pos.x >= p.x - _size.w then
+            if pos.z <= p.z + _size.l and pos.z >= p.z - _size.l then
+                if pos.y <= p.y + _size.h and pos.y >= p.y - _size.h then
+                    prot = p
+                end
+            end
+        end
+        if prot ~= nil then
+            break
+        end
     end
-    return nil
+    return prot
 end
 
-function ship_machine.get_ship_protector(pos, size, name)
+function ship_machine.get_ship_contains(pos, size, name)
     local pos1 = vector.subtract(pos, {
         x = size.w,
         y = size.h,
@@ -736,14 +752,143 @@ function ship_machine.get_ship_protector(pos, size, name)
 
     local nodes = minetest.find_nodes_in_area(pos1, pos2, name)
 
-    if #nodes == 1 then
-        return nodes[1]
+    local prot = nil
+    for _, p in pairs(nodes) do
+        if pos.x <= p.x + size.w and pos.x >= p.x - size.w then
+            if pos.z <= p.z + size.l and pos.z >= p.z - size.l then
+                if pos.y <= p.y + size.h and pos.y >= p.y - size.h then
+                    prot = p
+                end
+            end
+        end
+        if prot ~= nil then
+            break
+        end
     end
-    return nil
+    return prot
 end
 
 function ship_machine.get_jump_drive(pos)
     return minetest.find_node_near(pos, 15, {"group:jumpdrive"})
+end
+
+function ship_machine.engine_do_jump(pos, dest, size, jump_callback, dest_offset)
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
+
+    local drive = nil
+    for _, p in pairs(nodes) do
+        local prot = vector.add(p, vector.new(0, 2, 0))
+        local ship_meta = minetest.get_meta(prot)
+        local _size = {
+            w = ship_meta and ship_meta:get_int("p_width") or size.w,
+            l = ship_meta and ship_meta:get_int("p_length") or size.l,
+            h = ship_meta and ship_meta:get_int("p_height") or size.h
+        }
+        if pos.x <= p.x + _size.w and pos.x >= p.x - _size.w then
+            if pos.z <= p.z + _size.l and pos.z >= p.z - _size.l then
+                if pos.y <= p.y + _size.h and pos.y >= p.y - _size.h then
+                    drive = p
+                end
+            end
+        end
+        if drive ~= nil then
+            break
+        end
+    end
+
+    if drive then
+        return ship_machine.perform_jump(drive, dest, size, jump_callback, dest_offset)
+    end
+
+    jump_callback(-3)
+end
+
+function ship_machine.get_jump_dest(pos, offset, size)
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
+
+    local drive = nil
+    for _, p in pairs(nodes) do
+        local prot = vector.add(p, vector.new(0, 2, 0))
+        local ship_meta = minetest.get_meta(prot)
+        local _size = {
+            w = ship_meta and ship_meta:get_int("p_width") or size.w,
+            l = ship_meta and ship_meta:get_int("p_length") or size.l,
+            h = ship_meta and ship_meta:get_int("p_height") or size.h
+        }
+        if pos.x <= p.x + _size.w and pos.x >= p.x - _size.w then
+            if pos.z <= p.z + _size.l and pos.z >= p.z - _size.l then
+                if pos.y <= p.y + _size.h and pos.y >= p.y - _size.h then
+                    drive = p
+                end
+            end
+        end
+        if drive ~= nil then
+            break
+        end
+    end
+    if drive then
+        return #nodes, vector.add(drive, offset)
+    end
+    return #nodes, nil
+end
+
+function ship_machine.get_jumpdrive(pos, size)
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
+
+    local drive = nil
+    for _, p in pairs(nodes) do
+        local prot = vector.add(p, vector.new(0, 2, 0))
+        local ship_meta = minetest.get_meta(prot)
+        local _size = {
+            w = ship_meta and ship_meta:get_int("p_width") or size.w,
+            l = ship_meta and ship_meta:get_int("p_length") or size.l,
+            h = ship_meta and ship_meta:get_int("p_height") or size.h
+        }
+        if pos.x <= p.x + _size.w and pos.x >= p.x - _size.w then
+            if pos.z <= p.z + _size.l and pos.z >= p.z - _size.l then
+                if pos.y <= p.y + _size.h and pos.y >= p.y - _size.h then
+                    drive = p
+                end
+            end
+        end
+        if drive ~= nil then
+            break
+        end
+    end
+    return drive
 end
 
 function ship_machine.colorize_text_hp(hp, hp_max)
@@ -774,7 +919,11 @@ function ship_machine.update_ship_owner_all(pos, size, new_owner)
     for y = pos.y - s.w, pos.y + s.w do
         for x = pos.x - s.w, pos.x + s.w do
             for z = pos.z - s.w, pos.z + s.w do
-                local p = {x = x, y = y, z = z}
+                local p = {
+                    x = x,
+                    y = y,
+                    z = z
+                }
                 local meta = minetest.get_meta(p)
                 if meta and meta:get_string("owner") and meta:get_string("owner") ~= "" then
                     meta:set_string("owner", new_owner)
@@ -789,7 +938,11 @@ function ship_machine.update_ship_members_clear(pos, size)
     for y = pos.y - s.w, pos.y + s.w do
         for x = pos.x - s.w, pos.x + s.w do
             for z = pos.z - s.w, pos.z + s.w do
-                local p = {x = x, y = y, z = z}
+                local p = {
+                    x = x,
+                    y = y,
+                    z = z
+                }
                 local meta = minetest.get_meta(p)
                 if meta and meta:get_string("members") and meta:get_string("members") ~= "" then
                     meta:set_string("members", "")
@@ -798,3 +951,4 @@ function ship_machine.update_ship_members_clear(pos, size)
         end
     end
 end
+

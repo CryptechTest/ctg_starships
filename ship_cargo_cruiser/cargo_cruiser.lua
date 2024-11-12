@@ -91,7 +91,7 @@ function ship_cargo.register_cruiser(custom_data)
             return
         end
 
-        local jpos = ship_cargo.get_jumpdrive(pos, data.size)
+        local jpos = ship_machine.get_jumpdrive(pos, data.size)
         if jpos == nil then
             local message = "Jump Drive not found..."
             local formspec = ship_cargo.update_formspec(pos, data, 0, 0, message)
@@ -113,7 +113,6 @@ function ship_cargo.register_cruiser(custom_data)
             local prot_loc = ship_cargo.get_protector(pos, data.size)
             if prot_loc then
                 minetest.registered_nodes[minetest.get_node(prot_loc).name].on_rightclick(prot_loc, node, sender, nil)
-                --ship_cargo.rightclick(prot_loc, sender)
             end
             return
         end
@@ -248,7 +247,7 @@ function ship_cargo.register_cruiser(custom_data)
             y = move_y,
             z = move_z
         }
-        local ncount, dest = ship_cargo.get_jump_dest(jpos, offset, data.size)
+        local ncount, dest = ship_machine.get_jump_dest(jpos, offset, data.size)
         local panel_dest = vector.add(pos, offset)
 
         if ncount == 0 and dest == nil then
@@ -322,7 +321,7 @@ function ship_cargo.register_cruiser(custom_data)
             end
 
             -- async jump with callback
-            ship_cargo.engine_do_jump(pos, dest, data.size, jump_callback, offset)
+            ship_machine.engine_do_jump(pos, dest, data.size, jump_callback, offset)
 
             return
         elseif fields.submit_nav and not changed then
@@ -383,7 +382,7 @@ function ship_cargo.register_cruiser(custom_data)
         end,
 
         on_punch = function(pos, node, puncher)
-            local drive_loc = ship_cargo.get_jumpdrive(pos, data.size)
+            local drive_loc = ship_machine.get_protector(pos, data.size)
             if drive_loc then
                 minetest.registered_nodes[minetest.get_node(drive_loc).name].on_punch(drive_loc, node, puncher)
             end

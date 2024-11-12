@@ -20,7 +20,8 @@ function shipyard.update_formspec(pos, data, loc, ready, message)
         local bg = "image[0,0.5;9.78,6.5;starfield_2.png]image[5,3.25;2.2,0.88;bg2.png]"
 
         local combat_migration_done = meta:get_int("combat_ready") > 0 or 0
-        local combat_migration = (combat_migration_done == false and "button[4,5.25;3,1;submit_migr;Combat Migration]") or ""
+        local combat_migration =
+            (combat_migration_done == false and "button[4,5.25;3,1;submit_migr;Combat Migration]") or ""
 
         local icon_fan = "image[5,1;1,1;icon_fan.png]"
         local icon_env = "image[6,1;1,1;icon_life_support.png]"
@@ -91,87 +92,6 @@ function shipyard.update_formspec(pos, data, loc, ready, message)
     return formspec
 end
 
-function shipyard.engine_do_jump(pos, dest, size, jump_callback, dest_offset)
-    local pos1 = vector.subtract(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-    local pos2 = vector.add(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "shipyard:jump_drive")
-
-    if #nodes == 1 then
-        return ship_machine.perform_jump(nodes[1], dest, size, jump_callback, dest_offset)
-    end
-
-    jump_callback(-3)
-end
-
-function shipyard.engine_jump_activate(pos, dest, size)
-    local pos1 = vector.subtract(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-    local pos2 = vector.add(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "shipyard:jump_drive")
-
-    if #nodes == 1 then
-        return ship_machine.perform_jump(nodes[1], dest, size)
-    end
-    return -3
-end
-
-function shipyard.get_jump_dest(pos, offset, size)
-    local pos1 = vector.subtract(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-    local pos2 = vector.add(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "shipyard:jump_drive")
-
-    if #nodes == 1 then
-        return #nodes, vector.add(nodes[1], offset)
-    end
-    return #nodes, nil
-end
-
-function shipyard.get_jumpdrive(pos, size)
-    local pos1 = vector.subtract(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-    local pos2 = vector.add(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "shipyard:jump_drive")
-
-    if #nodes == 1 then
-        return nodes[1]
-    end
-    return nil
-end
-
 function shipyard.get_protector(pos, size)
     local pos1 = vector.subtract(pos, {
         x = size.w,
@@ -186,15 +106,35 @@ function shipyard.get_protector(pos, size)
 
     local nodes = minetest.find_nodes_in_area(pos1, pos2, "shipyard:shield_protect")
 
-    if #nodes == 1 then
-        return nodes[1]
+    local drive = nil
+    for _, p in pairs(nodes) do
+        local ship_meta = minetest.get_meta(p)
+        local _size = {
+            w = ship_meta and ship_meta:get_int("p_width") or size.w,
+            l = ship_meta and ship_meta:get_int("p_length") or size.l,
+            h = ship_meta and ship_meta:get_int("p_height") or size.h
+        }
+        if pos.x <= p.x + _size.w and pos.x >= p.x - _size.w then
+            if pos.z <= p.z + _size.l and pos.z >= p.z - _size.l then
+                if pos.y <= p.y + _size.h and pos.y >= p.y - _size.h then
+                    drive = p
+                end
+            end
+        end
+        if drive ~= nil then
+            break
+        end
+    end
+
+    if drive then
+        return drive
     end
     return nil
 end
 
 function shipyard.do_particle_effects(pos, amount)
     for i = 0, 3 do
-        minetest.after(i, function()   
+        minetest.after(i, function()
             shipyard.do_particle_effect(pos, amount);
         end)
     end

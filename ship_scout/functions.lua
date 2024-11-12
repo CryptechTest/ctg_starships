@@ -42,7 +42,7 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
         local hp_tag = "image[5.0,1.2;2.2,0.9;bg2.png]" .. "label[5.1,1.2;Hull Integrity]"
         local hp_col = ship_machine.colorize_text_hp(ship_hp, ship_hp_max)
         local hp_prcnt_col = minetest.colorize(hp_col, string.format("%.1f", ship_hp_prcnt) .. "%")
-        local hit_points = hp_tag .. "label[5.45,1.55;"..hp_prcnt_col.."]"
+        local hit_points = hp_tag .. "label[5.45,1.55;" .. hp_prcnt_col .. "]"
         -- shield
         local ship_shield_max = ship_meta:get_int("shield_max") or 1
         local ship_shield = ship_meta:get_int("shield") or 1
@@ -50,9 +50,10 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
         local shield_tag = "image[5.0,2.0;2.2,0.9;bg2.png]" .. "label[5.1,2.0;Shield Charge]"
         local shield_col = ship_machine.colorize_text_hp(ship_shield, ship_shield_max)
         local shield_prcnt_col = minetest.colorize(shield_col, string.format("%.1f", ship_shield_prcnt) .. "%")
-        local shield_points = shield_tag .. "label[5.45,2.35;"..shield_prcnt_col.."]"
+        local shield_points = shield_tag .. "label[5.45,2.35;" .. shield_prcnt_col .. "]"
         -- refresh
-        local refresh = "image_button[5.65,-0.225;0.8,0.8;ctg_ship_refresh_btn.png;refresh;;true;false;ctg_ship_refresh_btn_press.png]"
+        local refresh =
+            "image_button[5.65,-0.225;0.8,0.8;ctg_ship_refresh_btn.png;refresh;;true;false;ctg_ship_refresh_btn_press.png]"
 
         -- damage warning
         local d_warn_bg = "image[0.42,5.1;5.2,0.74;bg2.png]"
@@ -131,100 +132,17 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
         if is_deepspace then
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. img_ship .. img_hole_1 ..
-                           img_hole_2 .. img_hole_3 .. img_hole_4 .. damage_warn .. ship_owner ..
-                           nav_label .. hit_points .. shield_points ..
-                           busy .. combat_migration .. refresh .. message
+                           img_hole_2 .. img_hole_3 .. img_hole_4 .. damage_warn .. ship_owner .. nav_label ..
+                           hit_points .. shield_points .. busy .. combat_migration .. refresh .. message
         else
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. btn_doc .. img_ship ..
-                           coords_label .. input_field .. nav_label .. hit_points .. shield_points ..
-                           damage_warn .. ship_owner ..
-                           busy .. combat_migration .. refresh .. message
+                           coords_label .. input_field .. nav_label .. hit_points .. shield_points .. damage_warn ..
+                           ship_owner .. busy .. combat_migration .. refresh .. message
         end
     end
 
     return formspec
-end
-
-function ship_scout.engine_do_jump(pos, dest, size, jump_callback, dest_offset)
-    local pos1 = vector.subtract(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-    local pos2 = vector.add(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
-
-    if #nodes == 1 then
-        return ship_machine.perform_jump(nodes[1], dest, size, jump_callback, dest_offset)
-    end
-
-    jump_callback(-3)
-end
-
-function ship_scout.engine_jump_activate(pos, dest, size)
-    local pos1 = vector.subtract(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-    local pos2 = vector.add(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
-
-    if #nodes == 1 then
-        return ship_machine.perform_jump(nodes[1], dest, size)
-    end
-    return -3
-end
-
-function ship_scout.get_jump_dest(pos, offset, size)
-    local pos1 = vector.subtract(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-    local pos2 = vector.add(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
-
-    if #nodes == 1 then
-        return #nodes, vector.add(nodes[1], offset)
-    end
-    return #nodes, nil
-end
-
-function ship_scout.get_jumpdrive(pos, size)
-    local pos1 = vector.subtract(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-    local pos2 = vector.add(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
-
-    if #nodes == 1 then
-        return nodes[1]
-    end
-    return nil
 end
 
 function ship_scout.get_protector(pos, size)
@@ -241,8 +159,28 @@ function ship_scout.get_protector(pos, size)
 
     local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_scout:shield_protect")
 
-    if #nodes == 1 then
-        return nodes[1]
+    local drive = nil
+    for _, p in pairs(nodes) do
+        local ship_meta = minetest.get_meta(p)
+        local _size = {
+            w = ship_meta and ship_meta:get_int("p_width") or size.w,
+            l = ship_meta and ship_meta:get_int("p_length") or size.l,
+            h = ship_meta and ship_meta:get_int("p_height") or size.h
+        }
+        if pos.x <= p.x + _size.w and pos.x >= p.x - _size.w then
+            if pos.z <= p.z + _size.l and pos.z >= p.z - _size.l then
+                if pos.y <= p.y + _size.h and pos.y >= p.y - _size.h then
+                    drive = p
+                end
+            end
+        end
+        if drive ~= nil then
+            break
+        end
+    end
+
+    if drive then
+        return drive
     end
     return nil
 end

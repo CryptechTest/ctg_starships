@@ -114,8 +114,7 @@ function shipyard.register_shipyard()
 
         local locked = meta:get_int("travel_ready") == 1
         if locked then
-            local formspec =
-                shipyard.update_formspec(pos, data, loc, false, "Interface lockout! Allocator is busy...")
+            local formspec = shipyard.update_formspec(pos, data, loc, false, "Interface lockout! Allocator is busy...")
             meta:set_string("formspec", formspec)
             return
         end
@@ -152,7 +151,7 @@ function shipyard.register_shipyard()
             y = move_y,
             z = move_z
         }
-        local ncount, dest = shipyard.get_jump_dest(pos, offset, data.size)
+        local ncount, dest = ship_machine.get_jump_dest(pos, offset, data.size)
         local panel_dest = vector.add(pos, offset)
 
         if ncount == 0 and dest == nil then
@@ -223,7 +222,7 @@ function shipyard.register_shipyard()
             end
 
             -- async jump with callback
-            shipyard.engine_do_jump(pos, dest, data.size, jump_callback, offset)
+            ship_machine.engine_do_jump(pos, dest, data.size, jump_callback, offset)
 
             return
         elseif fields.submit_nav and not changed then
@@ -286,7 +285,7 @@ function shipyard.register_shipyard()
         end,
 
         on_punch = function(pos, node, puncher)
-            local drive_loc = shipyard.get_jumpdrive(pos, data.size)
+            local drive_loc = ship_machine.get_protector(pos, data.size)
             if drive_loc then
                 minetest.registered_nodes[minetest.get_node(drive_loc).name].on_punch(drive_loc, node, puncher)
             end
@@ -294,7 +293,7 @@ function shipyard.register_shipyard()
         --[[can_dig = function(pos, player)
             local is_admin = player:get_player_name() == "squidicuzz"
             return player and is_admin
-        end,]]--
+        end,]] --
 
         on_receive_fields = on_receive_fields,
         digiline = {
