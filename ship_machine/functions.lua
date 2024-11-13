@@ -492,9 +492,9 @@ local function transport_jumpship(pos, dest, size, owner, offset)
                                 end
                             end
                         end 
-                        pipeworks.tptube.update_tube(tubepos, channel, cr, player_name)
+                        pipeworks.tptube.set_tube(tubepos, channel, cr)
                         for _, val in pairs(receivers) do
-                            pipeworks.tptube.update_tube(val, channel, cr, player_name)
+                            pipeworks.tptube.set_tube(val, val.channel, val.cr)
                         end
                     end
                 end
