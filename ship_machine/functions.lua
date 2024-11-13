@@ -454,7 +454,10 @@ local function transport_jumpship(pos, dest, size, owner, offset)
                 end
             end
 
-            local tubes = minetest.find_nodes_in_area(pos1, pos2, "group:tube")
+            local min = vector.subtract(pos, offset)
+            local max = vector.add(pos, offset)
+
+            local tubes = minetest.find_nodes_in_area(min, max, "group:tube")
             if tubes == nil or #tubes == 0 then
                 return
             end
@@ -478,12 +481,10 @@ local function transport_jumpship(pos, dest, size, owner, offset)
                         if tube_db == nil then
                             return
                         end
-                        local hash = pipeworks.tptube.hash(tubepos)
                         local receivers = {}
-                        for key, val in pairs(tube_db) do
-                            minetest.chat_send_all("key: " .. key .. " val: " .. dump(val))
-
+                        for key, val in pairs(tube_db) do                            
                             if val.cr == 1 and val.channel == channel and not vector.equals(val, tubepos) then
+                                minetest.chat_send_all("key: " .. key .. " val: " .. dump(val))
                                 minetest.load_area(val)
                                 local node_name = minetest.get_node(val).name
                                 if node_name:find("pipeworks:teleport_tube") then
