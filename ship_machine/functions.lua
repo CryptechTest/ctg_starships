@@ -454,10 +454,7 @@ local function transport_jumpship(pos, dest, size, owner, offset)
                 end
             end
 
-            local min = vector.subtract(pos, offset)
-            local max = vector.add(pos, offset)
-
-            local tubes = minetest.find_nodes_in_area(min, max, "group:tube")
+            local tubes = minetest.find_nodes_in_area(pos1, pos2, "group:tube")
             if tubes == nil or #tubes == 0 then
                 return
             end
@@ -492,7 +489,7 @@ local function transport_jumpship(pos, dest, size, owner, offset)
                                 end
                             end
                         end 
-                        pipeworks.tptube.set_tube(tubepos, channel, cr)
+                        pipeworks.tptube.set_tube(vector.add(tubepos, offset), channel, cr)
                         for _, val in pairs(receivers) do
                             pipeworks.tptube.set_tube(val, val.channel, val.cr)
                         end
