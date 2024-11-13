@@ -479,7 +479,7 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
                         if channel ~= "" or  player_name ~= "" then
                             return
                         end
-                        pipeworks.tptube.update_tube(pos, channel, cr, player_name)                     
+                        pipeworks.tptube.set_tube(pos, channel, cr)                     
                     end
                 end
             end
