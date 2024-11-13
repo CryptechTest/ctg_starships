@@ -130,7 +130,7 @@ function ship_machine.register_engine(data)
                 meta:set_string("formspec", formspec)
                 gen_reset_tick = gen_reset_tick + 1
                 if gen_reset_tick >= 3 then
-                    ship_machine.reset_generator(meta)
+                    meta:set_int("charge", 0)
                     gen_reset_tick = 0
                 end
                 return

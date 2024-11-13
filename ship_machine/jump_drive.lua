@@ -155,7 +155,7 @@ function ship_machine.register_jumpship(data)
                 if perform then
                     minetest.after(0, function()
                         if ship_machine.check_engines_charged(pos) then
-                            ship_machine.transport_jumpship(pos, dest, data.size, sender)
+                            --ship_machine.transport_jumpship(pos, dest, data.size, sender)
                         end
                     end)
                 end

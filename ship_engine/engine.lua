@@ -5,8 +5,6 @@ local time_scl = time_tick
 
 local tick_scl = 500
 
-ship_engine.mese_image_mask = "default_mese_crystal.png^[colorize:#75757555"
-
 local function round(v)
     return math.floor(v + 0.5)
 end

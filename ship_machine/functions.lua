@@ -1,15 +1,6 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
-ship_machine.mese_image_mask = "default_mese_crystal.png^[colorize:#75757555"
-
--- check if enabled
-ship_machine.generator_enabled = function(meta)
-    return meta:get_int("enabled") == 1
-end
-
-ship_machine.reset_generator = function(meta)
-    meta:set_int("charge", 0)
-end
+local mese_image_mask = "default_mese_crystal.png^[colorize:#75757555"
 
 local function round(number, steps)
     steps = steps or 1
@@ -68,10 +59,9 @@ function ship_machine.update_formspec(data, running, enabled, has_mese, percent,
                        "list[current_player;main;0,5;8,4;]" .. "listring[current_player;main]" .. "label[0,0;" ..
                        machine_desc:format(tier) .. "]" .. image .. meseimg ..
                        "image[4,1;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
-                       ":gui_furnace_arrow_fg.png^[transformR270]" .. "image[3,1;1,1;" .. ship_machine.mese_image_mask ..
-                       "]" .. "button[3,3;4,1;toggle;" .. btnName .. "]" .. "label[3,2;Charge " .. tostring(charge) ..
-                       " of " .. tostring(charge_max) .. "]" .. "label[6,2;" .. tostring(charge_percent) .. "%" .. "]" ..
-                       act_msg
+                       ":gui_furnace_arrow_fg.png^[transformR270]" .. "image[3,1;1,1;" .. mese_image_mask .. "]" ..
+                       "button[3,3;4,1;toggle;" .. btnName .. "]" .. "label[3,2;Charge " .. tostring(charge) .. " of " ..
+                       tostring(charge_max) .. "]" .. "label[6,2;" .. tostring(charge_percent) .. "%" .. "]" .. act_msg
     end
     if data.upgrade then
         formspec = formspec .. "list[current_name;upgrade1;0.5,3;1,1;]" .. "list[current_name;upgrade2;1.5,3;1,1;]" ..
@@ -301,7 +291,7 @@ local function do_particle_tele(pos, amount)
     })]] --
 end
 
-function ship_machine.move_offline_players(drive, offset)
+local function move_offline_players(drive, offset)
     -- local node = minetest.get_node(drive)
     local dmeta = minetest.get_meta(drive)
 
@@ -325,7 +315,7 @@ function ship_machine.move_offline_players(drive, offset)
     dmeta:set_string("player_storage", minetest.serialize(contents))
 end
 
-function ship_machine.move_bed(pos, pos_new, n)
+local function move_bed(pos, pos_new, n)
 
     local node = minetest.get_node(pos)
     local other
@@ -399,7 +389,7 @@ function ship_machine.move_bed(pos, pos_new, n)
 
 end
 
-function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
+local function transport_jumpship(pos, dest, size, owner, offset)
     local save = false
     local flags = {
         file_cache = save,
@@ -438,7 +428,7 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
         -- load the schematic from cache..
         local count, ver, lmeta = schem_lib.process_emitted(nil, nil, sdata, true)
 
-        ship_machine.move_offline_players(pos, offset)
+        move_offline_players(pos, offset)
 
         minetest.after(5, function()
             local pos1 = vector.subtract(pos, {
@@ -459,7 +449,7 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
                     local g = minetest.get_item_group(bed.name, "bed");
                     if minetest.get_item_group(bed.name, "bed") >= 1 then
                         local bed_dest = vector.add(bedpos, offset)
-                        ship_machine.move_bed(bedpos, bed_dest, g)
+                        move_bed(bedpos, bed_dest, g)
                     end
                 end
             end
@@ -472,16 +462,16 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
             for _, tubepos in pairs(tubes) do               
                 
                 local node = minetest.get_node(tubepos)
-                if node ~= nil then 
+                if node ~= nil then
                     if node.name:find("pipeworks:teleport_tube") then
                         local meta = minetest.get_meta(tubepos)
                         local channel = meta:get_string("channel")
                         local cr = meta:get_int("can_receive")
                         local player_name = meta:get_string("owner")
-                        if channel == nil or cr == nil or player_name == nil  then
+                        if channel == nil or cr == nil or player_name == nil then
                             return
                         end
-                        if channel ~= "" or  player_name ~= "" then
+                        if channel ~= "" or player_name ~= "" then
                             return
                         end
                         local tube_db = pipeworks.tptube.get_db()
@@ -553,53 +543,6 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
     minetest.after(3, function()
         minetest.chat_send_player(player:get_player_name(), "Jumping...")
     end)--]]
-end
-
--- save to file
-function ship_machine.save_jumpship(pos, size, player, ship_name)
-    local save = true
-    local flags = {
-        file_cache = save,
-        keep_inv = true,
-        keep_meta = true,
-        origin_clear = false
-    }
-    local owner = player:get_player_name()
-    -- save to cache
-    local sdata = schem_lib.emit({
-        filename = ship_name,
-        owner = owner,
-        ttl = 300,
-        w = size.w,
-        h = size.h,
-        l = size.l,
-        origin = {
-            x = pos.x,
-            y = pos.y,
-            z = pos.z
-        }
-    }, flags)
-
-    minetest.chat_send_player(player:get_player_name(), "Saving Jumpship as... " .. ship_name)
-end
-
-function ship_machine.load_jumpship(pos, player, ship_name)
-    -- load the schematic from file..
-    local lmeta = schem_lib.load_emitted({
-        filename = ship_name,
-        origin = {
-            x = pos.x,
-            y = pos.y,
-            z = pos.z
-        },
-        moveObj = false
-    })
-
-    if lmeta then
-        minetest.chat_send_player(player:get_player_name(), "Loading Jumpship...")
-    else
-        minetest.chat_send_player(player:get_player_name(), "Loading Jumpship Failed!")
-    end
 end
 
 local function check_engines_charged(pos, size)
@@ -704,7 +647,7 @@ local function do_jump(pos, dest, size, jcb, offset)
         digilines.receptor_send(pos, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_prepare')
         local dist = vector.distance(pos, dest)
         engines_charged_spend(pos, dist, size)
-        ship_machine.transport_jumpship(pos, dest, size, owner, offset)
+        transport_jumpship(pos, dest, size, owner, offset)
         local drv = vector.add(pos, offset)
         minetest.after(0.5, function()
             digilines.receptor_send(drv, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_complete')
@@ -716,7 +659,7 @@ local function do_jump(pos, dest, size, jcb, offset)
     return
 end
 
-function ship_machine.perform_jump(pos, dest, size, jcb, offset)
+local function perform_jump(pos, dest, size, jcb, offset)
 
     local area_clear = true
     if not schem_lib.func.check_dest_clear(pos, dest, size) then
@@ -743,6 +686,57 @@ function ship_machine.perform_jump(pos, dest, size, jcb, offset)
         do_particles(dest, 20)
     end)
 
+end
+
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+
+-- save to file
+function ship_machine.save_jumpship(pos, size, player, ship_name)
+    local save = true
+    local flags = {
+        file_cache = save,
+        keep_inv = true,
+        keep_meta = true,
+        origin_clear = false
+    }
+    local owner = player:get_player_name()
+    -- save to cache
+    local sdata = schem_lib.emit({
+        filename = ship_name,
+        owner = owner,
+        ttl = 300,
+        w = size.w,
+        h = size.h,
+        l = size.l,
+        origin = {
+            x = pos.x,
+            y = pos.y,
+            z = pos.z
+        }
+    }, flags)
+
+    minetest.chat_send_player(player:get_player_name(), "Saving Jumpship as... " .. ship_name)
+end
+
+function ship_machine.load_jumpship(pos, player, ship_name)
+    -- load the schematic from file..
+    local lmeta = schem_lib.load_emitted({
+        filename = ship_name,
+        origin = {
+            x = pos.x,
+            y = pos.y,
+            z = pos.z
+        },
+        moveObj = false
+    })
+
+    if lmeta then
+        minetest.chat_send_player(player:get_player_name(), "Loading Jumpship...")
+    else
+        minetest.chat_send_player(player:get_player_name(), "Loading Jumpship Failed!")
+    end
 end
 
 function ship_machine.get_protector(pos, size)
@@ -851,7 +845,7 @@ function ship_machine.engine_do_jump(pos, dest, size, jump_callback, dest_offset
     end
 
     if drive then
-        return ship_machine.perform_jump(drive, dest, size, jump_callback, dest_offset)
+        return perform_jump(drive, dest, size, jump_callback, dest_offset)
     end
 
     jump_callback(-3)
@@ -994,4 +988,3 @@ function ship_machine.update_ship_members_clear(pos, size)
         end
     end
 end
-

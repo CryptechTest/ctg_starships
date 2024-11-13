@@ -129,7 +129,7 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
                 command = 'jumping'
             })
             ship_machine.engines_charged_spend(pos)
-            ship_machine.transport_jumpship(pos, msg.dest, size, owner)
+            --ship_machine.transport_jumpship(pos, msg.dest, size, owner)
         end
     end
 

@@ -1,5 +1,7 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
+local mese_image_mask = "default_mese_crystal.png^[colorize:#75757555"
+
 -- check if enabled
 ship_engine.engine_enabled = function(meta)
     return meta:get_int("enabled") == 1
@@ -53,7 +55,7 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
                        meseimg .. "image[3,0.65;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(tick_percent) ..
                        ":gui_furnace_arrow_fg.png^[transformR270]" .. "listring[current_name;dst]" ..
                        "listring[current_player;main]" .. "listring[current_name;src]" ..
-                       "listring[current_player;main]" .. "image[2,1;1,1;" .. ship_engine.mese_image_mask .. "]" ..
+                       "listring[current_player;main]" .. "image[2,1;1,1;" .. mese_image_mask .. "]" ..
                        "button[3,3;4,1;toggle;" .. btnName .. "]" .. "label[2,2;Charge " .. tostring(charge) .. " of " ..
                        tostring(charge_max) .. "]" .. "label[5,2;" .. tostring(charge_percent) .. "%" .. "]" ..
                        power_field .. input_field .. output_field ..
@@ -90,7 +92,7 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
         end
         formspec = "size[8,5;]" .. "label[0,0;" .. machine_desc:format(tier) .. "]" .. image .. meseimg ..
                        "image[3,1;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
-                       ":gui_furnace_arrow_fg.png^[transformR270]" .. "image[2,1;1,1;" .. ship_engine.mese_image_mask ..
+                       ":gui_furnace_arrow_fg.png^[transformR270]" .. "image[2,1;1,1;" .. mese_image_mask ..
                        "]" .. "button[2,3;4,1;toggle;" .. btnName .. "]" .. "label[2,2;Charge " .. tostring(charge) ..
                        " of " .. tostring(charge_max) .. "]" .. "label[5,2;" .. tostring(charge_percent) .. "%" .. "]"
     end
