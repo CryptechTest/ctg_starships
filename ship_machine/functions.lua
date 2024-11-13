@@ -491,7 +491,9 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
                         local hash = pipeworks.tptube.hash(tubepos)
                         local receivers = {}
                         for key, val in pairs(tube_db) do
-                            if val.cr == 1 and val.channel == channel and not vector.equals(val, pos) then
+                            minetest.chat_send_all("key: " .. key .. " val: " .. dump(val))
+
+                            if val.cr == 1 and val.channel == channel and not vector.equals(val, tubepos) then
                                 minetest.load_area(val)
                                 local node_name = minetest.get_node(val).name
                                 if node_name:find("pipeworks:teleport_tube") then
