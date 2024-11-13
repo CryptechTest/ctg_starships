@@ -62,7 +62,7 @@ function ship_cube.register_cruiser(custom_data)
             end
         end
 
-        if minetest.is_protected(pos, sender) then
+        if sender and sender:is_player() and minetest.is_protected(pos, sender:get_player_name() ) then
             return
         end
 
