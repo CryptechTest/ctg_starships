@@ -481,7 +481,7 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
                         if channel == nil or cr == nil or player_name == nil  then
                             return
                         end
-                        if channel ~= "" or  player_name ~= "" then
+                        if channel == "" or  player_name == "" then
                             return
                         end
                         local tube_db = pipeworks.tptube.get_db()
@@ -501,9 +501,9 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
                                 end
                             end
                         end 
-                        pipeworks.tptube.set_tube(pos, channel, cr)
+                        pipeworks.tptube.update_tube(tubepos, channel, cr, player_name)
                         for _, val in pairs(receivers) do
-                            pipeworks.tptube.set_tube(val, channel, cr)
+                            pipeworks.tptube.update_tube(val, channel, cr, player_name)
                         end
                     end
                 end
