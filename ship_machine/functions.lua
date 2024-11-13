@@ -464,6 +464,26 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
                 end
             end
 
+            local tubes = minetest.find_nodes_in_area(pos1, pos2, "group:tube")
+            for _, tubepos in pairs(tubes) do
+                local node = minetest.get_node(tubepos)
+                if node ~= nil then 
+                    if node.name:find("pipeworks:teleport_tube") then
+                        local meta = minetest.get_meta(tubepos)
+                        local channel = meta:get_string("channel")
+                        local cr = meta:get_int("can_receive")
+                        local player_name = meta:get_string("owner")
+                        if channel == nil or cr == nil or player_name == nil  then
+                            return
+                        end
+                        if channel ~= "" or  player_name ~= "" then
+                            return
+                        end
+                        pipeworks.tptube.update_tube(pos, channel, cr, player_name)                     
+                    end
+                end
+            end
+
         end)
     end
 
