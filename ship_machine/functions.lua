@@ -465,7 +465,12 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
             end
 
             local tubes = minetest.find_nodes_in_area(pos1, pos2, "group:tube")
-            for _, tubepos in pairs(tubes) do
+            if tubes == nil or #tubes == 0 then
+                return
+            end
+            
+            for _, tubepos in pairs(tubes) do               
+                
                 local node = minetest.get_node(tubepos)
                 if node ~= nil then 
                     if node.name:find("pipeworks:teleport_tube") then
@@ -479,7 +484,25 @@ function ship_machine.transport_jumpship(pos, dest, size, owner, offset)
                         if channel ~= "" or  player_name ~= "" then
                             return
                         end
-                        pipeworks.tptube.set_tube(pos, channel, cr)                     
+                        local tube_db = pipeworks.tptube.get_db()
+                        if tube_db == nil then
+                            return
+                        end
+                        local hash = pipeworks.tptube.hash(tubepos)
+                        local receivers = {}
+                        for key, val in pairs(tube_db) do
+                            if val.cr == 1 and val.channel == channel and not vector.equals(val, pos) then
+                                minetest.load_area(val)
+                                local node_name = minetest.get_node(val).name
+                                if node_name:find("pipeworks:teleport_tube") then
+                                    table.insert(receivers, val)
+                                end
+                            end
+                        end 
+                        pipeworks.tptube.set_tube(pos, channel, cr)
+                        for _, val in pairs(receivers) do
+                            pipeworks.tptube.set_tube(val, channel, cr)
+                        end
                     end
                 end
             end
