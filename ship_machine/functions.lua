@@ -172,31 +172,6 @@ local function do_particles(pos, amount)
         texture = texture,
         glow = prt.glow
     })
-
-    --[[minetest.add_particle({
-        pos = exm,
-        velocity = {
-            x = rx,
-            y = prt.vel * -math.random(0.2 * 100, 0.7 * 100) / 100,
-            z = rz
-        },
-        minacc = {
-            x = -0.02,
-            y = -0.05,
-            z = -0.02
-        },
-        maxacc = {
-            x = 0.02,
-            y = -0.03,
-            z = 0.02
-        },
-        expirationtime = ((math.random() / 5) + 0.25) * prt.time,
-        size = ((math.random()) * 7 + 0.1) * prt.size,
-        collisiondetection = prt.cols,
-        vertical = false,
-        texture = texture,
-        glow = prt.glow
-    })]] --
 end
 
 local function do_particle_tele(pos, amount)
@@ -220,7 +195,7 @@ local function do_particle_tele(pos, amount)
 
     minetest.add_particlespawner({
         amount = amount,
-        time = prt.time + math.random(0.8, 2.7),
+        time = prt.time + math.random(0.8, 2.0),
         minpos = {
             x = exm.x - 5,
             y = exm.y - 3,
@@ -263,32 +238,6 @@ local function do_particle_tele(pos, amount)
         texture = texture,
         glow = prt.glow
     })
-
-    --[[
-    minetest.add_particle({
-        pos = exm,
-        velocity = {
-            x = rx,
-            y = prt.vel * math.random(0.2 * 100, 0.7 * 100) / 100,
-            z = rz
-        },
-        minacc = {
-            x = -0.02,
-            y = 0.05,
-            z = -0.02
-        },
-        maxacc = {
-            x = 0.02,
-            y = 0.03,
-            z = 0.02
-        },
-        expirationtime = ((math.random() / 5) + 0.25) * prt.time,
-        size = ((math.random()) * 7 + 0.1) * prt.size,
-        collisiondetection = prt.cols,
-        vertical = true,
-        texture = texture,
-        glow = prt.glow
-    })]] --
 end
 
 local function move_offline_players(drive, offset)
@@ -389,6 +338,118 @@ local function move_bed(pos, pos_new, n)
 
 end
 
+local function move_beds(pos1, pos2, offset)
+    local beds = minetest.find_nodes_in_area(pos1, pos2, "group:bed")
+    for _, bedpos in pairs(beds) do
+        local bed = minetest.get_node(bedpos)
+        if bed ~= nil then
+            local g = minetest.get_item_group(bed.name, "bed");
+            if minetest.get_item_group(bed.name, "bed") >= 1 then
+                local bed_dest = vector.add(bedpos, offset)
+                move_bed(bedpos, bed_dest, g)
+            end
+        end
+    end
+end
+
+local function update_tubes(pos1, pos2, offset)
+    local tubes = minetest.find_nodes_in_area(pos1, pos2, "group:tube")
+    if tubes == nil or #tubes == 0 then
+        return
+    end
+    for _, tubepos in pairs(tubes) do
+        local node = minetest.get_node(tubepos)
+        if node ~= nil then
+            if node.name:find("pipeworks:teleport_tube") then
+                local meta = minetest.get_meta(tubepos)
+                local channel = meta:get_string("channel")
+                local cr = meta:get_int("can_receive")
+                local player_name = meta:get_string("owner")
+                if channel == nil or cr == nil or player_name == nil then
+                    return
+                end
+                if channel == "" or player_name == "" then
+                    return
+                end
+                local tube_db = pipeworks.tptube.get_db()
+                if tube_db == nil then
+                    return
+                end
+                local receivers = {}
+                for key, val in pairs(tube_db) do
+                    if val.cr == 1 and val.channel == channel and not vector.equals(val, tubepos) then
+                        minetest.load_area(val)
+                        local node_name = minetest.get_node(val).name
+                        if node_name:find("pipeworks:teleport_tube") then
+                            table.insert(receivers, val)
+                        end
+                    end
+                end
+                pipeworks.tptube.set_tube(vector.add(tubepos, offset), channel, cr)
+                for _, val in pairs(receivers) do
+                    pipeworks.tptube.set_tube(val, val.channel, val.cr)
+                end
+            end
+        end
+    end
+end
+
+local function do_effect(pos1, pos2)
+    local function _effect(obj, i)
+        minetest.after(i, function()
+            if (obj ~= nil) then
+                local name = obj:get_player_name()
+                minetest.sound_play("tele_drone", {
+                    to_player = name,
+                    gain = math.random(0.8, 1.1),
+                    pitch = math.random(0.8, 1)
+                })
+                local p = obj:get_pos()
+                do_particles(p, 40)
+                do_particle_tele(p, 110)
+            end
+        end)
+    end
+    -- get cube of area nearby
+    local objects = minetest.get_objects_in_area(pos1, pos2) or {}
+    local players = {}
+    for _, obj in pairs(objects) do
+        if (obj ~= nil and obj:is_player()) then
+            table.insert(players, obj)
+        end
+    end
+    -- play effects to players in area
+    for _, obj in pairs(players) do
+        for i = 0, 3 do
+            _effect(obj, i)
+        end
+    end
+end
+
+local function emerge_callback_on_complete(data)
+    if data == nil or data.meta == nil then
+        return
+    end
+    schem_lib.func.jump_ship_emit_player(data.meta, false)
+    minetest.after(0, function()
+        schem_lib.func.jump_ship_move_contents(data.meta)
+    end)
+    minetest.after(3, function()
+        schem_lib.func.jump_ship_emit_player(data.meta, true)
+    end)
+    if data.flags and data.flags.origin_clear and data.meta.ttl and data.meta.ttl > 0 then
+        local size = data.meta.offset
+        local pos1 = vector.subtract(data.meta.origin, vector.new(size.x, size.y, size.z))
+        local pos2 = vector.add(data.meta.origin, vector.new(size.x, size.y, size.z))
+        minetest.after(data.meta.ttl or 3, function()
+            schem_lib.func.clear_position(pos1, pos2)
+        end)
+        minetest.after((data.meta.ttl or 3) * 5, function()
+            schem_lib.func.clear_position(pos1, pos2)
+        end)
+    end
+end
+
 local function transport_jumpship(pos, dest, size, owner, offset)
     local save = false
     local flags = {
@@ -398,25 +459,21 @@ local function transport_jumpship(pos, dest, size, owner, offset)
         origin_clear = true
     }
     local ship_name = "jumpship_1_" .. owner
-    -- save to cache
-    local sdata = schem_lib.emit({
+    -- position min/max
+    local pos1 = vector.subtract(pos, vector.new(size.w, size.h, size.l))
+    local pos2 = vector.add(pos, vector.new(size.w, size.h, size.l))
+    local data = {
         filename = ship_name,
         owner = owner,
-        ttl = 300, -- ???
-        w = size.w,
-        h = size.h,
-        l = size.l,
-        origin = {
-            x = pos.x,
-            y = pos.y,
-            z = pos.z
-        },
-        dest = {
-            x = dest.x,
-            y = dest.y,
-            z = dest.z
-        }
-    }, flags)
+        ttl = 3,
+        min = pos1,
+        max = pos2,
+        offset = vector.new(size.w, size.h, size.l),
+        origin = vector.new(pos),
+        dest = vector.new(dest)
+    }
+    -- save to cache
+    local schem_data = schemlib.emit(data, flags)
 
     if save then
         -- load the schematic from file..
@@ -426,122 +483,17 @@ local function transport_jumpship(pos, dest, size, owner, offset)
         })
     else
         -- load the schematic from cache..
-        local count, ver, lmeta = schem_lib.process_emitted(nil, nil, sdata, true)
-
-        move_offline_players(pos, offset)
-
-        minetest.after(5, function()
-            local pos1 = vector.subtract(pos, {
-                x = size.w,
-                y = size.h,
-                z = size.l
-            })
-            local pos2 = vector.add(pos, {
-                x = size.w,
-                y = size.h,
-                z = size.l
-            })
-
-            local beds = minetest.find_nodes_in_area(pos1, pos2, "group:bed")
-            for _, bedpos in pairs(beds) do
-                local bed = minetest.get_node(bedpos)
-                if bed ~= nil then
-                    local g = minetest.get_item_group(bed.name, "bed");
-                    if minetest.get_item_group(bed.name, "bed") >= 1 then
-                        local bed_dest = vector.add(bedpos, offset)
-                        move_bed(bedpos, bed_dest, g)
-                    end
-                end
-            end
-
-            local tubes = minetest.find_nodes_in_area(pos1, pos2, "group:tube")
-            if tubes == nil or #tubes == 0 then
-                return
-            end
-            
-            for _, tubepos in pairs(tubes) do               
-                
-                local node = minetest.get_node(tubepos)
-                if node ~= nil then
-                    if node.name:find("pipeworks:teleport_tube") then
-                        local meta = minetest.get_meta(tubepos)
-                        local channel = meta:get_string("channel")
-                        local cr = meta:get_int("can_receive")
-                        local player_name = meta:get_string("owner")
-                        if channel == nil or cr == nil or player_name == nil then
-                            return
-                        end
-                        if channel == "" or  player_name == "" then
-                            return
-                        end
-                        local tube_db = pipeworks.tptube.get_db()
-                        if tube_db == nil then
-                            return
-                        end
-                        local receivers = {}
-                        for key, val in pairs(tube_db) do                            
-                            if val.cr == 1 and val.channel == channel and not vector.equals(val, tubepos) then
-                                minetest.load_area(val)
-                                local node_name = minetest.get_node(val).name
-                                if node_name:find("pipeworks:teleport_tube") then
-                                    table.insert(receivers, val)
-                                end
-                            end
-                        end 
-                        pipeworks.tptube.set_tube(vector.add(tubepos, offset), channel, cr)
-                        for _, val in pairs(receivers) do
-                            pipeworks.tptube.set_tube(val, val.channel, val.cr)
-                        end
-                    end
-                end
-            end
-
+        local count, ver, lmeta = schemlib.process_emitted(nil, nil, schem_data, emerge_callback_on_complete)
+        minetest.after(1, function()
+            -- move beds and update tubes
+            move_beds(pos1, pos2, offset)
+            update_tubes(pos1, pos2, offset)
         end)
+        -- move offline player locations
+        move_offline_players(pos, offset)
+        -- do jump tele effects
+        do_effect(pos1, pos2)
     end
-
-    local pos1 = vector.subtract(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-    local pos2 = vector.add(pos, {
-        x = size.w,
-        y = size.h,
-        z = size.l
-    })
-
-    -- get cube of area nearby
-    local objects = minetest.get_objects_in_area(pos1, pos2) or {}
-    for _, obj in pairs(objects) do
-        if (obj ~= nil and obj:is_player()) then
-            for i = 0, 3 do
-                minetest.after(i, function()
-                    if (obj ~= nil) then
-                        local name = obj:get_player_name()
-                        minetest.sound_play("tele_drone", {
-                            to_player = name,
-                            gain = math.random(0.8, 1.1),
-                            pitch = math.random(0.8, 1)
-                        })
-                        local p = obj:get_pos()
-                        do_particles(p, 40)
-                        do_particle_tele(p, 110)
-                    end
-                end)
-            end
-        end
-    end
-
-    --[[minetest.chat_send_player(player:get_player_name(), "Jumping in... 3")
-    minetest.after(1, function()
-        minetest.chat_send_player(player:get_player_name(), "Jumping in... 2")
-    end)
-    minetest.after(2, function()
-        minetest.chat_send_player(player:get_player_name(), "Jumping in... 1")
-    end)
-    minetest.after(3, function()
-        minetest.chat_send_player(player:get_player_name(), "Jumping...")
-    end)--]]
 end
 
 local function check_engines_charged(pos, size)
@@ -644,9 +596,11 @@ local function do_jump(pos, dest, size, jcb, offset)
 
     if check_engines_charged(pos, size) == true then
         digilines.receptor_send(pos, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_prepare')
+
         local dist = vector.distance(pos, dest)
         engines_charged_spend(pos, dist, size)
         transport_jumpship(pos, dest, size, owner, offset)
+
         local drv = vector.add(pos, offset)
         minetest.after(0.5, function()
             digilines.receptor_send(drv, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_complete')
@@ -658,7 +612,9 @@ local function do_jump(pos, dest, size, jcb, offset)
     return
 end
 
-local function perform_jump(pos, dest, size, jcb, offset)
+local function perform_jump(pos, size, jcb, offset)
+
+    local dest = vector.add(pos, offset)
 
     local area_clear = true
     if not schem_lib.func.check_dest_clear(pos, dest, size) then
@@ -808,7 +764,7 @@ function ship_machine.get_jump_drive(pos)
     return minetest.find_node_near(pos, 15, {"group:jumpdrive"})
 end
 
-function ship_machine.engine_do_jump(pos, dest, size, jump_callback, dest_offset)
+function ship_machine.engine_do_jump(pos, size, jump_callback, dest_offset)
     local pos1 = vector.subtract(pos, {
         x = size.w,
         y = size.h,
@@ -844,7 +800,7 @@ function ship_machine.engine_do_jump(pos, dest, size, jump_callback, dest_offset
     end
 
     if drive then
-        return perform_jump(drive, dest, size, jump_callback, dest_offset)
+        return perform_jump(drive, size, jump_callback, dest_offset)
     end
 
     jump_callback(-3)

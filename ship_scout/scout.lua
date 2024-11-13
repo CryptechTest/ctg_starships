@@ -276,7 +276,8 @@ function ship_scout.register_scout(custom_data)
             meta:set_int("travel_ready", 0)
             message = "Jump destination beyond engine abilities..."
         elseif fields.submit_nav and ((is_deepspace and loc ~= "0") or (not is_deepspace)) then
-            local formspec = ship_scout.update_formspec(pos, data, loc, false, "Preparing Jump...")
+            message = "Routing Jump Actuality..."
+            local formspec = ship_scout.update_formspec(pos, data, loc, 0, message)
             meta:set_string("formspec", formspec)
 
             local function jump_callback(j)
@@ -285,20 +286,23 @@ function ship_scout.register_scout(custom_data)
                 end
                 if j == 1 then
                     meta:set_int("travel_ready", 1)
-                    message = "Jump actuality establishing route..."
-                    local ready = meta:get_int("travel_ready")
-                    local formsp = ship_scout.update_formspec(pos, data, loc, ready, message)
-                    meta:set_string("formspec", formsp)
+                    meta:set_string("formspec", nil)
+                    minetest.after(0.5, function()
+                        local metad = minetest.get_meta(panel_dest)
+                        metad:set_int("travel_ready", 1)
+                        local formspec_new = ship_scout.update_formspec(panel_dest, data, loc, 0, "Folding Jump Space...")
+                        metad:set_string("formspec", formspec_new)
+                    end)
                     minetest.after(3.5, function()
                         local metad = minetest.get_meta(panel_dest)
-                        local formspec_old = ship_scout.update_formspec(panel_dest, data, loc, false, "Jump Complete!")
-                        meta:set_string("formspec", formspec_old)
-                        local formspec_new = ship_scout.update_formspec(panel_dest, data, loc, false, "Jump Complete!")
+                        local formspec_new = ship_scout.update_formspec(panel_dest, data, loc, 0, "Jump Complete!")
                         metad:set_string("formspec", formspec_new)
                         metad:set_int("travel_ready", 0)
-                        minetest.after(5, function()
-                            local formspec_rdy = ship_scout.update_formspec(panel_dest, data, loc, false, "Ready...")
-                            metad:set_string("formspec", formspec_rdy)
+                        minetest.after(7, function()
+                            if metad then
+                                local formspec_rdy = ship_scout.update_formspec(panel_dest, data, loc, 0, "Ready...")
+                                metad:set_string("formspec", formspec_rdy)
+                            end
                         end)
                     end)
                     return
@@ -322,7 +326,7 @@ function ship_scout.register_scout(custom_data)
             end
 
             -- async jump with callback
-            ship_machine.engine_do_jump(pos, dest, data.size, jump_callback, offset)
+            ship_machine.engine_do_jump(pos, data.size, jump_callback, offset)
 
             return
         elseif fields.submit_nav and not changed then
