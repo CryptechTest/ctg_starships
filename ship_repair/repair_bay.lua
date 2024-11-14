@@ -74,9 +74,9 @@ local function update_formspec(pos, data)
         local label = "label[0,3.0;Materials Required]"
 
         formspec = "size[8,10;]" ..
-                    "list[".."repair_box"..";src;0,1;8,2;]" .. "list[current_player;main;0,6;8,4;]" ..
+                    "list[".."current_name"..";src;0,1;8,2;]" .. "list[current_player;main;0,6;8,4;]" ..
                     "list[current_name;ship_repair_inv;0,3.5;5,2;]" .. "label[0,0;" .. machine_desc:format(tier) .. "]" ..
-                    "listring[".."repair_box"..";src]" .. "listring[current_player;main]" ..
+                    "listring[".."current_name"..";src]" .. "listring[current_player;main]" ..
                     "button[5.5,3.5;2.5,1;toggle;" .. btnName .. "]" .. label .. progress_time .. progress_tick
     end
     return formspec
