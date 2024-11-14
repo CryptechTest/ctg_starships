@@ -5,9 +5,9 @@ ship_cube = {}
 local ship_def = {}
 ship_def.name = "Cube Cruiser"
 ship_def.size = {
-    w = 35,
-    h = 35,
-    l = 46
+    w = 42,
+    h = 42,
+    l = 42
 }
 ship_def.hp = 20000
 ship_def.shield = 10000
@@ -23,7 +23,7 @@ ship_cube.register_cruiser({
     typename = "ship_cube",
     modname = "ship_cube",
     machine_name = "cruiser",
-    jump_dist = 2000,
+    jump_dist = 5000,
     size = ship_def.size,
     hp = ship_def.hp,
     shield = ship_def.shield,
