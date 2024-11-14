@@ -179,6 +179,7 @@ function ship_machine.register_jumpship(data)
     if data.do_protect then
         ship_machine.register_jumpship_protect({
             modname = data.modname,
+            machine_name = data.shield_name,
             ship_name = data.ship_name,
             size = data.size,
             hp = data.hp,

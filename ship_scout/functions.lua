@@ -157,7 +157,7 @@ function ship_scout.get_protector(pos, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "ship_scout:shield_protect")
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, {"ship_scout:shield_protect", "ship_scout:shield_protect_legacy"})
 
     local drive = nil
     for _, p in pairs(nodes) do

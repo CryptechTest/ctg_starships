@@ -15,7 +15,7 @@ end
 function ship_engine.update_formspec(data, running, enabled, has_mese, percent, charge, charge_max, eu_input, eu_supply,
     tick, tick_max)
     local machine_name = data.machine_name
-    local machine_desc = "Starship " .. data.machine_desc
+    local machine_desc = "Jumpship " .. data.machine_desc
     local typename = data.typename
     local tier = data.tier
     local ltier = string.lower(tier)

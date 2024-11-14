@@ -88,7 +88,8 @@ local function register_ship_protect(def)
 
     local hit_points = def.hp or 1000
     local modname = def.modname or "ship_machine"
-    local nodename = modname .. ":" .. "shield_protect"
+    local machine_name = def.machine_name or "shield_protect"
+    local nodename = modname .. ":" .. machine_name
     local ship_name = def.ship_name or "Jumpship"
 
     local protector_max_share_count = 12
