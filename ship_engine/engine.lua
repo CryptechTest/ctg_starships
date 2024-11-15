@@ -3,7 +3,7 @@ local S = minetest.get_translator(minetest.get_current_modname())
 local time_tick = 50
 local time_scl = time_tick
 
-local tick_scl = 500
+local tick_scl = 700
 
 local function round(v)
     return math.floor(v + 0.5)
