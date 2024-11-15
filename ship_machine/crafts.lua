@@ -42,4 +42,33 @@ if true then
         recipe = {{gw, cam, gw}, {cc, gdmv, cc}, {sw, hvt, sw}},
         replacements = {{ gw, es .. " 2" }, {sw, es .. " 2"}}
     })
+
+    local vp = "ctg_machines:lv_vacuum_pump"
+    local bo = "ctg_machines:lv_bottler"
+    local bt = "vessels:steel_bottle"
+    local nst = "livingcaves:bacteriacave_nest"
+    local tb = "pipeworks:mese_tube_000000"
+    local lg = "technic:control_logic_unit"
+    local cr = "technic:green_energy_crystal"
+    local gcr = "group:crystal"
+
+    local lcm = "ship_machine:lv_chemical_lab"
+    local mcm = "ship_machine:mv_chemical_lab"
+
+    -- lv
+    minetest.register_craft({
+        output = "ship_machine:lv_chemical_lab",
+        recipe = {{bt, lg, tb}, {nst, bo, nst}, {cc, vp, cc}}
+    })
+    -- mv
+    minetest.register_craft({
+        output = "ship_machine:mv_chemical_lab",
+        recipe = {{bt, bt, bt}, {cr, lcm, cr}, {cc, mvt, cc}}
+    })
+    -- hv
+    minetest.register_craft({
+        output = "ship_machine:hv_chemical_lab",
+        recipe = {{bt, gcr, bt}, {bt, mcm, bt}, {cc, hvt, cc}}
+    })
+
 end
