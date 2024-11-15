@@ -35,7 +35,7 @@ function ship_machine.register_jumpship(data)
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
 
-        local machine_desc_tier = machine_desc:format(tier)
+        local machine_desc_tier = data.machine_desc:format(tier)
         local machine_node = data.modname .. ":" .. data.machine_name
         local machine_demand_active = data.demand
 
