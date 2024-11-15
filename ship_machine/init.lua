@@ -25,8 +25,11 @@ minetest.register_on_joinplayer(function(player, last_login)
 
     local last_pos = ship_machine.locations[name];
     if last_pos then
-        player:set_pos(last_pos)
-        --minetest.chat_send_player(name, "Location Updated!")
+        local drive = ship_machine.get_jumpdrive(last_pos)
+        if drive and player:get_pos() ~= last_pos then
+            player:set_pos(last_pos)
+            minetest.chat_send_player(name, "Offline location updated...")
+        end
         --minetest.log("player location loaded")
     end
 end)
@@ -35,7 +38,7 @@ minetest.register_on_leaveplayer(function(player, timed_out)
     local name = player:get_player_name()
     local pos = player:get_pos()
 
-    local drive = ship_machine.get_jump_drive(pos)
+    local drive = ship_machine.get_jumpdrive(pos)
 
     if drive ~= nil then
 

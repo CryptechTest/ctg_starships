@@ -237,9 +237,8 @@ local function do_particle_tele(pos, amount)
     })
 end
 
-local function move_offline_players(drive, offset)
-    -- local node = minetest.get_node(drive)
-    local dmeta = minetest.get_meta(drive)
+local function move_offline_players(dest, offset)
+    local dmeta = minetest.get_meta(dest)
 
     local stor_str = dmeta:get_string("player_storage")
     local contents = {}
@@ -485,9 +484,9 @@ local function transport_jumpship(pos, dest, size, owner, offset)
             -- move beds and update tubes
             move_beds(pos1, pos2, offset)
             update_tubes(pos1, pos2, offset)
+            -- move offline player locations
+            move_offline_players(pos, offset)
         end)
-        -- move offline player locations
-        move_offline_players(pos, offset)
         -- do jump tele effects
         do_effect(pos1, pos2)
     end
@@ -755,10 +754,6 @@ function ship_machine.get_ship_contains(pos, size, name)
         end
     end
     return prot
-end
-
-function ship_machine.get_jump_drive(pos)
-    return minetest.find_node_near(pos, 15, {"group:jumpdrive"})
 end
 
 function ship_machine.engine_do_jump(pos, size, jump_callback, dest_offset)
