@@ -5,17 +5,18 @@ local function round(v)
 end
 
 function ship_machine.register_jumpship(data)
-    -- data.modname = "ship_machine"
-    -- data.machine_name = "jump_drive"
-    -- data.machine_desc = "Jump Drive Allocator"
-    -- data.typename = "jump_drive"
 
     data.tier = data.tier or "LV"
     data.hp = data.hp or 1000
     data.shield = data.shield or 1000
+    data.demand = data.demand or 0
+
+    local tier = data.tier
+    local ltier = string.lower(tier)
+    local base_texture = data.texture_name or data.machine_name
 
     local texture_active = {
-        image = data.machine_name .. "_active.png",
+        image = base_texture .. "_active.png",
         animation = {
             type = "vertical_frames",
             aspect_w = 32,
@@ -24,24 +25,100 @@ function ship_machine.register_jumpship(data)
         }
     }
 
+    local connect_sides = {"bottom"}
+
+    -------------------------------------------------------
+    -------------------------------------------------------
+    -- technic run
+    local run = function(pos, node)
+        local meta = minetest.get_meta(pos)
+        local inv = meta:get_inventory()
+        local eu_input = meta:get_int(tier .. "_EU_input")
+
+        local machine_desc_tier = machine_desc:format(tier)
+        local machine_node = data.modname .. ":" .. data.machine_name
+        local machine_demand_active = data.demand
+
+        -- Setup meta data if it does not exist.
+        if not eu_input then
+            meta:set_int(tier .. "_EU_demand", machine_demand_active[1])
+            meta:set_int(tier .. "_EU_input", 0)
+            return
+        end
+
+        local powered = eu_input >= machine_demand_active[1]
+        if powered then
+            meta:set_int("enabled", 1)
+            meta:set_int("src_time", meta:get_int("src_time") + round(data.speed * 10 * 1.0))
+        end
+        while true do
+            local enabled = meta:get_int("enabled") == 1
+
+            meta:set_int(tier .. "_EU_demand", machine_demand_active[1])
+
+            if not powered then
+                meta:set_int("enabled", 0)
+                meta:set_string("infotext", machine_desc_tier .. S(" - Not Powered"))
+                return
+            end
+
+            meta:set_string("infotext", machine_desc_tier .. S(" - Online"))
+
+            if (meta:get_int("src_time") < round(time_scl * 10)) then
+                break
+            end
+
+            meta:set_int("src_time", meta:get_int("src_time") - round(time_scl * 10))
+        end
+    end
+
+    -------------------------------------------------------
+
     local nodename = data.modname .. ":" .. data.machine_name
     minetest.register_node(nodename, {
         description = S(data.machine_desc),
-        tiles = {texture_active, data.machine_name .. "_bottom.png", texture_active, texture_active, texture_active,
+        tiles = {texture_active, base_texture .. "_bottom.png", texture_active, texture_active, texture_active,
                  texture_active},
 
         paramtype = "light",
         paramtype2 = "facedir",
-        light_source = 3,
+        light_source = 4,
         groups = {
             cracky = 1,
+            technic_machine = 1,
+            ["technic_" .. ltier] = 1,
+            ctg_machine = 1,
             metal = 1,
+            level = 2,
             jumpdrive = 1,
             ship_machine = 1,
-            jump_dist = 1,
             not_in_creative_inventory = 1
         },
         sounds = default.node_sound_metal_defaults(),
+        drop = nodename,
+
+        drawtype = "nodebox",
+        node_box = {
+            type = "fixed",
+            fixed = {
+                {-0.5, -0.5, -0.5, 0.5, -0.4375, 0.5}, -- base
+                {-0.53125, -0.5, -0.53125, -0.4375, 0.50625, -0.4375}, -- p1
+                {-0.53125, -0.5, 0.4375, -0.4375, 0.50625, 0.53125}, -- p2
+                {0.4375, -0.5, 0.4375, 0.53125, 0.50625, 0.53125}, -- p3
+                {0.4375, -0.5, -0.53125, 0.53125, 0.50625, -0.4375}, -- p4
+                {-0.4375, -0.4375, -0.4375, 0.4375, 0.4375, 0.4375}, -- mid_base
+                {-0.5, 0.4375, 0.40625, 0.5, 0.50625, 0.5}, -- top_b
+                {-0.5, 0.4375, -0.5, 0.5, 0.50625, -0.40625}, -- top_f
+                {-0.5, 0.4375, -0.40625, -0.40625, 0.50625, 0.40625}, -- top_l
+                {0.40625, 0.4375, -0.40625, 0.5, 0.50625, 0.40625}, -- top_r
+            }
+        },
+        selection_box = {
+            type = "fixed",
+            fixed = {
+                {-0.53125, -0.5, -0.53125, 0.53125, 0.50625, 0.53125}, -- col_base
+            }
+        },
 
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             local meta = minetest.get_meta(pos)
@@ -54,12 +131,15 @@ function ship_machine.register_jumpship(data)
             return technic.machine_after_dig_node
         end,
         on_rotate = screwdriver.disallow,
+        connect_sides = connect_sides,
         -- can_dig = technic.machine_can_dig,
         can_dig = function(pos, player)
             local is_admin = player:get_player_name() == "squidicuzz"
             return player and is_admin
         end,
-        --on_blast = function() end,
+        on_blast = function()
+            -- TODO: handle destroy...
+        end,
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
@@ -75,7 +155,8 @@ function ship_machine.register_jumpship(data)
         allow_metadata_inventory_put = technic.machine_inventory_put,
         allow_metadata_inventory_take = technic.machine_inventory_take,
         allow_metadata_inventory_move = technic.machine_inventory_move,
-        -- technic_run = run,
+
+        technic_run = run,
 
         on_receive_fields = function(pos, formname, fields, sender)
             if fields.quit then
@@ -92,15 +173,6 @@ function ship_machine.register_jumpship(data)
                 return
             end
             local node = minetest.get_node(pos)
-            local enabled = false
-            if fields.toggle then
-                if meta:get_int("enabled") == 1 then
-                    meta:set_int("enabled", 0)
-                else
-                    meta:set_int("enabled", 1)
-                    enabled = true
-                end
-            end
             local owner_name = ""
             if fields.set_owner and fields.owner_name then
                 owner_name = fields.owner_name
@@ -112,18 +184,6 @@ function ship_machine.register_jumpship(data)
                     meta2:set_string("infotext", S("Protection (owned by @1)", meta2:get_string("owner")))
                     ship_machine.update_ship_owner_all(pos, data.size, owner_name)
                 end
-            end
-            local move_x = 0
-            local move_y = 0
-            local move_z = 0
-            if fields.inp_x then
-                move_x = fields.inp_x
-            end
-            if fields.inp_y then
-                move_y = fields.inp_y
-            end
-            if fields.inp_z then
-                move_z = fields.inp_z
             end
             local file_name = ""
             if fields.file_name then
@@ -138,27 +198,6 @@ function ship_machine.register_jumpship(data)
                 minetest.after(0, function()
                     ship_machine.load_jumpship(pos, sender, file_name)
                 end)
-            end
-            if fields.jump then
-                local dest = {
-                    x = pos.x + move_x,
-                    y = pos.y + move_y,
-                    z = pos.z + move_z
-                }
-                local perform = true;
-                if vector.distance(pos, dest) < 32 then
-                    perform = false;
-                end
-                if perform and not schem_lib.func.check_dest_clear(pos, dest, data.size) then
-                    perform = false;
-                end
-                if perform then
-                    minetest.after(0, function()
-                        if ship_machine.check_engines_charged(pos) then
-                            --ship_machine.transport_jumpship(pos, dest, data.size, sender)
-                        end
-                    end)
-                end
             end
             local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
             meta:set_string("formspec", formspec)
@@ -175,6 +214,8 @@ function ship_machine.register_jumpship(data)
             }
         }
     })
+
+    technic.register_machine(tier, nodename, technic.receiver)
 
     if data.do_protect then
         ship_machine.register_jumpship_protect({
