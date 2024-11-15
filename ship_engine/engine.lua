@@ -474,31 +474,6 @@ function ship_engine.register_engine(data)
 
 end
 
-local function register_lv_engine(data)
-    data.modname = "ship_engine"
-    data.charge_max = 160
-    data.demand = {5000}
-    data.supply = 6600
-    data.speed = 1
-    data.tier = "LV"
-    data.typename = "engine"
-    -- data.machine_name = "engine"
-    -- data.machine_desc = "Starship Engine"
-
-    ship_engine.register_engine(data)
-end
-
-register_lv_engine({
-    machine_name = "engine_l",
-    machine_desc = "LV Port Engine",
-    engine_digiline_effector = ship_engine.engine_digiline_effector_l
-})
-register_lv_engine({
-    machine_name = "engine_r",
-    machine_desc = "LV Starboard Engine",
-    engine_digiline_effector = ship_engine.engine_digiline_effector_r
-})
-
 ----------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------
 
@@ -792,9 +767,6 @@ function ship_engine.register_engine_core(data)
     technic.register_machine(tier, node_name .. "_active", technic.receiver)
 
 end
-
-ship_engine.register_engine_core({})
-
 
 -- engine radiation
 if minetest.get_modpath("radiant_damage") then
