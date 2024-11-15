@@ -4,12 +4,15 @@ local function round(v)
     return math.floor(v + 0.5)
 end
 
+local time_scl = 10
+
 function ship_machine.register_jumpship(data)
 
     data.tier = data.tier or "LV"
     data.hp = data.hp or 1000
     data.shield = data.shield or 1000
     data.demand = data.demand or {0}
+    data.speed = 1
 
     local tier = data.tier
     local ltier = string.lower(tier)
