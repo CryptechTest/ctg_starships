@@ -9,7 +9,7 @@ function ship_machine.register_jumpship(data)
     data.tier = data.tier or "LV"
     data.hp = data.hp or 1000
     data.shield = data.shield or 1000
-    data.demand = data.demand or 0
+    data.demand = data.demand or {0}
 
     local tier = data.tier
     local ltier = string.lower(tier)
