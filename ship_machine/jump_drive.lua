@@ -173,8 +173,8 @@ function ship_machine.register_jumpship(data)
                 meta:set_string("formspec", formspec)
             end
             local is_admin = false
-            if minetest.check_player_privs(player, "jumpship_admin") then
-                return true
+            if minetest.check_player_privs(sender, "jumpship_admin") then
+                is_admin = true
             end
             if not is_admin then
                 -- meta:set_string("formspec", '')
