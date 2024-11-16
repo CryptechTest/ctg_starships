@@ -472,6 +472,9 @@ function ship_weapons.register_missile_tower(data)
     end
 
     local function check_display(pos)
+        if not minetest.compare_block_status(pos, "active") then
+            return
+        end
         local found_display = false
         local objs = minetest.get_objects_inside_radius(pos, 0.5)
         for _, obj in pairs(objs) do
