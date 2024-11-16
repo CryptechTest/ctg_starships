@@ -135,9 +135,11 @@ function ship_machine.register_jumpship(data)
         end,
         on_rotate = screwdriver.disallow,
         connect_sides = connect_sides,
-        -- can_dig = technic.machine_can_dig,
         can_dig = function(pos, player)
-            local is_admin = player:get_player_name() == "squidicuzz"
+            local is_admin = false
+            if minetest.check_player_privs(player, "jumpship_admin") then
+                return true
+            end
             return player and is_admin
         end,
         on_blast = function()
@@ -170,7 +172,10 @@ function ship_machine.register_jumpship(data)
                 local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
                 meta:set_string("formspec", formspec)
             end
-            local is_admin = sender:get_player_name() == "squidicuzz"
+            local is_admin = false
+            if minetest.check_player_privs(player, "jumpship_admin") then
+                return true
+            end
             if not is_admin then
                 -- meta:set_string("formspec", '')
                 return

@@ -557,8 +557,10 @@ local function register_ship_protect(def)
         on_punch = def.punch,
 
         can_dig = function(pos, player)
-            -- return player and def.protector.can_dig(1, pos, player:get_player_name(), true, 1)
-            local is_admin = player:get_player_name() == "squidicuzz"
+            local is_admin = false
+            if minetest.check_player_privs(player, "jumpship_admin") then
+                return true
+            end
             return player and is_admin
         end,
 

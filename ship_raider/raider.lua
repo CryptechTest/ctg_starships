@@ -394,10 +394,6 @@ function ship_raider.register_scout(custom_data)
                 minetest.registered_nodes[minetest.get_node(drive_loc).name].on_punch(drive_loc, minetest.get_node(drive_loc), puncher)
             end
         end,
-        --[[can_dig = function(pos, player)
-            local is_admin = player:get_player_name() == "squidicuzz"
-            return player and is_admin
-        end,]] --
 
         on_receive_fields = on_receive_fields,
         digiline = {

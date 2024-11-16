@@ -19,6 +19,12 @@ dofile(default_path .. DIR_DELIM .. "crafts.lua")
 dofile(default_path .. DIR_DELIM .. "coolants.lua")
 dofile(default_path .. DIR_DELIM .. "chemical_lab.lua")
 
+minetest.register_privilege("jumpship_admin", {
+	description = "Allow player to admin jumpdrives",
+	give_to_singleplayer = false,
+	give_to_admin = true,
+})
+
 minetest.register_on_joinplayer(function(player, last_login)
     local name = player:get_player_name()
     local pos = player:get_pos()

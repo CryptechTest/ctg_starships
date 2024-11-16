@@ -294,10 +294,6 @@ function shipyard.register_shipyard()
                 minetest.registered_nodes[minetest.get_node(drive_loc).name].on_punch(drive_loc, node, puncher)
             end
         end,
-        --[[can_dig = function(pos, player)
-            local is_admin = player:get_player_name() == "squidicuzz"
-            return player and is_admin
-        end,]] --
 
         on_receive_fields = on_receive_fields,
         digiline = {
