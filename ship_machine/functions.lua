@@ -485,7 +485,7 @@ local function transport_jumpship(pos, dest, size, owner, offset)
             move_beds(pos1, pos2, offset)
             update_tubes(pos1, pos2, offset)
             -- move offline player locations
-            move_offline_players(pos, offset)
+            move_offline_players(dest, offset)
         end)
         -- do jump tele effects
         do_effect(pos1, pos2)
