@@ -237,7 +237,8 @@ local function do_particle_tele(pos, amount)
     })
 end
 
-local function move_offline_players(dest, offset)
+local function move_offline_players(origin, offset)
+    local dest = vector.add(origin, offset)
     local dmeta = minetest.get_meta(dest)
 
     local stor_str = dmeta:get_string("player_storage")
@@ -485,7 +486,7 @@ local function transport_jumpship(pos, dest, size, owner, offset)
             move_beds(pos1, pos2, offset)
             update_tubes(pos1, pos2, offset)
             -- move offline player locations
-            move_offline_players(dest, offset)
+            move_offline_players(pos, offset)
         end)
         -- do jump tele effects
         do_effect(pos1, pos2)
