@@ -569,7 +569,9 @@ local function register_ship_protect(def)
 
         after_destruct = del_display
     })
-    minetest.register_alias(modname .. ":protect2", nodename)
+    if machine_name == "shield_protect" then
+        minetest.register_alias(modname .. ":protect2", nodename)
+    end
 
     -- check formspec buttons or when name entered
     minetest.register_on_player_receive_fields(function(player, formname, fields)
