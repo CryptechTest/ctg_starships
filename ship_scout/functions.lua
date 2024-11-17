@@ -129,15 +129,17 @@ function ship_scout.update_formspec(pos, data, loc, ready, message)
         local input_field =
             "field[1,3.5;1.4,1;inp_x;Move X;0]field[2.3,3.5;1.4,1;inp_y;Move Y;0]field[3.6,3.5;1.4,1;inp_z;Move Z;0]"
 
+        local holo = "image_button[4.85,-0.225;0.8,0.8;ctg_radar_on.png;holo;;true;false]"
+
         if is_deepspace then
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. img_ship .. img_hole_1 ..
-                           img_hole_2 .. img_hole_3 .. img_hole_4 .. damage_warn .. ship_owner .. nav_label ..
+                           img_hole_2 .. img_hole_3 .. img_hole_4 .. damage_warn .. ship_owner .. nav_label .. holo ..
                            hit_points .. shield_points .. busy .. combat_migration .. refresh .. message
         else
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
                            machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. btn_doc .. img_ship ..
-                           coords_label .. input_field .. nav_label .. hit_points .. shield_points .. damage_warn ..
+                           coords_label .. input_field .. nav_label .. holo .. hit_points .. shield_points .. damage_warn ..
                            ship_owner .. busy .. combat_migration .. refresh .. message
         end
     end

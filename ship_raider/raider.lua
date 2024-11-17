@@ -118,6 +118,24 @@ function ship_raider.register_scout(custom_data)
             return
         end
 
+        if fields.holo then
+            local drive_loc = ship_machine.get_jumpdrive(pos, data.size)
+            local holo_pos = vector.add(pos, vector.new(0,1,0))
+            local ofs = vector.subtract(holo_pos, drive_loc)
+            local node = core.get_node(holo_pos)
+            if node.name ~= "ship_holodisplay:display" then
+                core.set_node(holo_pos, {name = "ship_holodisplay:display"})
+                local meta = core.get_meta(holo_pos)
+                meta:set_int("X", -(128 + ofs.x))
+                meta:set_int("Y", -(129 + ofs.y))
+                meta:set_int("Z", -(128 + ofs.z))
+                core.get_node_timer(holo_pos):start(1)
+            else
+                core.set_node(holo_pos, {name = "ship_holodisplay:display_off"})
+            end
+            return
+        end
+
         local jump_dis = meta:get_int("jump_dist")
         local is_deepspace = jpos and jpos.y > 22000;
 
@@ -368,8 +386,15 @@ function ship_raider.register_scout(custom_data)
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             local meta = minetest.get_meta(pos)
             meta:set_string("infotext", "Starship Control " .. "-" .. " " .. machine_desc)
+            local holo_pos = vector.add(pos, vector.new(0,1,0))
+            core.set_node(holo_pos, {name = "ship_holodisplay:display_off"})
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
+            local holo_pos = vector.add(pos, vector.new(0,1,0))
+            local node = core.get_node(holo_pos)
+            if node.name == "ship_holodisplay:display" or node.name == "ship_holodisplay:display_off" then
+                core.set_node(holo_pos, {name = "air"})
+            end
             return technic.machine_after_dig_node
         end,
         on_rotate = screwdriver.disallow,
@@ -386,7 +411,7 @@ function ship_raider.register_scout(custom_data)
             meta:set_string("pos_nav", "{}")
             meta:set_string("pos_eng1", "{}")
             meta:set_string("pos_eng2", "{}")
-            local pos_drive = get_jumpdrive(pos, data.size)
+            local pos_drive = ship_machine.get_jumpdrive(pos, data.size)
             if pos_drive then
                 local drive_offset = vector.subtract(pos, pos_drive)
                 meta:set_string("drive_offset", minetest.serialize(drive_offset))
