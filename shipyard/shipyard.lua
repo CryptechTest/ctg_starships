@@ -4,9 +4,9 @@ local function isInteger(str)
     return tonumber(str) ~= nil
 end
 
-function shipyard.register_shipyard()
+function shipyard.register_shipyard(custom_data)
 
-    local data = {}
+    local data = custom_data or {}
 
     data.typename = "shipyard"
     data.modname = "shipyard"
@@ -14,8 +14,6 @@ function shipyard.register_shipyard()
     data.machine_name = "shipyard"
     data.machine_desc = "Shipyard"
     data.jump_dist = 15000
-    data.size = shipyard.size;
-    data.hp = 200000
 
     local modname = "shipyard"
     local ltier = string.lower(data.tier)
@@ -313,5 +311,3 @@ function shipyard.register_shipyard()
     })
 
 end
-
-shipyard.register_shipyard()

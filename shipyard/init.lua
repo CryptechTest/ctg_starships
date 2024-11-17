@@ -21,6 +21,12 @@ dofile(default_path .. DIR_DELIM .. "shipyard_bay.lua")
 dofile(default_path .. DIR_DELIM .. "shipyard.lua")
 dofile(default_path .. DIR_DELIM .. "chest.lua")
 
+shipyard.register_shipyard({
+    ship_name = ship_def.name,
+    size = ship_def.size,
+    hp = ship_def.hp,
+    shield = ship_def.shield,
+})
 
 ship_machine.register_jumpship({
     modname = "shipyard",
