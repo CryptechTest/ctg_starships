@@ -35,7 +35,7 @@ ship_scout_legacy.register_scout({
 if minetest.get_modpath("ship_machine") then
     ship_machine.register_jumpship({
         modname = "ship_scout_legacy",
-        machine_name = "jump_drive",
+        machine_name = "jump_drive_legacy",
         machine_desc = "Jump Drive Allocator - Scout",
         typename = "jump_drive",
         do_protect = true,
