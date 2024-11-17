@@ -151,10 +151,15 @@ core.register_node("ship_holodisplay:display", {
 	-- Textures of node; +Y, -Y, +X, -X, +Z, -Z
 	tiles = {"ship_holodisplay_display_top.png", "ship_holodisplay_display_top.png"},
 	groups = {oddly_breakable_by_hand = 2},
+	paramtype = "light",
 	light_source = 12,
 	use_texture_alpha = "blend",
 	backface_culling = false,
 	collisionbox = {0, 0, 0, 0, 0, 0},
+	selection_box = {
+		type = "fixed",
+		fixed = {0, 0, 0, 0, 0, 0},
+	},
 	walkable = false,
 	drawtype = "nodebox",
 	node_box = {
@@ -185,6 +190,26 @@ core.register_node("ship_holodisplay:display", {
 		update_entities(pos)
 		core.get_node_timer(pos):start(2)
 	end
+})
+
+core.register_node("ship_holodisplay:display_off", {
+	description = "Holographic Display Off",
+	-- Textures of node; +Y, -Y, +X, -X, +Z, -Z
+	tiles = {"ship_holodisplay_display_top.png", "ship_holodisplay_display_top.png"},
+	groups = {oddly_breakable_by_hand = 2},
+	use_texture_alpha = "blend",
+	backface_culling = false,
+	collisionbox = {0, 0, 0, 0, 0, 0},
+	selection_box = {
+		type = "fixed",
+		fixed = {0, 0, 0, 0, 0, 0},
+	},
+	walkable = false,
+	drawtype = "nodebox",
+	node_box = {
+		type = "fixed",
+		fixed = {-0.0, -0.0, -0.0, 0.0, -0.0, 0.0},
+	},
 })
 
 core.register_entity("ship_holodisplay:entity", {
