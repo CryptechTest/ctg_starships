@@ -119,6 +119,13 @@ local update_ships = function (pos)
 				local max2 = {x = x + 127, y = y + 127, z = z + 127}
 				local nodes = core.find_nodes_in_area(min2, max2, {"group:jumpdrive"})
 				for _, node in ipairs(nodes) do
+                    local ship_name = "Unknown Ship"
+                    local drive = core.get_node(node)
+                    -- the name will look something like this and we just want the final part discarding the mod and the "jump_drive_" part "ship_raider:jump_drive_raider" -> "Raider"
+                    local ship_name = string.split(drive.name, ":")[2]
+                    ship_name = string.sub(ship_name, 12)
+                    ship_name = string.upper(string.sub(ship_name, 1, 1)) .. string.sub(ship_name, 2)
+
 					-- get node 2 blocks above the jumpdrive, check if it's a protector
 					local prot_pos = {x = node.x, y = node.y + 2, z = node.z}
 					local protector = core.get_node(prot_pos)
@@ -133,10 +140,12 @@ local update_ships = function (pos)
 						local spos = {x = ominp.x + ((node.x - scanpos.x) * 0.00390625), y = ominp.y + ((node.y - scanpos.y) * 0.00390625), z= ominp.z + ((node.z - scanpos.z) * 0.00390625)}
 						local type = "unknown"
 						local offset = {x = 128, y = 129, z = 128}
+                        
 						if node == vector.add(offset, scanpos) then
+
 							type = "self"
 						end
-						core.add_entity(spos, "ship_holodisplay:ship", "Unknown Ship;" .. core.pos_to_string(node) .. ";" .. core.pos_to_string(size) .. ";" .. type)
+						core.add_entity(spos, "ship_holodisplay:ship", ship_name .. ";" .. core.pos_to_string(node) .. ";" .. core.pos_to_string(size) .. ";" .. type)
 					end
 					
 				end
