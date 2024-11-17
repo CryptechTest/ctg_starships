@@ -110,7 +110,7 @@ local update_ships = function (pos)
 	local meta = core.get_meta(pos)
 	local scanpos = {x = pos.x + meta:get_int("X"), y = pos.y + meta:get_int("Y"), z = pos.z + meta:get_int("Z")}
 	local min = {x = scanpos.x - 1, y = scanpos.y, z = scanpos.z - 1}
-	local max = {x = scanpos.x + 255, y = scanpos.y + 256, z = scanpos.z + 255}
+	local max = {x = scanpos.x + 128, y = scanpos.y + 128, z = scanpos.z + 128}
 	-- Area volume for 'core.find_nodes_in_area' is limited to 4,096,000 nodes so we need to scan in chunks of 128x128x128
 	for x = min.x, max.x, 128 do
 		for y = min.y, max.y, 128 do
