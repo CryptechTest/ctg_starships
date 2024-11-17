@@ -189,7 +189,10 @@ core.register_node("ship_holodisplay:display", {
 		update_ships(pos)
 		update_entities(pos)
 		core.get_node_timer(pos):start(2)
-	end
+	end,
+	on_blast = function()
+		-- TODO: handle destroy...
+	end,
 })
 
 core.register_node("ship_holodisplay:display_off", {
@@ -210,6 +213,9 @@ core.register_node("ship_holodisplay:display_off", {
 		type = "fixed",
 		fixed = {-0.0, -0.0, -0.0, 0.0, -0.0, 0.0},
 	},
+	on_blast = function()
+		-- TODO: handle destroy...
+	end,
 })
 
 core.register_entity("ship_holodisplay:entity", {
