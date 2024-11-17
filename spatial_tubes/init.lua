@@ -353,7 +353,7 @@ function spatial_tubes.register_machine(data)
 
             -- calculate charge percent
             local charge_percent = (math.floor(meta:get_int("charge") / meta:get_int("charge_max") * 100))
-            local dest = (meta:get_string("sta_exit") ~= nil and "\n" .. "Transport to: " .. exit) or ""
+            local dest = (meta:get_string("sta_exit") ~= nil and type(exit) ~= "table" and "\n" .. "Transport to: " .. exit) or ""
             meta:set_string("infotext", machine_desc_tier .. S(" - Charge: " .. charge_percent .. "%" .. dest))
             -- check if run time is not expired..
             if meta:get_int("src_time") < round(time_scl * 10) then
