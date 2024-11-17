@@ -13,6 +13,7 @@ function ship_machine.register_jumpship(data)
     data.shield = data.shield or 1000
     data.demand = data.demand or {0}
     data.speed = 1
+    data.ship_name = data.ship_name or "Jumpship"
 
     local tier = data.tier
     local ltier = string.lower(tier)
@@ -155,6 +156,7 @@ function ship_machine.register_jumpship(data)
             meta:set_int("locked", 0)
             local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
             meta:set_string("formspec", formspec)
+            meta:set_string("ship_name", data.ship_name)
         end,
 
         allow_metadata_inventory_put = technic.machine_inventory_put,

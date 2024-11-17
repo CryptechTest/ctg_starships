@@ -386,6 +386,11 @@ function ship_scout.register_scout(custom_data)
             meta:set_string("pos_nav", "{}")
             meta:set_string("pos_eng1", "{}")
             meta:set_string("pos_eng2", "{}")
+            local pos_drive = get_jumpdrive(pos, data.size)
+            if pos_drive then
+                local drive_offset = vector.subtract(pos, pos_drive)
+                meta:set_string("drive_offset", minetest.serialize(drive_offset))
+            end
         end,
 
         on_punch = function(pos, node, puncher)

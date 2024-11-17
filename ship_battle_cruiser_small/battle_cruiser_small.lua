@@ -408,6 +408,11 @@ function ship_battle_cruiser_small.register_cruiser(custom_data)
             meta:set_int("travel_ready", 0)
             meta:set_string("formspec", ship_battle_cruiser_small.update_formspec(pos, data, "0", false, ''))
             meta:set_string("pos_nav", "{}")
+            local pos_drive = get_jumpdrive(pos, data.size)
+            if pos_drive then
+                local drive_offset = vector.subtract(pos, pos_drive)
+                meta:set_string("drive_offset", minetest.serialize(drive_offset))
+            end
         end,
 
         --on_rightclick = function(pos, node, clicker, itemstack, pointed_thing) end,
