@@ -40,7 +40,7 @@ if minetest.get_modpath("ship_machine") then
         typename = "jump_drive",
         do_protect = true,
         ship_name = ship_def.name,
-        shield_name = "shield_protect_legacy",
+        shield_name = "shield_protect",
         size = ship_def.size,
         hp = ship_def.hp,
         shield = ship_def.shield
