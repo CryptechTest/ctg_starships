@@ -338,7 +338,7 @@ local function register_ship_protect(def)
         end
 
         -- find the protector nodes
-        local pos = minetest.find_nodes_in_area({
+        local nodes = minetest.find_nodes_in_area({
             x = pos.x - s.w,
             y = (pos.y - s.h) + 2,
             z = pos.z - s.l
@@ -350,14 +350,30 @@ local function register_ship_protect(def)
 
         local meta, owner, members
 
-        for n = 1, #pos do
+        for n = 1, #nodes do
 
-            meta = minetest.get_meta(pos[n])
+            local p = nodes[n]
+            meta = minetest.get_meta(p)
             owner = meta:get_string("owner") or ""
             members = meta:get_string("members") or ""
 
+            local _size = {
+                w = meta:get_int("p_width") or 0,
+                l = meta:get_int("p_length") or 0,
+                h = meta:get_int("p_height") or 0
+            }
+
+            local in_bound = false
+            if pos.x <= p.x + _size.w and pos.x >= p.x - _size.w then
+                if pos.z <= p.z + _size.l and pos.z >= p.z - _size.l then
+                    if pos.y <= p.y + _size.h and pos.y >= p.y - _size.h then
+                        in_bound = true
+                    end
+                end
+            end
+
             -- node change and digger isn't owner
-            if infolevel == 1 and owner ~= digger then
+            if infolevel == 1 and owner ~= digger and in_bound then
 
                 -- and you aren't on the member list
                 if onlyowner or not is_member(meta, digger) then
@@ -369,11 +385,11 @@ local function register_ship_protect(def)
             end
 
             -- when using protector as tool, show protector information
-            if infolevel == 2 then
+            if infolevel == 2 and in_bound then
 
                 minetest.chat_send_player(digger, S("This ship area is owned by @1", owner) .. ".")
 
-                minetest.chat_send_player(digger, S("Protection located at: @1", minetest.pos_to_string(pos[n])))
+                minetest.chat_send_player(digger, S("Protection located at: @1", minetest.pos_to_string(nodes[n])))
 
                 if members ~= "" then
 
@@ -388,7 +404,7 @@ local function register_ship_protect(def)
         -- show when you can build on unprotected area
         if infolevel == 2 then
 
-            if #pos < 1 then
+            if #nodes < 1 then
 
                 minetest.chat_send_player(digger, S("This ship area is not protected."))
             end
