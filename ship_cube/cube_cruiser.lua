@@ -194,6 +194,30 @@ function ship_cube.register_cruiser(custom_data)
             end
         end
 
+        if fields.submit_dock2 then
+            local message = ""
+            local bFound = false
+            local bay_center = ship_dock.get_dock_pos(pos, data.size)
+            local bnode = core.get_node(bay_center)
+            local is_jumpdrive = core.get_item_group(bnode.name, "jumpdrive") > 0
+            if not is_jumpdrive and bnode.name == "vacuum:vacuum" then
+                move_x = bay_center.x - jpos.x
+                move_y = bay_center.y - jpos.y
+                move_z = bay_center.z - jpos.z
+                fields.submit_nav = true
+                bFound = true;
+                message = "Docking port located!"
+                local formspec = ship_cube.update_formspec(pos, data, loc, 1, message)
+                meta:set_string("formspec", formspec)
+            end
+            if not bFound then
+                message = "Docking port invalid..."
+                local formspec = ship_cube.update_formspec(pos, data, loc, 0, message)
+                meta:set_string("formspec", formspec)
+                return;
+            end
+        end
+
         --[[if fields.submit_dock then
             local message = ""
             -- TDOO: this should be dynamic...

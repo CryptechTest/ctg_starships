@@ -196,6 +196,35 @@ function ship_raider.register_scout(custom_data)
         end
 
         local docked = false
+
+        if fields.submit_dock2 then
+            local message = ""
+            local bFound = false
+            local ship_meta = core.get_meta(jpos)
+            local ship_owner = ship_meta:get_string("owner")
+            local bay_center = ship_dock.get_dock_pos(pos, data.size, ship_owner, nil, false)
+            if bay_center then
+                local bnode = core.get_node(bay_center)
+                local is_jumpdrive = core.get_item_group(bnode.name, "jumpdrive") > 0
+                if not is_jumpdrive and bnode.name == "vacuum:vacuum" then
+                    move_x = bay_center.x - jpos.x
+                    move_y = bay_center.y - jpos.y
+                    move_z = bay_center.z - jpos.z
+                    fields.submit_nav = true
+                    bFound = true;
+                    message = "Docking port located!"
+                    local formspec = ship_raider.update_formspec(pos, data, loc, 1, message)
+                    meta:set_string("formspec", formspec)
+                end
+                if not bFound then
+                    message = "Docking port invalid..."
+                    local formspec = ship_raider.update_formspec(pos, data, loc, 0, message)
+                    meta:set_string("formspec", formspec)
+                    return;
+                end
+            end
+        end
+
         if fields.submit_dock then
             local message = ""
             -- TDOO: this should be dynamic...
@@ -214,8 +243,8 @@ function ship_raider.register_scout(custom_data)
                 y = spos.y + s.h,
                 z = spos.z + s.l
             }, {"shipyard:assembler_bay"})
-
             local bFound = false
+            -- check if bays found
             if #bays > 0 and vector.distance(jpos, spos) <= 768 then
                 for c = 1, #bays do
                     local bay = bays[c]
@@ -243,7 +272,6 @@ function ship_raider.register_scout(custom_data)
                     end
                 end
             end
-
             if not bFound then
                 message = "Docking bay not found..."
                 local formspec = ship_raider.update_formspec(pos, data, loc, 0, message)
@@ -303,12 +331,12 @@ function ship_raider.register_scout(custom_data)
                         local formspec_new = ship_raider.update_formspec(panel_dest, data, loc, 0, "Folding Jump Space...")
                         metad:set_string("formspec", formspec_new)
                     end)
-                    minetest.after(3.5, function()
+                    minetest.after(3, function()
                         local metad = minetest.get_meta(panel_dest)
                         local formspec_new = ship_raider.update_formspec(panel_dest, data, loc, 0, "Jump Complete!")
                         metad:set_string("formspec", formspec_new)
                         metad:set_int("travel_ready", 0)
-                        minetest.after(7, function()
+                        minetest.after(1.5, function()
                             if metad then
                                 local formspec_rdy = ship_raider.update_formspec(panel_dest, data, loc, 0, "Ready...")
                                 metad:set_string("formspec", formspec_rdy)

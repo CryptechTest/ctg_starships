@@ -441,7 +441,7 @@ local function emerge_callback_on_complete(data)
         minetest.after(data.meta.ttl or 3, function()
             schem_lib.func.clear_position(pos1, pos2)
         end)
-        minetest.after((data.meta.ttl or 3) * 5, function()
+        minetest.after((data.meta.ttl or 3) * 2, function()
             schem_lib.func.clear_position(pos1, pos2)
         end)
     end

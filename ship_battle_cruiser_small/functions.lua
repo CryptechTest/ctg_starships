@@ -21,6 +21,7 @@ function ship_battle_cruiser_small.update_formspec(pos, data, loc, ready, messag
         z = 0
     }
     local near_shipyard = false -- vector.distance(pos, spos) <= 192
+    local near_dock = ship_dock.get_dock_pos(pos, data.size)
 
     if typename == 'ship_battle_cruiser_small' then
 
@@ -85,6 +86,8 @@ function ship_battle_cruiser_small.update_formspec(pos, data, loc, ready, messag
 
         if near_shipyard then
             btn_doc = "button[5,4.8;2,1;submit_dock;Dock Ship]"
+        elseif near_dock then
+            btn_doc = "button[5,4.8;2,1;submit_dock2;Dock Ship]"
         end
 
         if loc == "1" then

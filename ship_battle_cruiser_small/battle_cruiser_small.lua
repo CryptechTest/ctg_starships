@@ -194,6 +194,30 @@ function ship_battle_cruiser_small.register_cruiser(custom_data)
             end
         end
 
+        if fields.submit_dock2 then
+            local message = ""
+            local bFound = false
+            local bay_center = ship_dock.get_dock_pos(pos, data.size)
+            local bnode = core.get_node(bay_center)
+            local is_jumpdrive = core.get_item_group(bnode.name, "jumpdrive") > 0
+            if not is_jumpdrive and bnode.name == "vacuum:vacuum" then
+                move_x = bay_center.x - jpos.x
+                move_y = bay_center.y - jpos.y
+                move_z = bay_center.z - jpos.z
+                fields.submit_nav = true
+                bFound = true;
+                message = "Docking port located!"
+                local formspec = ship_battle_cruiser_small.update_formspec(pos, data, loc, 1, message)
+                meta:set_string("formspec", formspec)
+            end
+            if not bFound then
+                message = "Docking port invalid..."
+                local formspec = ship_battle_cruiser_small.update_formspec(pos, data, loc, 0, message)
+                meta:set_string("formspec", formspec)
+                return;
+            end
+        end
+
         --[[if fields.submit_dock then
             local message = ""
             -- TDOO: this should be dynamic...
@@ -340,7 +364,7 @@ function ship_battle_cruiser_small.register_cruiser(custom_data)
                         local formspec_new = ship_battle_cruiser_small.update_formspec(panel_dest, data, loc, 0, "Jump Complete!")
                         metad:set_string("formspec", formspec_new)
                         metad:set_int("travel_ready", 0)
-                        minetest.after(7, function()
+                        minetest.after(1, function()
                             if metad then
                                 local formspec_rdy = ship_battle_cruiser_small.update_formspec(panel_dest, data, loc, 0, "Ready...")
                                 metad:set_string("formspec", formspec_rdy)
