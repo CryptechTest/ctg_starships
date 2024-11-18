@@ -13,7 +13,7 @@ shipyard.can_access_crate = function(clicker, pos)
         return true
     end
 
-    local s = shipyard.size;
+    local s = shipyard.ship.size;
     -- find the protector nodes
     local prots = minetest.find_nodes_in_area({
         x = pos.x - s.w,
@@ -23,7 +23,7 @@ shipyard.can_access_crate = function(clicker, pos)
         x = pos.x + s.w,
         y = pos.y + s.h,
         z = pos.z + s.l
-    }, {"shipyard:shield_protect", "ship_scout:shield_protect"}) -- "shipyard:protect2",
+    }, {"shipyard:shield_protect", "ship_scout:shield_protect"})
 
     local isValid = false
     for n = 1, #prots do
@@ -66,12 +66,12 @@ shipyard.can_access_crate = function(clicker, pos)
                     end
                     -- node change and clicker isn't owner
                     if cowner ~= clicker then
-                        if not shipyard.protector.is_member(cmeta, clicker) then
+                        if not ship_weapons.is_member(cmeta, clicker) then
                             isValid = false;
                             local pn = clicker
                             minetest.chat_send_player(pn, S("This ship crate is owned by @1", cowner) .. "!")
                             return false
-						elseif shipyard.protector.is_member(cmeta, clicker) then
+						elseif ship_weapons.is_member(cmeta, clicker) then
                             isValid = true;
                             break
                         end

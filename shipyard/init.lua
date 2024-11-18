@@ -12,6 +12,8 @@ ship_def.size = {
 ship_def.hp = 200000
 ship_def.shield = 100000
 
+shipyard.ship = ship_def
+
 -- load files
 local default_path = minetest.get_modpath("shipyard")
 
