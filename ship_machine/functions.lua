@@ -428,7 +428,6 @@ local function emerge_callback_on_complete(data)
     if data == nil or data.meta == nil then
         return
     end
-    schem_lib.func.jump_ship_emit_player(data.meta, false)
     minetest.after(0, function()
         schem_lib.func.jump_ship_move_contents(data.meta)
     end)
@@ -480,6 +479,7 @@ local function transport_jumpship(pos, dest, size, owner, offset)
             moveObj = true
         })
     else
+        schem_lib.func.jump_ship_emit_player(data.meta, false)
         -- load the schematic from cache..
         local count, ver, lmeta = schemlib.process_emitted(nil, nil, schem_data, emerge_callback_on_complete)
         minetest.after(1, function()

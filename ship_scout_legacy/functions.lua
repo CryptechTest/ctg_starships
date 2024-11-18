@@ -138,7 +138,7 @@ function ship_scout_legacy.update_formspec(pos, data, loc, ready, message)
                            hit_points .. shield_points .. busy .. combat_migration .. refresh .. message
         else
             formspec = "formspec_version[3]" .. "size[8,6;]" .. "real_coordinates[false]" .. bg .. "label[0,0;" ..
-                           machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. btn_doc .. img_ship ..
+                           machine_desc:format(tier) .. "]" .. btn_prot .. btn_nav .. img_ship ..
                            coords_label .. input_field .. nav_label .. holo .. hit_points .. shield_points .. damage_warn ..
                            ship_owner .. busy .. combat_migration .. refresh .. message
         end
