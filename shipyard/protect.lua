@@ -275,7 +275,7 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
         x = pos.x + s.w,
         y = (pos.y + s.h) + 2,
         z = pos.z + s.l
-    }, {"ship_scout:shield_protect"})
+    }, {"ship_scout:shield_protect", "ship_raider:shield_protect"})
 
     local isValid = false
     for n = 1, #childs do
@@ -295,7 +295,7 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
             x = pos.x + sc.w,
             y = (pos.y + sc.h) + 2,
             z = pos.z + sc.l
-        }, {"ship_scout:shield_protect"})
+        }, {"ship_scout:shield_protect", "ship_raider:shield_protect"})
 
         if #childArea > 0 then
             -- node change and digger is owner

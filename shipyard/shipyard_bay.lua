@@ -108,7 +108,7 @@ local function register_assembler_bay(data)
                 local offset = {x = 0, y = 2, z = 1 + 2 + 14}
                 local core_pos = vector.add(pos, offset)
 
-                if minetest.get_node(core_pos).name == "ship_machine:jump_drive" then
+                if minetest.get_node(core_pos).name:match("jump_drive") then
                     minetest.chat_send_player(sender:get_player_name(),
                     S("This shipyard bay is occupied..."))
                     return
