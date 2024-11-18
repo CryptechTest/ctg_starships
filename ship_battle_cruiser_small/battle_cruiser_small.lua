@@ -202,7 +202,7 @@ function ship_battle_cruiser_small.register_cruiser(custom_data)
                 y = 5350,
                 z = 0
             }
-            local s = shipyard.size
+            local s = shipyard.ship.size
             local bays = minetest.find_nodes_in_area({
                 x = spos.x - s.w,
                 y = spos.y - s.h,
