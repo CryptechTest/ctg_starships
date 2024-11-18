@@ -23,12 +23,21 @@ shipyard.protector = {
     intllib = S
 }
 
+-- get static spawn position
+local statspawn = minetest.string_to_pos(minetest.settings:get("static_spawnpoint")) or {
+    x = 0,
+    y = 2,
+    z = 0
+}
+
 local protector_max_share_count = 12
 -- get minetest.conf settings
 local protector_flip = minetest.settings:get_bool("shipyard.protector_flip") or false
-local protector_hurt = tonumber(minetest.settings:get("shipyard.protector_hurt")) or 0.25
+local protector_hurt = tonumber(minetest.settings:get("shipyard.protector_hurt")) or 0.2
 local protector_show = tonumber(minetest.settings:get("shipyard.protector_show_interval")) or 8
 local protector_msg = minetest.settings:get_bool("shipyard.protector_msg") ~= false
+-- spawn protection
+local protector_spawn = tonumber(minetest.settings:get("protector_spawn")) or 250
 
 -- return list of members as a table
 local get_member_list = function(meta)
@@ -210,6 +219,22 @@ local show_msg = function(player, msg)
     minetest.chat_send_player(player, msg)
 end
 
+-- check if pos is inside a protected spawn area
+local inside_spawn = function(pos, radius)
+
+    if protector_spawn <= 0 then
+        return false
+    end
+
+    if pos.x < statspawn.x + radius and pos.x > statspawn.x - radius and pos.y < statspawn.y + radius and pos.y >
+        statspawn.y - radius and pos.z < statspawn.z + radius and pos.z > statspawn.z - radius then
+
+        return true
+    end
+
+    return false
+end
+
 -- Infolevel:
 -- 0 for no info
 -- 1 for "This area is owned by <owner> !" if you can't dig
@@ -234,7 +259,12 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
         infolevel = 1
     end
 
-    
+    -- is spawn area protected ?
+    if inside_spawn(pos, protector_spawn) then
+        show_msg(digger, S("Spawn @1 has been protected up to a @2 block radius.", minetest.pos_to_string(statspawn), protector_spawn))
+        return false
+    end
+
     local vol2 = (s.l * 2 + 1) * (s.w * 2 + 1) * (s.h * 2 + 1);
     if (vol2 >= 4096000 - 1) then
         return true
@@ -259,7 +289,7 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
         })
         local jumpdrive = minetest.get_node(jumpdrive_pos)
         if jumpdrive.name ~= "shipyard:jump_drive" then
-            --pos = jumpdrive_pos
+            -- pos = jumpdrive_pos
         end
     end
 
@@ -275,7 +305,7 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
         x = pos.x + s.w,
         y = (pos.y + s.h) + 2,
         z = pos.z + s.l
-    }, {"ship_scout:shield_protect", "ship_raider:shield_protect"})
+    }, {"ship_scout:shield_protect", "ship_raider:shield_protect", "group:protector"})
 
     local isValid = false
     for n = 1, #childs do
@@ -452,7 +482,7 @@ function minetest.can_interact_with_node(clicker, pos)
 
     -- otherwise can access
     return old_can_interact_with_node(clicker, pos)
-end]]--
+end]] --
 
 -- make sure protection block doesn't overlap another protector's area
 local check_overlap = function(itemstack, placer, pointed_thing)
@@ -548,7 +578,8 @@ minetest.register_node("shipyard:shield_protect", {
         dig_immediate = 2,
         unbreakable = 1,
         not_in_creative_inventory = 1,
-        ship_protector = 1
+        ship_protector = 1,
+        protector = 3
     },
     is_ground_content = false,
     paramtype = "light",

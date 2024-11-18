@@ -3,59 +3,87 @@
 -- temporary pos store
 local player_pos = {}
 
--- display entity shown when protector node is punched
-minetest.register_entity("ship_machine:jump_display", {
-    physical = false,
-    collisionbox = {0, 0, 0, 0, 0, 0},
-    visual = "sprite",
-    -- wielditem seems to be scaled to 1.5 times original node size
-    visual_size = {
-        x = 0.6,
-        y = 0.6
-    },
-    pointable = false,
-    textures = {"tele_effect03.png"},
-    timer = 0,
-    glow = 5,
-    nametag = "UNKNOWN",
-    infotext = "Jumpship",
-    hp_max = 1000,
-    hp = 1000,
-    type = 0,
+-- get static spawn position
+local statspawn = minetest.string_to_pos(minetest.settings:get("static_spawnpoint")) or {
+    x = 0,
+    y = 2,
+    z = 0
+}
+-- spawn protection
+local protector_spawn = tonumber(minetest.settings:get("protector_spawn")) or 250
 
-    on_step = function(self, dtime)
+local use_jump_display_ent = false
 
-        self.timer = self.timer + dtime
+if use_jump_display_ent then
+    minetest.register_entity("ship_machine:jump_display", {
+        physical = false,
+        collisionbox = {0, 0, 0, 0, 0, 0},
+        visual = "sprite",
+        -- wielditem seems to be scaled to 1.5 times original node size
+        visual_size = {
+            x = 0.6,
+            y = 0.6
+        },
+        pointable = false,
+        textures = {"tele_effect03.png"},
+        timer = 0,
+        glow = 5,
+        nametag = "UNKNOWN",
+        infotext = "Jumpship",
+        hp_max = 1000,
+        hp = 1000,
+        type = 0,
 
-        local col
-        if self.type == 0 then
-            col = "#FFFFFF"
-        elseif self.type == 1 then
-            col = ship_machine.colorize_text_hp(self.hp, self.hp_max)
-        elseif self.type == 2 then
-            local qua = self.hp_max / 6
-            if self.hp <= qua then
-                col = "#FF000F"
-            elseif self.hp <= (qua * 2) then
-                col = "#FF7A0F"
-            elseif self.hp <= (qua * 3) then
-                col = "#FFB50F"
-            elseif self.hp <= (qua * 4) then
-                col = "#FFFF0F"
-            elseif self.hp <= (qua * 5) then
-                col = "#B4FF0F"
-            elseif self.hp > (qua * 5) then
-                col = "#00FF0F"
+        on_step = function(self, dtime)
+
+            self.timer = self.timer + dtime
+
+            local col
+            if self.type == 0 then
+                col = "#FFFFFF"
+            elseif self.type == 1 then
+                col = ship_machine.colorize_text_hp(self.hp, self.hp_max)
+            elseif self.type == 2 then
+                local qua = self.hp_max / 6
+                if self.hp <= qua then
+                    col = "#FF000F"
+                elseif self.hp <= (qua * 2) then
+                    col = "#FF7A0F"
+                elseif self.hp <= (qua * 3) then
+                    col = "#FFB50F"
+                elseif self.hp <= (qua * 4) then
+                    col = "#FFFF0F"
+                elseif self.hp <= (qua * 5) then
+                    col = "#B4FF0F"
+                elseif self.hp > (qua * 5) then
+                    col = "#00FF0F"
+                end
+            end
+            self.object:set_properties({nametag = self.nametag, nametag_color = col, infotext = self.infotext})
+
+            -- remove after set number of seconds
+            if self.timer > 10 then
+                --self.object:remove()
             end
         end
-        self.object:set_properties({nametag = self.nametag, nametag_color = col, infotext = self.infotext})
+    })
+end
 
-        -- remove after set number of seconds
-        if self.timer > 10 then
-            --self.object:remove()
-        end
+-- check if pos is inside a protected spawn area
+local inside_spawn = function(pos, radius)
+
+    if protector_spawn <= 0 then
+        return false
     end
-})
+
+    if pos.x < statspawn.x + radius and pos.x > statspawn.x - radius and pos.y < statspawn.y + radius and pos.y >
+        statspawn.y - radius and pos.z < statspawn.z + radius and pos.z > statspawn.z - radius then
+
+        return true
+    end
+
+    return false
+end
 
 local function register_ship_protect(def)
 
@@ -95,7 +123,7 @@ local function register_ship_protect(def)
     local protector_max_share_count = 12
     -- get minetest.conf settings
     local protector_flip = minetest.settings:get_bool("ship_machine.protector_flip") or false
-    local protector_hurt = tonumber(minetest.settings:get("ship_machine.protector_hurt")) or 1
+    local protector_hurt = tonumber(minetest.settings:get("ship_machine.protector_hurt")) or 0.5
     local protector_show = tonumber(minetest.settings:get("ship_machine.protector_show_interval")) or 10
     local protector_msg = minetest.settings:get_bool("ship_machine.protector_msg") ~= false
 
@@ -302,6 +330,12 @@ local function register_ship_protect(def)
         if infolevel == 3 then
             infolevel = 1
         end
+        
+        -- is spawn area protected ?
+        if inside_spawn(pos, protector_spawn) then
+            show_msg(digger, S("Spawn @1 has been protected up to a @2 block radius.", minetest.pos_to_string(statspawn), protector_spawn))
+            return false
+        end
 
         -- find the protector nodes
         local pos = minetest.find_nodes_in_area({
@@ -312,7 +346,7 @@ local function register_ship_protect(def)
             x = pos.x + s.w,
             y = (pos.y + s.h) + 2,
             z = pos.z + s.l
-        }, {nodename})
+        }, {nodename, "group:protector"})
 
         local meta, owner, members
 
@@ -510,7 +544,8 @@ local function register_ship_protect(def)
             dig_immediate = 2,
             unbreakable = 1,
             not_in_creative_inventory = 1,
-            ship_protector = 1
+            ship_protector = 1,
+            protector = 2,
         },
         is_ground_content = false,
         paramtype = "light",
@@ -790,124 +825,126 @@ local function register_ship_protect(def)
         })
     end
 
-    -- name info
-    function def.register_check_tag_entity_1(meta, pos)
-        local object = nil
-        local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
-        for _, obj in pairs(objects) do
-            local ent = obj:get_luaentity()
-            if ent then
-                if ent.name == "ship_machine:jump_display" then
-                    object = obj
-                    break;
+    if use_jump_display_ent then
+        -- name info
+        function def.register_check_tag_entity_1(meta, pos)
+            local object = nil
+            local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
+            for _, obj in pairs(objects) do
+                local ent = obj:get_luaentity()
+                if ent then
+                    if ent.name == "ship_machine:jump_display" then
+                        object = obj
+                        break;
+                    end
+                end
+            end
+            if object == nil then
+                object = minetest.add_entity(pos, "ship_machine:jump_display")
+            end
+            if object then
+                --local meta = minetest.get_meta(pos)
+                local ship_hp_max = meta:get_int("hp_max") or 1000
+                local ship_hp = meta:get_int("hp") or 1000
+                local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
+                local ent = object:get_luaentity()
+                if ent then
+                    ent.type = 0
+                    ent.hp_max = ship_hp_max
+                    ent.hp = ship_hp
+                    ent.nametag = ship_name
                 end
             end
         end
-        if object == nil then
-            object = minetest.add_entity(pos, "ship_machine:jump_display")
-        end
-        if object then
-            --local meta = minetest.get_meta(pos)
-            local ship_hp_max = meta:get_int("hp_max") or 1000
-            local ship_hp = meta:get_int("hp") or 1000
-            local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
-            local ent = object:get_luaentity()
-            if ent then
-                ent.type = 0
-                ent.hp_max = ship_hp_max
-                ent.hp = ship_hp
-                ent.nametag = ship_name
+        
+        -- hull
+        function def.register_check_tag_entity_2(meta, pos)
+            local object = nil
+            local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
+            for _, obj in pairs(objects) do
+                local ent = obj:get_luaentity()
+                if ent then
+                    if ent.name == "ship_machine:jump_display" then
+                        object = obj
+                        break;
+                    end
+                end
             end
-        end
-    end
-    
-    -- hull
-    function def.register_check_tag_entity_2(meta, pos)
-        local object = nil
-        local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
-        for _, obj in pairs(objects) do
-            local ent = obj:get_luaentity()
-            if ent then
-                if ent.name == "ship_machine:jump_display" then
-                    object = obj
-                    break;
+            if object == nil then
+                object = minetest.add_entity(pos, "ship_machine:jump_display")
+            end
+            if object then
+                --local meta = minetest.get_meta(pos)
+                local ship_hp_max = meta:get_int("hp_max")
+                local ship_hp = meta:get_int("hp")
+                local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
+                local ent = object:get_luaentity()
+                if ent then
+                    ent.type = 1
+                    ent.hp_max = ship_hp_max
+                    ent.hp = ship_hp
+                    ent.nametag = "HULL\n" .. string.format("%.2f", ship_hp_prcnt) .. "%"
                 end
             end
         end
-        if object == nil then
-            object = minetest.add_entity(pos, "ship_machine:jump_display")
-        end
-        if object then
-            --local meta = minetest.get_meta(pos)
-            local ship_hp_max = meta:get_int("hp_max")
-            local ship_hp = meta:get_int("hp")
-            local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
-            local ent = object:get_luaentity()
-            if ent then
-                ent.type = 1
-                ent.hp_max = ship_hp_max
-                ent.hp = ship_hp
-                ent.nametag = "HULL\n" .. string.format("%.2f", ship_hp_prcnt) .. "%"
+        
+        -- shield
+        function def.register_check_tag_entity_3(meta, pos)
+            local object = nil
+            local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
+            for _, obj in pairs(objects) do
+                local ent = obj:get_luaentity()
+                if ent then
+                    if ent.name == "ship_machine:jump_display" then
+                        object = obj
+                        break;
+                    end
+                end
             end
-        end
-    end
-    
-    -- shield
-    function def.register_check_tag_entity_3(meta, pos)
-        local object = nil
-        local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
-        for _, obj in pairs(objects) do
-            local ent = obj:get_luaentity()
-            if ent then
-                if ent.name == "ship_machine:jump_display" then
-                    object = obj
-                    break;
+            if object == nil then
+                object = minetest.add_entity(pos, "ship_machine:jump_display")
+            end
+            if object then
+                --local meta = minetest.get_meta(pos)
+                local ship_shield_max = meta:get_int("shield_max") 
+                local ship_shield = meta:get_int("shield")
+                local ship_shield_prcnt = (ship_shield / ship_shield_max) * 100
+                local ent = object:get_luaentity()
+                if ent then
+                    ent.type = 2
+                    ent.hp_max = ship_shield_max
+                    ent.hp = ship_shield
+                    ent.nametag = "SHIELD\n" .. string.format("%.2f", ship_shield_prcnt) .. "%"
                 end
             end
         end
-        if object == nil then
-            object = minetest.add_entity(pos, "ship_machine:jump_display")
-        end
-        if object then
-            --local meta = minetest.get_meta(pos)
-            local ship_shield_max = meta:get_int("shield_max") 
-            local ship_shield = meta:get_int("shield")
-            local ship_shield_prcnt = (ship_shield / ship_shield_max) * 100
-            local ent = object:get_luaentity()
-            if ent then
-                ent.type = 2
-                ent.hp_max = ship_shield_max
-                ent.hp = ship_shield
-                ent.nametag = "SHIELD\n" .. string.format("%.2f", ship_shield_prcnt) .. "%"
-            end
-        end
-    end
 
-    function def.clear_check_tag_entity(pos)
-        local objects = minetest.get_objects_inside_radius(pos, 2) or {}
-        for _, obj in pairs(objects) do
-            local ent = obj:get_luaentity()
-            if ent then
-                if ent.name == "ship_machine:jump_display" then
-                    obj:remove()
+        function def.clear_check_tag_entity(pos)
+            local objects = minetest.get_objects_inside_radius(pos, 2) or {}
+            for _, obj in pairs(objects) do
+                local ent = obj:get_luaentity()
+                if ent then
+                    if ent.name == "ship_machine:jump_display" then
+                        obj:remove()
+                    end
                 end
-            end
-        end 
-    end
-
-    function def.register_check_tag_entity(pos)
-        local ship_meta = minetest.get_meta(pos)
-        local ship_combat_ready = ship_meta:get_int("combat_ready") > 1
-        if not ship_combat_ready then
-            return
+            end 
         end
-        def.clear_check_tag_entity(pos)
-        local pos1 = vector.add(pos, {x = 0, y = 1.25, z = 0})
-        local pos2 = vector.add(pos, {x = 0, y = 0, z = 0})
-        local pos3 = vector.add(pos, {x = 0, y = -1.5, z = 0})
-        def.register_check_tag_entity_1(ship_meta, pos1)
-        def.register_check_tag_entity_2(ship_meta, pos2)
-        def.register_check_tag_entity_3(ship_meta, pos3)
+
+        function def.register_check_tag_entity(pos)
+            local ship_meta = minetest.get_meta(pos)
+            local ship_combat_ready = ship_meta:get_int("combat_ready") > 1
+            if not ship_combat_ready then
+                return
+            end
+            def.clear_check_tag_entity(pos)
+            local pos1 = vector.add(pos, {x = 0, y = 1.25, z = 0})
+            local pos2 = vector.add(pos, {x = 0, y = 0, z = 0})
+            local pos3 = vector.add(pos, {x = 0, y = -1.5, z = 0})
+            def.register_check_tag_entity_1(ship_meta, pos1)
+            def.register_check_tag_entity_2(ship_meta, pos2)
+            def.register_check_tag_entity_3(ship_meta, pos3)
+        end
     end
 
     function def.regenerate_shield(pos)
