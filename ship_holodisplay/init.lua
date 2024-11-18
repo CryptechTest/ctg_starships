@@ -158,7 +158,7 @@ end
 core.register_node("ship_holodisplay:display", {
 	description = "Holographic Display",
 	-- Textures of node; +Y, -Y, +X, -X, +Z, -Z
-	tiles = {"ship_holodisplay_display_top.png", "ship_holodisplay_display_top.png"},
+	tiles = {"ship_holodisplay_display_top.png^[opacity:0", "ship_holodisplay_display_top.png^[opacity:0"},
 	groups = {oddly_breakable_by_hand = 2},
 	paramtype = "light",
 	light_source = 12,
@@ -195,6 +195,7 @@ core.register_node("ship_holodisplay:display", {
 		core.show_formspec(clicker:get_player_name(), "ship_holodisplay", formspec)
 	end,
 	on_timer = function(pos, elapsed)
+        core.add_entity(vector.add(pos, {x = 0, y = -0.5, z =0}), "ship_holodisplay:scanner")
 		update_ships(pos)
 		update_entities(pos)
 		core.get_node_timer(pos):start(2)
@@ -234,7 +235,7 @@ core.register_entity("ship_holodisplay:entity", {
 		visual_size = {x = 0.00390625, y = 0.00390625, z = 0.00390625},
 		collisionbox = {-0.001953125, -0.001953125, -0.001953125, 0.001953125, 0.001953125, 0.001953125},
 		collide_with_objects = false,
-		textures = {"", "", "", "", "", ""},
+		textures = {},
 		glow = 14,
         use_texture_alpha = true,
 	},
@@ -311,6 +312,45 @@ core.register_entity("ship_holodisplay:entity", {
 	end
 })
 
+core.register_entity("ship_holodisplay:scanner", {
+	initial_properties = {
+		physical = true,
+		visual = "cube",
+		visual_size = {x = 1, y = 0, z = 1},
+		collisionbox = { 0, 0, 0, 0, 0, 0},
+		collide_with_objects = false,
+		glow = 14,
+        use_texture_alpha = true,
+		textures = {"ship_holodisplay_display_top.png^[opacity:191", "ship_holodisplay_display_top.png^[opacity:191"},
+	},
+    _lifetime = nil,
+    _start_pos = nil,
+    on_activate = function(self, staticdata)
+        self._lifetime = 4
+        self._start_pos = self.object:get_pos()
+        self.object:set_velocity({x = 0, y = 0.5, z = 0})
+    end,
+	on_step = function(self, dtime)
+		if self._lifetime and self._lifetime <= 0 then
+			self.object:remove()
+		else
+			self._lifetime = (self._lifetime or 2) - dtime
+		end
+        local pos = self.object:get_pos()
+        if pos then
+            if pos.y >= self._start_pos.y + 1 then
+                self.object:set_velocity({x = 0, y = -0.5, z = 0})
+            elseif pos.y <= self._start_pos.y then
+                self.object:set_velocity({x = 0, y = 0.5, z = 0})
+            end
+        end
+	end,
+    on_punch = function(self, puncher)
+        return true
+    end,
+
+})
+
 
 core.register_entity("ship_holodisplay:ship", {
 	initial_properties = {
@@ -321,7 +361,7 @@ core.register_entity("ship_holodisplay:ship", {
 		collide_with_objects = false,
 		glow = 14,
         use_texture_alpha = true,
-		textures = {"", "", "", "", "", ""},
+		textures = {},
 	},
 	_name = "",
 	_pos = {x = 0, y = 0, z = 0},
@@ -397,17 +437,17 @@ core.register_entity("ship_holodisplay:ship", {
 	end
 })
 
-minetest.register_on_player_receive_fields(function(player, formname, fields)
+core.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "ship_holodisplay" then
 		if fields["submit"] then
-			local pos = minetest.deserialize(player:get_meta():get_string("holonode"))
-			local meta = minetest.get_meta(pos)
+			local pos = core.deserialize(player:get_meta():get_string("holonode"))
+			local meta = core.get_meta(pos)
 			meta:set_int("X", tonumber(fields["x"]))
 			meta:set_int("Y", tonumber(fields["y"]))
 			meta:set_int("Z", tonumber(fields["z"]))
 		elseif fields["show"] then
-			local pos = minetest.deserialize(player:get_meta():get_string("holonode"))
-			local meta = minetest.get_meta(pos)
+			local pos = core.deserialize(player:get_meta():get_string("holonode"))
+			local meta = core.get_meta(pos)
 			meta:set_int("show", (meta:get_int("show") > 0) and 0 or 1)
 		end
 	end
