@@ -37,7 +37,8 @@ local disallowed_targets = {
 	"tubelib2:marker_cube",
 	'x_farming:stove_food',
 	"ship_holodisplay:entity",
-    "ship_holodisplay:ship"
+    "ship_holodisplay:ship",
+    "ship_holodisplay:scanner",
 }
 
 local update_entities = function(pos)
