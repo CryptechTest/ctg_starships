@@ -146,7 +146,7 @@ local function register_assembler_bay(data)
                     prot_meta:set_int("p_width", 12);
                     prot_meta:set_int("p_length", 15);
                     prot_meta:set_int("p_height", 12);
-                    ship_machine.update_ship_owner_all(prot_pos, vector.new(15, 12, 15), op)
+                    ship_machine.update_ship_owner_all(core_pos, {l = 15, w = 12, h = 12}, op)
                     minetest.chat_send_player(sender:get_player_name(),
                         S("Jumpship Assembly Ready!"))
                 end)

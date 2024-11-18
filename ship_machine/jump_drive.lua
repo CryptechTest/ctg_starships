@@ -195,6 +195,16 @@ function ship_machine.register_jumpship(data)
                     ship_machine.update_ship_owner_all(pos, data.size, owner_name)
                 end
             end
+            if fields.set_owner_local and fields.owner_name_local then
+                owner_name = fields.owner_name_local
+                meta:set_string("owner", owner_name)
+                local prot = minetest.find_node_near(pos, 3, "group:ship_protector")
+                if prot then
+                    local meta2 = minetest.get_meta(prot)
+                    meta2:set_string("owner", owner_name)
+                    meta2:set_string("infotext", S("Protection (owned by @1)", meta2:get_string("owner")))
+                end
+            end
             local file_name = ""
             if fields.file_name then
                 file_name = fields.file_name

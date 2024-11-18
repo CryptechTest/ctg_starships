@@ -88,6 +88,7 @@ function ship_machine.update_jumpdrive_formspec(data, meta)
     if typename == 'jump_drive' or typename == 'jump_drive_spawn' then
         local owner = "label[5,0;Owner:]label[6,0;" .. meta:get_string("owner") .. "]"
         local set_owner = "field[1,2.65;4,1;owner_name;Owner Name;]button[5,2.25;1,1;set_owner;Set]"
+        local set_owner_local = "field[1,3.45;4,1;owner_name_local;Owner Local;]button[5,2.25;1,1;set_owner_local;Set]"
         local input_name = "field[1,1.45;4,1;file_name;File Name;]"
         local input_save_load = "button[5,1;1,1;save;Save]button[6,1;1,1;load;Load]"
 

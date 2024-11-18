@@ -22,6 +22,7 @@ dofile(default_path .. DIR_DELIM .. "functions.lua")
 dofile(default_path .. DIR_DELIM .. "shipyard_bay.lua")
 dofile(default_path .. DIR_DELIM .. "shipyard.lua")
 dofile(default_path .. DIR_DELIM .. "chest.lua")
+dofile(default_path .. DIR_DELIM .. "protect.lua")
 
 shipyard.register_shipyard({
     ship_name = ship_def.name,
@@ -32,12 +33,14 @@ shipyard.register_shipyard({
 
 ship_machine.register_jumpship({
     modname = "shipyard",
-    machine_name = "jump_drive",
+    machine_name = "jump_drive_shipyard",
     machine_desc = "Jump Drive - Shipyard Station",
     typename = "jump_drive",
-    do_protect = true,
+    do_protect = false,
     ship_name = ship_def.name,
     size = ship_def.size,
     hp = ship_def.hp,
     shield = ship_def.shield,
 })
+
+minetest.register_alias("shipyard:jump_drive", "shipyard:jump_drive_shipyard")
