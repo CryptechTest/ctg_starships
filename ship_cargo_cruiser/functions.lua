@@ -31,6 +31,9 @@ function ship_cargo.update_formspec(pos, data, loc, ready, message)
         local combat_migration = combat_migration_done == false and "button[4,5;3,1;submit_migr;Combat Migration]" or ""
 
         local shipp = ship_cargo.get_protector(pos, data.size)
+        if not shipp then
+            return ''
+        end
         local ship_meta = minetest.get_meta(shipp)
 
         -- ship hp
