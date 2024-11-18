@@ -195,6 +195,7 @@ function ship_scout.register_scout(custom_data)
             end
         end
 
+        local docked = false
         if fields.submit_dock then
             local message = ""
             -- TDOO: this should be dynamic...
@@ -224,24 +225,15 @@ function ship_scout.register_scout(custom_data)
                         z = 1 + 2 + 14
                     }
                     local bay_center = vector.add(bay, offset);
+                    if bay_center == jpos then
+                        docked = true
+                    end
                     -- local bmeta = minetest.get_meta(bay)
                     local bnode = minetest.get_node(bay_center)
                     if bnode.name ~= "ship_scout:shield_protect" and bnode.name == "vacuum:vacuum" then
-                        if bay_center.x < jpos.x then
-                            move_x = bay_center.x - jpos.x
-                        else
-                            move_x = jpos.x - bay_center.x
-                        end
-                        if bay_center.y < jpos.y then
-                            move_y = bay_center.y - jpos.y
-                        else
-                            move_y = jpos.y - bay_center.y
-                        end
-                        if bay_center.z < jpos.z then
-                            move_z = bay_center.z - jpos.z
-                        else
-                            move_z = jpos.z - bay_center.z
-                        end
+                        move_x = bay_center.x - jpos.x
+                        move_y = bay_center.y - jpos.y
+                        move_z = bay_center.z - jpos.z
                         fields.submit_nav = true
                         bFound = true;
                         message = "Docking bay found!"
@@ -281,7 +273,7 @@ function ship_scout.register_scout(custom_data)
         elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < data.min_dist and not fields.submit_dock then
             meta:set_int("travel_ready", 0)
             message = "Jump distance below engine range..."
-        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < 41 and fields.submit_dock then
+        elseif fields.submit_nav and not is_deepspace and docked and fields.submit_dock then
             meta:set_int("travel_ready", 0)
             message = "You are already Docked..."
         elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) > jump_dis + 1 then

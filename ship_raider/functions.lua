@@ -30,6 +30,9 @@ function ship_raider.update_formspec(pos, data, loc, ready, message)
         local combat_migration = combat_migration_done == false and "button[4,5;3,1;submit_migr;Combat Migration]" or ""
 
         local shipp = ship_raider.get_protector(pos, data.size)
+        if not shipp then
+            return "formspec_version[3]" .. "size[8,6;]" .. bg
+        end
         local ship_meta = minetest.get_meta(shipp)
 
         -- ship hp
