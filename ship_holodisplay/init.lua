@@ -143,8 +143,17 @@ local update_ships = function (pos)
 						local offset = {x = 128, y = 129, z = 128}
                         
 						if node == vector.add(offset, scanpos) then
-
+                            
 							type = "self"
+                        else 
+                            local pitch = 2
+                            local vol = length * width * height
+                            if vol > 100000 then
+                                pitch = 1
+                            elseif vol > 10000 then
+                                pitch = 1.5
+                            end
+                            core.sound_play("ship_holodisplay_scanner", {pos = spos, max_hear_distance = 5, gain = 0.025, pitch = pitch})
 						end
 						core.add_entity(spos, "ship_holodisplay:ship", ship_name .. ";" .. core.pos_to_string(node) .. ";" .. core.pos_to_string(size) .. ";" .. type)
 					end
