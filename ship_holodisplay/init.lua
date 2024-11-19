@@ -174,7 +174,7 @@ core.register_node("ship_holodisplay:display", {
 	description = "Holographic Display",
 	-- Textures of node; +Y, -Y, +X, -X, +Z, -Z
 	tiles = {"ship_holodisplay_display_top.png^[opacity:0", "ship_holodisplay_display_top.png^[opacity:0"},
-	groups = {oddly_breakable_by_hand = 2},
+	groups = {oddly_breakable_by_hand = 2, not_in_creative_inventory = 1},
 	paramtype = "light",
 	light_source = 12,
 	use_texture_alpha = "blend",
@@ -224,7 +224,7 @@ core.register_node("ship_holodisplay:display_off", {
 	description = "Holographic Display Off",
 	-- Textures of node; +Y, -Y, +X, -X, +Z, -Z
 	tiles = {"ship_holodisplay_display_top.png", "ship_holodisplay_display_top.png"},
-	groups = {oddly_breakable_by_hand = 2},
+	groups = {oddly_breakable_by_hand = 2, not_in_creative_inventory = 1},
 	use_texture_alpha = "blend",
 	backface_culling = false,
 	collisionbox = {0, 0, 0, 0, 0, 0},
