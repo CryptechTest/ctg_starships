@@ -4,8 +4,7 @@ ship_dock = {}
 
 -- load files
 local default_path = minetest.get_modpath("ship_dock")
-
--- dofile(default_path .. "/functions.lua")
+dofile(default_path .. "/crafts.lua")
 
 local function register_ship_dock(def)
 
@@ -98,7 +97,7 @@ local function register_ship_dock(def)
             s_length = true
         end
 
-        local public = meta:get_int("d_public") <= 0
+        local public = meta:get_int("d_public") >= 1
         local name = meta:get_string("d_name") or "Unknown"
 
         formspec = {"formspec_version[8]", "size[8.5,6]", "label[0.2,0.3;Jumpship Docking Port - Controller Setup]",
@@ -190,6 +189,13 @@ local function register_ship_dock(def)
             end
         end
 
+        if fields.public ~= nil then
+            if fields.public == 'true' then
+                meta:set_int("d_public", 1)
+            else
+                meta:set_int("d_public", 0)
+            end
+        end
         if fields.submit and not isNumError then
             if (width + 1) * (length + 1) * (height + 1) > 4096000 then
                 send_msg(sender, "Volume size of bay is too large!")
@@ -230,9 +236,6 @@ local function register_ship_dock(def)
             meta:set_string("d_offset", core.serialize(offset))
             if fields.name then
                 meta:set_string("d_name", fields.name)
-            end
-            if fields.public then
-                meta:set_int("d_public", fields.public and 1 or 0)
             end
             local dir = get_facing_vector(pos)
             local center = {
@@ -401,6 +404,85 @@ local function register_ship_dock(def)
             end
         end
         return dock
+    end
+
+    function ship_dock.get_docks(pos, ship_size, s_owner, s_name, s_pub)
+
+        local s_owner = s_owner or ""
+        local s_name = s_name or ""
+        local s_pub = s_pub or false
+
+        local size = {
+            w = 72,
+            l = 72,
+            h = 64
+        }
+        local pos1 = vector.subtract(pos, {
+            x = size.w,
+            y = size.h,
+            z = size.l
+        })
+        local pos2 = vector.add(pos, {
+            x = size.w,
+            y = size.h,
+            z = size.l
+        })
+
+        local docks = {}
+        local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:ship_dock")
+
+        if #nodes > 0 then
+            for _, node in ipairs(nodes) do
+                local meta = minetest.get_meta(node)
+                local size = core.deserialize(meta:get_string("d_size"))
+                -- local offset = core.deserialize(meta:get_string("d_offset"))
+                local center = core.deserialize(meta:get_string("d_center"))
+                local owner = meta:get_string("owner") or ""
+                local name = meta:get_string("d_name") or ""
+                local public = (meta:get_int("d_public") or 0) > 0
+                local dock = nil
+                -- match dock size to ship size
+                if size.w - ship_size.w >= 0 and size.l - ship_size.l >= 0 and size.h - ship_size.h >= 0 then
+                    if not s_pub then
+                        -- only private dock
+                        if s_owner and owner == s_owner then
+                            -- owner match
+                            if s_name == "" then
+                                -- search name empty
+                                dock = center
+                            elseif name == s_name then
+                                -- search name match
+                                dock = center
+                            end
+                        end
+                        if public then
+                            -- allow public dock
+                            if s_name == ""  then
+                                -- search name empty
+                                dock = center
+                            elseif name == s_name then
+                                -- search name match
+                                dock = center
+                            end
+                        end
+                    elseif public then
+                        -- allow public dock
+                        if s_name == "" then
+                            -- search name empty
+                            dock = center
+                        elseif name == s_name then
+                            -- search name match
+                            dock = center
+                        end
+                    end
+
+                end
+                if dock then
+                    table.insert(docks, {name = name, pos = dock})
+                end
+            end
+        end
+        return docks
     end
 
 end
