@@ -16,32 +16,37 @@ ship_def.proto_jump_dist = 2000
 
 -- load files
 local default_path = minetest.get_modpath("ship_scout")
+dofile(default_path .. "/digilines.lua")
 
-dofile(default_path .. DIR_DELIM .. "functions.lua")
-dofile(default_path .. DIR_DELIM .. "digilines.lua")
-dofile(default_path .. DIR_DELIM .. "scout.lua")
-
-ship_scout.register_scout({
+-- register control console
+ship_machine.register_control_console({
     typename = "ship_scout",
     modname = "ship_scout",
     machine_name = "scout",
     jump_dist = ship_def.proto_jump_dist,
+    min_dist = 25,
+    tier = "LV",
     size = ship_def.proto_size,
     hp = ship_def.proto_hp,
     shield = ship_def.proto_shield,
-    machine_desc = ship_def.proto_name
+    machine_desc = ship_def.proto_name,
+    digiline_effector = ship_scout.digiline_effector,
+    do_docking = true,
+    groups = {
+        ship_scout = 1,
+        ship_proto = 1
+    }
 });
 
-if minetest.get_modpath("ship_machine") then
-    ship_machine.register_jumpship({
-        modname = "ship_scout",
-        machine_name = "jump_drive_scout",
-        machine_desc = "Jump Drive Allocator - Scout",
-        typename = "jump_drive",
-        do_protect = true,
-        ship_name = ship_def.proto_name,
-        size = ship_def.proto_size,
-        hp = ship_def.proto_hp,
-        shield = ship_def.proto_shield
-    })
-end
+-- register jumpship
+ship_machine.register_jumpship({
+    modname = "ship_scout",
+    machine_name = "jump_drive_scout",
+    machine_desc = "Jump Drive Allocator - Scout",
+    typename = "jump_drive",
+    do_protect = true,
+    ship_name = ship_def.proto_name,
+    size = ship_def.proto_size,
+    hp = ship_def.proto_hp,
+    shield = ship_def.proto_shield
+})

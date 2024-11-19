@@ -1,4 +1,4 @@
-ship_battle_cruiser_small.scout_digiline_effector = function(pos, node, channel, msg)
+ship_battle_cruiser_small.digiline_effector = function(pos, node, channel, msg)
     local set_channel = "ship_battle_cruiser_small" -- static channel for now
 
     local msgt = type(msg)

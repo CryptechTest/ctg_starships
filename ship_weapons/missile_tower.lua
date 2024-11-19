@@ -662,7 +662,7 @@ function ship_weapons.register_missile_tower(data)
                         elseif obj:is_player() and (attack_type == 2 or attack_type == 4 or attack_type == 5) then
                             local name = obj:get_player_name()
                             -- players
-                            if name ~= meta:get_string("owner") and not ship_weapons.is_member(meta, name) then
+                            if name ~= meta:get_string("owner") and not ship_weapons.is_member(meta, name) and not ship_weapons.is_ally(meta, name) then
                                 if ship_weapons.missile_strike(proj_def, owner, pos, obj_pos, obj) then
                                     bFoundTarget = true;
                                     nTargetCount = nTargetCount + 1

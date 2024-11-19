@@ -93,6 +93,7 @@ ship_machine.register_jumpship({
         l = 15
     },
     ship_name = "Jumpship",
+    jump_dist = 1500,
     hp = 1000,
     shield = 1000,
 })

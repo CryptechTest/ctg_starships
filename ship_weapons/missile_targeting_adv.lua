@@ -87,7 +87,7 @@ local function do_strike_obj(pos, mode, ltier)
                 local name = obj:get_player_name()
                 local ship_meta = minetest.get_meta(ship_pos[1])
                 -- players
-                if name ~= ship_meta:get_string("owner") and not ship_weapons.is_member(ship_meta, name) then
+                if name ~= ship_meta:get_string("owner") and not ship_weapons.is_member(ship_meta, name) and not ship_weapons.is_ally(ship_meta, name) then
                     bFoundTarget = true;
                     nTargetCount = nTargetCount + 1
                     digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {

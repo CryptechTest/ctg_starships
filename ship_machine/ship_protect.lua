@@ -129,19 +129,26 @@ local function register_ship_protect(def)
 
     -- return list of members as a table
     local get_member_list = function(meta)
-
         return meta:get_string("members"):split(" ")
     end
 
     -- write member list table in protector meta as string
     local set_member_list = function(meta, list)
-
         meta:set_string("members", table.concat(list, " "))
+    end
+
+    -- return list of allies as a table
+    local get_ally_list = function(meta)
+        return meta:get_string("allies"):split(" ")
+    end
+
+    -- write ally list table in protector meta as string
+    local set_ally_list = function(meta, list)
+        meta:set_string("allies", table.concat(list, " "))
     end
 
     -- check for owner name
     local is_owner = function(meta, name)
-
         return name == meta:get_string("owner")
     end
 
@@ -149,9 +156,7 @@ local function register_ship_protect(def)
     local is_member = function(meta, name)
 
         if factions_available and meta:get_int("faction_members") == 1 then
-
             if factions.version == nil then
-
                 -- backward compatibility
                 if factions.get_player_faction(name) ~= nil and factions.get_player_faction(meta:get_string("owner")) ==
                     factions.get_player_faction(name) then
@@ -163,9 +168,7 @@ local function register_ship_protect(def)
                 local owner = meta:get_string("owner")
 
                 if owner_factions ~= nil and owner_factions ~= false then
-
                     for _, f in ipairs(owner_factions) do
-
                         if factions.player_is_in_faction(f, owner) then
                             return true
                         end
@@ -175,7 +178,6 @@ local function register_ship_protect(def)
         end
 
         for _, n in pairs(get_member_list(meta)) do
-
             if n == name then
                 return true
             end
@@ -184,113 +186,167 @@ local function register_ship_protect(def)
         return false
     end
 
+    -- check for ally name
+    local is_ally = function(meta, name)
+        for _, n in pairs(get_ally_list(meta)) do
+            if n == name then
+                return true
+            end
+        end
+        return false
+    end
+
     -- add player name to table as member
     local add_member = function(meta, name)
-
         -- Validate player name for MT compliance
         if name ~= string.match(name, "[%w_-]+") then
             return
         end
-
         -- Constant (20) defined by player.h
         if name:len() > 25 then
             return
         end
-
         -- does name already exist?
-        if is_owner(meta, name) or is_member(meta, name) then
+        if is_owner(meta, name) or is_member(meta, name) or is_ally(meta, name) then
             return
         end
-
         local list = get_member_list(meta)
-
         if #list >= protector_max_share_count then
             return
         end
-
         table.insert(list, name)
-
         set_member_list(meta, list)
     end
 
     -- remove player name from table
     local del_member = function(meta, name)
-
         local list = get_member_list(meta)
-
         for i, n in pairs(list) do
-
             if n == name then
                 table.remove(list, i)
                 break
             end
         end
-
         set_member_list(meta, list)
+    end
+
+    -- add player name to table as ally
+    local add_ally = function(meta, name)
+        -- Validate player name for MT compliance
+        if name ~= string.match(name, "[%w_-]+") then
+            return
+        end
+        -- Constant (20) defined by player.h
+        if name:len() > 25 then
+            return
+        end
+        -- does name already exist?
+        if is_owner(meta, name) or is_member(meta, name) or is_ally(meta, name) then
+            return
+        end
+        local list = get_ally_list(meta)
+        if #list >= protector_max_share_count then
+            return
+        end
+        table.insert(list, name)
+        set_ally_list(meta, list)
+    end
+
+    -- remove player name from table
+    local del_ally = function(meta, name)
+        local list = get_ally_list(meta)
+        for i, n in pairs(list) do
+            if n == name then
+                table.remove(list, i)
+                break
+            end
+        end
+        set_ally_list(meta, list)
     end
 
     -- protector interface
     def.protector_formspec = function(meta)
 
-        local formspec = "size[8,7]" .. default.gui_bg .. default.gui_bg_img .. "label[2.5,0;" ..
-                             F(S("Jumpship Protection Interface")) .. "]" .. "label[0,2.5;" ..
-                             F(S("PUNCH node to show protected area")) .. "]" .. "label[0,2;" .. F(S("Members:")) .. "]" ..
-                             "button_exit[2.5,6.2;3,0.5;close_me;" .. F(S("Close")) .. "]" ..
-                             "field_close_on_enter[protector_add_member;false]"
+        local formspec = "size[8,9]" .. default.gui_bg .. default.gui_bg_img .. "label[2.5,0;" ..
+                             F(S("Jumpship Protection Interface")) .. "]" .. 
+                             "button_exit[2.5,8.4;3,0.5;close_me;" .. F(S("Close")) .. "]"
 
+        local menu_level = meta:get_int("menu_level") or 1
         local members = get_member_list(meta)
+        local allies = get_ally_list(meta)
         local npp = protector_max_share_count -- max users added to protector list
         local i = 0
+        local j = 0
         local checkbox_faction = false
+
+        if menu_level == 1 then
+            formspec = formspec .. "button[6,-0.2;2,1;toggle_menu_1;Toggle View]"
+            formspec = formspec .. "field_close_on_enter[protector_add_member;false]"
+            formspec = formspec .. "label[0,0.4;" .. F(S("Crew Members:")) .. "]"
+            formspec = formspec .. "label[0.3,7.6;" .. F(S("Crew members may access ship, perform actions and are safe.")) .. "]"
+        elseif menu_level == 2 then
+            formspec = formspec .. "button[6,-0.2;2,1;toggle_menu_2;Toggle View]"
+            formspec = formspec .. "field_close_on_enter[protector_add_ally;false]"
+            formspec = formspec .. "label[0,0.4;" .. F(S("Ally Members:")) .. "]"
+            formspec = formspec .. "label[0.3,7.6;" .. F(S("Ally members may not access ship, but are safe from defenses.")) .. "]"
+        end
 
         -- Display the checkbox only if the owner is member of at least 1 faction
         if factions_available then
-
             if factions.version == nil then
-
                 -- backward compatibility
                 if factions.get_player_faction(meta:get_string("owner")) then
                     checkbox_faction = true
                 end
             else
                 local player_factions = factions.get_player_factions(meta:get_string("owner"))
-
                 if player_factions ~= nil and #player_factions >= 1 then
                     checkbox_faction = true
                 end
             end
         end
         if checkbox_faction then
-
             formspec = formspec .. "checkbox[0,5;faction_members;" .. F(S("Allow faction access")) .. ";" ..
                            (meta:get_int("faction_members") == 1 and "true" or "false") .. "]"
-
             if npp > 8 then
                 npp = 8
             end
         end
 
-        for n = 1, #members do
-
-            if i < npp then
-
-                -- show username
-                formspec = formspec .. "button[" .. (i % 4 * 2) .. "," .. math.floor(i / 4 + 3) ..
-                               ";1.5,.5;protector_member;" .. F(members[n]) .. "]" -- username remove button
-                .. "button[" .. (i % 4 * 2 + 1.25) .. "," .. math.floor(i / 4 + 3) .. ";.75,.5;protector_del_member_" ..
-                               F(members[n]) .. ";X]"
+        if menu_level == 1 then
+            for n = 1, #members do
+                if i < npp then
+                    -- show username
+                    formspec = formspec .. "button[" .. (i % 4 * 2) .. "," .. math.floor(i / 4 + 1) ..
+                                ";1.5,.5;protector_member;" .. F(members[n]) .. "]" -- username remove button
+                    .. "button[" .. (i % 4 * 2 + 1.275) .. "," .. math.floor(i / 4 + 1) .. ";.75,.5;protector_del_member_" ..
+                                F(members[n]) .. ";X]"
+                end
+                i = i + 1
             end
-
-            i = i + 1
-        end
-
-        if i < npp then
-
-            -- user name entry field
-            formspec = formspec .. "field[" .. (i % 4 * 2 + 1 / 3) .. "," .. (math.floor(i / 4 + 3) + 1 / 3) ..
-                           ";1.433,.5;protector_add_member;;]" -- username add button
-            .. "button[" .. (i % 4 * 2 + 1.25) .. "," .. math.floor(i / 4 + 3) .. ";.75,.5;protector_submit;+]"
-
+            if i < npp then
+                -- user name entry field
+                formspec = formspec .. "field[" .. (i % 4 * 2 + 1 / 3) .. "," .. (math.floor(i / 4 + 1) + 1 / 3) ..
+                            ";1.433,.5;protector_add_member;;]" -- username add button
+                .. "button[" .. (i % 4 * 2 + 1.275) .. "," .. math.floor(i / 4 + 1) .. ";.75,.5;protector_submit;+]"
+            end
+        elseif menu_level == 2 then
+            for n = 1, #allies do
+                if j < npp then
+                    -- show username
+                    formspec = formspec .. "button[" .. (j % 4 * 2) .. "," .. math.floor(j / 4 + 1) ..
+                                ";1.5,.5;protector_ally;" .. F(allies[n]) .. "]" -- username remove button
+                    .. "button[" .. (j % 4 * 2 + 1.275) .. "," .. math.floor(j / 4 + 1) .. ";.75,.5;protector_del_ally_" ..
+                                F(allies[n]) .. ";X]"
+                end
+                j = j + 1
+            end
+            if j < npp then
+                -- user name entry field
+                formspec = formspec .. "field[" .. (j % 4 * 2 + 1 / 3) .. "," .. (math.floor(j / 4 + 1) + 1 / 3) ..
+                            ";1.433,.5;protector_add_ally;;]" -- username add button
+                .. "button[" .. (j % 4 * 2 + 1.275) .. "," .. math.floor(j / 4 + 1) .. ";.75,.5;protector_submit;+]"
+            end
         end
 
         return formspec
@@ -585,7 +641,9 @@ local function register_ship_protect(def)
             local meta = minetest.get_meta(pos)
             meta:set_string("owner", placer:get_player_name() or "")
             meta:set_string("members", "")
+            meta:set_string("allies", "")
             meta:set_string("infotext", S("Protection (owned by @1)", meta:get_string("owner")))
+            meta:set_int("menu_level", 1)
             meta:set_int("p_width", def.protector.size.w)
             meta:set_int("p_length", def.protector.size.l)
             meta:set_int("p_height", def.protector.size.h)
@@ -638,14 +696,30 @@ local function register_ship_protect(def)
             return
         end
 
+        local toggle_menu = (fields.toggle_menu_1 and 1) or (fields.toggle_menu_2 and 2) or 0
         local add_member_input = fields.protector_add_member
+        local add_ally_input = fields.protector_add_ally
+
+        local meta = minetest.get_meta(pos)
+        if not meta then
+            return
+        end
+
+        if toggle_menu > 0 then
+            if toggle_menu == 1 then
+                meta:set_int("menu_level", 2)
+            elseif toggle_menu == 2 then
+                meta:set_int("menu_level", 1)
+            end
+            minetest.show_formspec(name, formname, def.protector_formspec(meta))
+            return
+        end
 
         -- reset formspec until close button pressed
         if (fields.close_me or fields.quit) and (not add_member_input or add_member_input == "") then
             player_pos[name] = nil
             return
         end
-
         local s = {
             l = 1,
             h = 1,
@@ -664,11 +738,6 @@ local function register_ship_protect(def)
             return
         end
 
-        local meta = minetest.get_meta(pos)
-
-        if not meta then
-            return
-        end
 
         -- add faction members
         if factions_available and fields.faction_members ~= nil then
@@ -677,7 +746,6 @@ local function register_ship_protect(def)
 
         -- add member [+]
         if add_member_input then
-
             for _, i in pairs(add_member_input:split(" ")) do
                 add_member(meta, i)
             end
@@ -685,10 +753,22 @@ local function register_ship_protect(def)
 
         -- remove member [x]
         for field, value in pairs(fields) do
-
             if string.sub(field, 0, string.len("protector_del_member_")) == "protector_del_member_" then
-
                 del_member(meta, string.sub(field, string.len("protector_del_member_") + 1))
+            end
+        end
+
+        -- add ally [+]
+        if add_ally_input then
+            for _, i in pairs(add_ally_input:split(" ")) do
+                add_ally(meta, i)
+            end
+        end
+
+        -- remove ally [x]
+        for field, value in pairs(fields) do
+            if string.sub(field, 0, string.len("protector_del_ally_")) == "protector_del_ally_" then
+                del_ally(meta, string.sub(field, string.len("protector_del_ally_") + 1))
             end
         end
 

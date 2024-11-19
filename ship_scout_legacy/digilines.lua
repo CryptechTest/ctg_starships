@@ -1,4 +1,4 @@
-ship_scout_legacy.scout_digiline_effector = function(pos, node, channel, msg)
+ship_scout_legacy.digiline_effector = function(pos, node, channel, msg)
     local set_channel = "ship_scout_legacy" -- static channel for now
 
     local msgt = type(msg)

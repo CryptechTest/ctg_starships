@@ -47,13 +47,13 @@ ship_weapons.add_member = function(meta, name)
     end
 
     -- does name already exist?
-    if is_owner(meta, name) or ship_weapons.is_member(meta, name) then
+    if is_owner(meta, name) or ship_weapons.is_member(meta, name) or ship_machine.is_ally(meta, name) then
         return
     end
 
     local list = get_member_list(meta)
 
-    if #list >= 28 then
+    if #list >= 16 then
         return
     end
 
@@ -77,6 +77,64 @@ ship_weapons.del_member = function(meta, name)
 
     set_member_list(meta, list)
 end
+
+----------------------------------------------------
+
+-- return list of allies as a table
+local get_ally_list = function(meta)
+    return meta:get_string("allies"):split(" ")
+end
+
+-- write ally list table in protector meta as string
+local set_ally_list = function(meta, list)
+    meta:set_string("allies", table.concat(list, " "))
+end
+
+-- check for ally name
+ship_weapons.is_ally = function(meta, name)
+    for _, n in pairs(get_ally_list(meta)) do
+        if n == name then
+            return true
+        end
+    end
+    return false
+end
+
+-- add player name to table as ally
+ship_weapons.add_ally = function(meta, name)
+    -- Validate player name for MT compliance
+    if name ~= string.match(name, "[%w_-]+") then
+        return
+    end
+    -- Constant (20) defined by player.h
+    if name:len() > 25 then
+        return
+    end
+    -- does name already exist?
+    if is_owner(meta, name) or ship_machine.is_member(meta, name) or ship_machine.is_ally(meta, name) then
+        return
+    end
+    local list = get_ally_list(meta)
+    if #list >= 16 then
+        return
+    end
+    table.insert(list, name)
+    set_ally_list(meta, list)
+end
+
+-- remove player name from table
+ship_weapons.del_ally = function(meta, name)
+    local list = get_ally_list(meta)
+    for i, n in pairs(list) do
+        if n == name then
+            table.remove(list, i)
+            break
+        end
+    end
+    set_ally_list(meta, list)
+end
+
+----------------------------------------------------
 
 function ship_weapons.get_port_direction(pos)
     local node = minetest.get_node(pos)

@@ -14,31 +14,37 @@ ship_def.shield = 5000
 
 -- load files
 local default_path = minetest.get_modpath("ship_cargo")
+dofile(default_path .. "/digilines.lua")
 
-dofile(default_path .. DIR_DELIM .. "functions.lua")
-dofile(default_path .. DIR_DELIM .. "digilines.lua")
-dofile(default_path .. DIR_DELIM .. "cargo_cruiser.lua")
-
-ship_cargo.register_cruiser({
+-- register control console
+ship_machine.register_control_console({
     typename = "ship_cargo",
     modname = "ship_cargo",
     machine_name = "cruiser",
-    jump_dist = 8000,
+    jump_dist = 9000,
+    min_dist = 120,
+    tier = "HV",
     size = ship_def.size,
     hp = ship_def.hp,
     shield = ship_def.shield,
+    machine_desc = ship_def.name,
+    digiline_effector = ship_cargo.digiline_effector,
+    do_docking = true,
+    groups = {
+        ship_battle_cruiser_small = 1,
+        ship_jumps = 3,
+    }
 });
 
-if minetest.get_modpath("ship_machine") then
-    ship_machine.register_jumpship({
-        modname = "ship_cargo",
-        machine_name = "jump_drive_cargo_cruiser",
-        machine_desc = "Jump Drive Allocator",
-        typename = "jump_drive",
-        do_protect = true,
-        ship_name = ship_def.name,
-        size = ship_def.size,
-        hp = ship_def.hp,
-        shield = ship_def.shield,
-    })
-end
+-- register jumpship
+ship_machine.register_jumpship({
+    modname = "ship_cargo",
+    machine_name = "jump_drive_cargo_cruiser",
+    machine_desc = "Jump Drive Allocator",
+    typename = "jump_drive",
+    do_protect = true,
+    ship_name = ship_def.name,
+    size = ship_def.size,
+    hp = ship_def.hp,
+    shield = ship_def.shield,
+})
