@@ -260,9 +260,10 @@ local function register_ship_dock(def)
                 return
             end
             center = vector.add(center, offset)
+            meta:set_int("setup", 1)
             meta:set_string("d_center", core.serialize(center))
             meta:set_string("formspec", update_formspec(pos, def))
-            send_msg(sender, "Docking area defined and accepted!")
+            send_msg(sender, "Docking area defined and ready!")
             return
         end
 
@@ -300,6 +301,7 @@ local function register_ship_dock(def)
             local inv = meta:get_inventory()
             -- inv:set_size("ship1", 1)
             meta:set_int("enabled", 1)
+            meta:set_int("setup", 0)
             meta:set_string("owner", "")
             local size = {
                 w = 12,
@@ -440,9 +442,10 @@ local function register_ship_dock(def)
                 local owner = meta:get_string("owner") or ""
                 local name = meta:get_string("d_name") or ""
                 local public = (meta:get_int("d_public") or 0) > 0
+                local setup = (meta:get_int("setup") or 0) > 0
                 local dock = nil
                 -- match dock size to ship size
-                if size.w - ship_size.w >= 0 and size.l - ship_size.l >= 0 and size.h - ship_size.h >= 0 then
+                if setup and size.w - ship_size.w >= 0 and size.l - ship_size.l >= 0 and size.h - ship_size.h >= 0 then
                     if not s_pub then
                         -- only private dock
                         if s_owner and owner == s_owner then

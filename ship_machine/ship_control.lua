@@ -109,10 +109,15 @@ local function update_formspec_nav(pos, data, message)
             btn_doc = "button[5,5.7;2.5,1;submit_dock;Station Dock]"
         elseif near_docks and #near_docks > 0 and combat_migration_done and ship_hp_prcnt >= 10 then
             local items = {}
-            for _, item in pairs(near_docks) do
+            local index = 1
+            local dock_name = meta:get_string("dock_with")
+            for i, item in pairs(near_docks) do
                 table.insert(items, item.name)
+                if item.name == dock_name then
+                    index = i
+                end
             end
-            local ddrop = "dropdown[5,5;2.5,1;dock_name;"..table.concat(items, ",")..";;]"
+            local ddrop = "dropdown[5,5;2.5,1;dock_name;"..table.concat(items, ",")..";"..index..";]"
             btn_doc = ddrop .. "button[5,5.7;2.5,1;submit_dock2;Dock]"
         end
 
@@ -392,6 +397,10 @@ function ship_machine.register_control_console(custom_data)
 
         local docked = false
 
+        if fields.dock_name then
+            meta:set_string("dock_with", fields.dock_name)
+        end
+
         -- general docking
         if fields.submit_dock2 and def.do_docking then
             local message = ""
@@ -407,12 +416,19 @@ function ship_machine.register_control_console(custom_data)
                     move_x = bay_center.x - jpos.x
                     move_y = bay_center.y - jpos.y
                     move_z = bay_center.z - jpos.z
-                    fields.submit_nav = true
-                    bFound = true;
-                    meta:set_int("travel_ready", 1)
-                    message = "Docking port located!"
-                    local formspec = update_formspec_nav(pos, def, message)
-                    meta:set_string("formspec", formspec)
+                    if vector.distance(vector.new(move_x, move_y, move_z), jpos) <= 3 then
+                        message = "You are already docked with '" .. meta:get_string("dock_with") .. "'"
+                        local formspec = update_formspec_nav(pos, def, message)
+                        meta:set_string("formspec", formspec)
+                        return
+                    else
+                        fields.submit_nav = true
+                        bFound = true;
+                        meta:set_int("travel_ready", 1)
+                        message = "Docking port '" .. meta:get_string("dock_with") .. "' located!"
+                        local formspec = update_formspec_nav(pos, def, message)
+                        meta:set_string("formspec", formspec)
+                    end
                 end
                 if not bFound then
                     message = "Docking port invalid..."
@@ -540,6 +556,7 @@ function ship_machine.register_control_console(custom_data)
                             local metad = minetest.get_meta(panel_dest)
                             local formspec_new = update_formspec_nav(panel_dest, def, "Jump Complete!")
                             metad:set_string("formspec", formspec_new)
+                            metad:set_string("dock_with", '')
                             metad:set_int("travel_ready", 0)
                             minetest.after(1.5, function()
                                 if metad then
