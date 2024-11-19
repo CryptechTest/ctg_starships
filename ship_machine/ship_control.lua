@@ -412,30 +412,28 @@ function ship_machine.register_control_console(custom_data)
             if bay_center then
                 local bnode = core.get_node(bay_center)
                 local is_jumpdrive = core.get_item_group(bnode.name, "jumpdrive") > 0
-                if not is_jumpdrive and bnode.name == "vacuum:vacuum" then
-                    move_x = bay_center.x - jpos.x
-                    move_y = bay_center.y - jpos.y
-                    move_z = bay_center.z - jpos.z
-                    if vector.distance(vector.new(move_x, move_y, move_z), jpos) <= 3 then
-                        message = "You are already docked with '" .. meta:get_string("dock_with") .. "'"
-                        local formspec = update_formspec_nav(pos, def, message)
-                        meta:set_string("formspec", formspec)
-                        return
-                    else
-                        fields.submit_nav = true
-                        bFound = true;
-                        meta:set_int("travel_ready", 1)
-                        message = "Docking port '" .. meta:get_string("dock_with") .. "' located!"
-                        local formspec = update_formspec_nav(pos, def, message)
-                        meta:set_string("formspec", formspec)
-                    end
-                end
-                if not bFound then
-                    message = "Docking port invalid..."
+                move_x = bay_center.x - jpos.x
+                move_y = bay_center.y - jpos.y
+                move_z = bay_center.z - jpos.z
+                if vector.distance(vector.new(move_x, move_y, move_z), jpos) <= 3 then
+                    message = "You are already docked with '" .. meta:get_string("dock_with") .. "'"
                     local formspec = update_formspec_nav(pos, def, message)
                     meta:set_string("formspec", formspec)
-                    return;
+                    return
+                elseif not is_jumpdrive and bnode.name == "vacuum:vacuum" then
+                    fields.submit_nav = true
+                    bFound = true;
+                    meta:set_int("travel_ready", 1)
+                    message = "Docking port '" .. meta:get_string("dock_with") .. "' located!"
+                    local formspec = update_formspec_nav(pos, def, message)
+                    meta:set_string("formspec", formspec)
                 end
+            end
+            if not bFound then
+                message = "Docking port invalid..."
+                local formspec = update_formspec_nav(pos, def, message)
+                meta:set_string("formspec", formspec)
+                return;
             end
         end
 
