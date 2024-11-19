@@ -202,7 +202,7 @@ function ship_machine.register_control_console(custom_data)
     def.machine_name = custom_data.machine_name or "Jumpship"
     def.machine_desc = custom_data.machine_desc or "Jumpship"
     def.do_docking = custom_data.do_docking or false
-    def.jump_dist = custom_data.jumpdist or 1000
+    def.jump_dist = custom_data.jump_dist or 1000
     def.min_dist = custom_data.min_dist or 15
     def.groups = custom_data.groups or {}
 
