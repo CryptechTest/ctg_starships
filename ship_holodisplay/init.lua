@@ -123,7 +123,7 @@ local update_ships = function (pos)
                     local ship_name = "Unknown Ship"
                     local drive = core.get_node(node)
                     -- the name will look something like this and we just want the final part discarding the mod and the "jump_drive_" part "ship_raider:jump_drive_raider" -> "Raider"
-                    local ship_name = string.split(drive.name, ":")[2]
+                    ship_name = string.split(drive.name, ":")[2]
                     ship_name = string.sub(ship_name, 12)
                     ship_name = string.upper(string.sub(ship_name, 1, 1)) .. string.sub(ship_name, 2)
 
@@ -245,7 +245,7 @@ core.register_node("ship_holodisplay:display_off", {
 
 core.register_entity("ship_holodisplay:entity", {
 	initial_properties = {
-		physical = true,
+		physical = false,
 		visual = "cube",
 		visual_size = {x = 0.00390625, y = 0.00390625, z = 0.00390625},
 		collisionbox = {-0.001953125, -0.001953125, -0.001953125, 0.001953125, 0.001953125, 0.001953125},
@@ -261,8 +261,8 @@ core.register_entity("ship_holodisplay:entity", {
 		return true
 	end,
 	on_step = function(self, dtime)
-		self.lifetime = (self.lifetime or 2.1) - dtime
-		if self.lifetime and self.lifetime <= 0 then
+		self._lifetime = (self._lifetime or 2.1) - dtime
+		if self._lifetime and self._lifetime <= 0 then
 			self.object:remove()
 		end
 	end,
@@ -274,6 +274,7 @@ core.register_entity("ship_holodisplay:entity", {
 			if #data ~= 3 then
 				self.object:remove()
 			end
+            self._lifetime = 2.1
 			self._player = data[1]
 			self._player_pos = core.string_to_pos(data[2])
 			self._type = data[3]
@@ -329,7 +330,7 @@ core.register_entity("ship_holodisplay:entity", {
 
 core.register_entity("ship_holodisplay:scanner", {
 	initial_properties = {
-		physical = true,
+		physical = false,
 		visual = "cube",
 		visual_size = {x = 1, y = 0, z = 1},
 		collisionbox = { 0, 0, 0, 0, 0, 0},
@@ -369,7 +370,7 @@ core.register_entity("ship_holodisplay:scanner", {
 
 core.register_entity("ship_holodisplay:ship", {
 	initial_properties = {
-		physical = true,
+		physical = false,
 		visual = "cube",
 		visual_size = {x = 0.00390625, y = 0.00390625, z = 0.00390625},
 		collisionbox = {-0.001953125, -0.001953125, -0.001953125, 0.001953125, 0.001953125, 0.001953125},
@@ -386,16 +387,17 @@ core.register_entity("ship_holodisplay:ship", {
 		return true
 	end,
 	on_step = function(self, dtime)
-		if self.lifetime and self.lifetime <= 0 then
+		if self._lifetime and self._lifetime <= 0 then
 			self.object:remove()
 		else
-			self.lifetime = (self.lifetime or 2.1) - dtime
+			self._lifetime = (self._lifetime or 2.1) - dtime
 		end
 	end,
 	on_activate = function(self, staticdata)
 		if staticdata == nil or staticdata == "" then
 			self.object:remove()
 		else
+            self._lifetime = 2.1
 			local data = string.split(staticdata, ";")
 			if #data ~= 4 then
 				self.object:remove()
