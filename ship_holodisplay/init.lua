@@ -145,7 +145,7 @@ local update_ships = function (pos)
 						local spos = {x = ominp.x + ((node.x - scanpos.x) * 0.00390625), y = ominp.y + ((node.y - scanpos.y) * 0.00390625), z= ominp.z + ((node.z - scanpos.z) * 0.00390625)}
 						local type = "unknown"
 						local offset = {x = 128, y = 129, z = 128}
-                        local owner = prot_meta:get_string("owner")
+                        local owner = prot_meta:get_string("owner") or ""
 						if node == vector.add(offset, scanpos) then
 							type = "self"
                         else 
