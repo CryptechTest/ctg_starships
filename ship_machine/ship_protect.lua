@@ -409,6 +409,11 @@ local function register_ship_protect(def)
         for n = 1, #nodes do
 
             local p = nodes[n]
+            local g = minetest.get_item_group(p.name, "protector");
+            if g ~= 1 then
+                return true
+            end
+
             meta = minetest.get_meta(p)
             owner = meta:get_string("owner") or ""
             members = meta:get_string("members") or ""
