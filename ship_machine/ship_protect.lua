@@ -412,7 +412,6 @@ local function register_ship_protect(def)
             meta = minetest.get_meta(p)
             owner = meta:get_string("owner") or ""
             members = meta:get_string("members") or ""
-
             local _size = {
                 w = meta:get_int("p_width") or 0,
                 l = meta:get_int("p_length") or 0,
@@ -428,6 +427,10 @@ local function register_ship_protect(def)
                 end
             end
 
+            if in_bound and owner == "" then
+                return true
+            end
+            
             -- node change and digger isn't owner
             if infolevel == 1 and owner ~= digger and in_bound then
 
@@ -528,6 +531,7 @@ local function register_ship_protect(def)
         if not def.protector.can_dig(def.protector.size, pos, digger, false, 1) then
             return true
         end
+        
 
         -- otherwise can dig or place
         return old_is_protected(pos, digger)
