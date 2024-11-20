@@ -145,9 +145,8 @@ local update_ships = function (pos)
 						local spos = {x = ominp.x + ((node.x - scanpos.x) * 0.00390625), y = ominp.y + ((node.y - scanpos.y) * 0.00390625), z= ominp.z + ((node.z - scanpos.z) * 0.00390625)}
 						local type = "unknown"
 						local offset = {x = 128, y = 129, z = 128}
-                        
+                        local owner = prot_meta:get_string("owner")
 						if node == vector.add(offset, scanpos) then
-                            
 							type = "self"
                         else 
                             local pitch = 2
@@ -164,7 +163,7 @@ local update_ships = function (pos)
                                 core.sound_play("ship_holodisplay_scanner", {pos = spos, max_hear_distance = 5, gain = 0.025, pitch = pitch})
                             end)
 						end
-						core.add_entity(spos, "ship_holodisplay:ship", ship_name .. ";" .. core.pos_to_string(node) .. ";" .. core.pos_to_string(size) .. ";" .. type)
+						core.add_entity(spos, "ship_holodisplay:ship", ship_name .. ";" .. core.pos_to_string(node) .. ";" .. core.pos_to_string(size) .. ";" .. type .. ";" .. owner)
 					end
 					
 				end
@@ -387,6 +386,7 @@ core.register_entity("ship_holodisplay:ship", {
 	_pos = {x = 0, y = 0, z = 0},
 	_size = {x = 0, y = 0, z = 0},
 	_type = "unknown",
+    _owner = "",
 	on_punch = function(self, puncher)
 		return true
 	end,
@@ -403,13 +403,14 @@ core.register_entity("ship_holodisplay:ship", {
 		else
             self._lifetime = 2.1
 			local data = string.split(staticdata, ";")
-			if #data ~= 4 then
+			if #data ~= 5 then
 				self.object:remove()
 			end
 			self._name = data[1]
 			self._pos = core.string_to_pos(data[2])
 			self._size = core.string_to_pos(data[3])
 			self._type = data[4]
+            self._owner = data[5]
 		end
 		local min = {x = self._pos.x - self._size.x, y = self._pos.y - self._size.y, z = self._pos.z - self._size.z}
 		local max = {x = self._pos.x + self._size.x, y = self._pos.y + self._size.y, z = self._pos.z + self._size.z}
@@ -450,11 +451,18 @@ core.register_entity("ship_holodisplay:ship", {
                 "ship_holodisplay_ship_friendly.png"
             }
 		end
-
-		self.object:set_properties({infotext = self._name .. " " .. core.pos_to_string(self._pos), visual_size = size, textures = textures})
+        local collisionbox = {
+            -size.x / 2, -size.y / 2, -size.z / 2,
+            size.x / 2, size.y / 2, size.z / 2
+        }
+        local infotext = self._name .. " " .. core.pos_to_string(self._pos)
+        if self._owner ~= "" then
+            infotext = infotext .. " owned by " .. self._owner
+        end
+		self.object:set_properties({infotext =  infotext, visual_size = size, textures = textures, collisionbox = collisionbox})
 	end,
 	get_staticdata = function(self)
-		return self._name .. ";" .. core.pos_to_string(self._pos) .. ";" .. core.pos_to_string(self._size) .. ";" .. self._type
+		return self._name .. ";" .. core.pos_to_string(self._pos) .. ";" .. core.pos_to_string(self._size) .. ";" .. self._type .. ";" .. self._owner
 	end
 })
 
