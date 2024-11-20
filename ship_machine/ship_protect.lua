@@ -411,7 +411,7 @@ local function register_ship_protect(def)
             local p = nodes[n]
             local n = minetest.get_node(p)
             local g = minetest.get_item_group(n.name, "protector");
-            if g ~= 1 then
+            if g ~= 2 then
                 return true
             end
 
