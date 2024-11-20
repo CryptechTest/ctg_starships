@@ -148,7 +148,7 @@ local update_ships = function (pos)
                         local owner = prot_meta:get_string("owner") or ""
 						if node == vector.add(offset, scanpos) then
 							type = "self"
-                        else 
+                        else
                             local pitch = 2
                             local delay = 0.5
                             local vol = length * width * height
@@ -403,14 +403,16 @@ core.register_entity("ship_holodisplay:ship", {
 		else
             self._lifetime = 2.1
 			local data = string.split(staticdata, ";")
-			if #data ~= 5 then
+			if #data < 4 then
 				self.object:remove()
 			end
 			self._name = data[1]
 			self._pos = core.string_to_pos(data[2])
 			self._size = core.string_to_pos(data[3])
 			self._type = data[4]
-            self._owner = data[5]
+            if #data == 5 then
+                self._owner = data[5]
+            end
 		end
 		local min = {x = self._pos.x - self._size.x, y = self._pos.y - self._size.y, z = self._pos.z - self._size.z}
 		local max = {x = self._pos.x + self._size.x, y = self._pos.y + self._size.y, z = self._pos.z + self._size.z}
