@@ -432,7 +432,7 @@ local function register_ship_protect(def)
                 end
             end
 
-            if in_bound and owner == "" then
+            if in_bound and owner == "*nobody" then
                 return true
             end
             
