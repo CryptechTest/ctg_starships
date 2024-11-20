@@ -409,7 +409,8 @@ local function register_ship_protect(def)
         for n = 1, #nodes do
 
             local p = nodes[n]
-            local g = minetest.get_item_group(p.name, "protector");
+            local n = minetest.get_node(p)
+            local g = minetest.get_item_group(n.name, "protector");
             if g ~= 1 then
                 return true
             end
