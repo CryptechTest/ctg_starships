@@ -472,7 +472,7 @@ local function register_ship_protect(def)
     end
 
     -- add protector hurt and flip to protection violation function
-    minetest.register_on_protection_violation(function(pos, name)
+    --[[minetest.register_on_protection_violation(function(pos, name)
 
         local player = minetest.get_player_by_name(name)
 
@@ -515,7 +515,7 @@ local function register_ship_protect(def)
                 end
             end
         end
-    end)
+    end)]]
 
     local old_is_protected = minetest.is_protected
 
