@@ -427,7 +427,7 @@ local function register_ship_protect(def)
             local in_bound = false
             if pos.x <= p.x + _size.w and pos.x >= p.x - _size.w then
                 if pos.z <= p.z + _size.l and pos.z >= p.z - _size.l then
-                    if pos.y <= p.y + _size.h and pos.y >= p.y - _size.h then
+                    if pos.y <= (p.y - 2) + _size.h and pos.y >= (p.y - 2) - _size.h then
                         in_bound = true
                     end
                 end
