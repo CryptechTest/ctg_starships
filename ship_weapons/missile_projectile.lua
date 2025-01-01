@@ -65,6 +65,8 @@ local function register_projectile(def)
         target_delay = 3,
         target_pos = {},
         object_target = nil,
+        max_hp = 5,
+        hp = 5,
 
         on_death = function(self, killer)
             local pos = self.object:get_pos()
@@ -122,6 +124,31 @@ local function register_projectile(def)
         on_step = function(self, dtime)
             self.timer = self.timer + 1
             local pos = self.object:get_pos()
+
+            if self.object:get_hp() <= 5 and def.tier == 'hv' then
+                local proj_def = {
+                    tier = 'lv',
+                    delay = 0,
+                    count = 2,
+                    novel = 1
+                }
+                ship_weapons.launch_projectile(proj_def, self.owner, pos, self.target_pos, self.object_target)
+                if def.hit_flare then
+                    minetest.add_particle({
+                        pos = self.previous_pos,
+                        expirationtime = 0.2,
+                        size = def.hit_flare_size,
+                        collisiondetection = false,
+                        vertical = false,
+                        texture = def.hit_flare,
+                        glow = def.hit_flare_glow,
+                    })
+                end
+                --Remove the projectile
+                self.object:remove()
+                return;
+            end
+
             --Trail particle spawner
             if def.trail_particle then
                 --Smoke Effect
@@ -359,6 +386,7 @@ local function setup_projectile_register(tier)
     end
     local def = { 
         name = modname .. ':' .. tier .. '_ship_missile',
+        tier = tier,
         spread = spread,
         cooldown = 1,
         flare = "tnt_boom.png",
@@ -460,6 +488,7 @@ local function setup_projectile_register(tier)
     --Make a projectile definition and register projectile
     local projectiledef = {
         name=def.name.."_projectile",
+        tier=def.tier,
         damage=damage,
         timeout=projectile_timeout,
         projectile_speed=projectile_speed,
@@ -543,6 +572,9 @@ function ship_weapons.launch_projectile(custom_def, operator, origin, target, ob
     local vel = vector.multiply(dir, 16)
     --Set projectile port origin position
     local pos = {x=originpos.x+dir.x*spawndist, y=originpos.y+dir.y*spawndist, z=originpos.z+dir.z*spawndist}
+    if custom_def.novel == 1 then
+        pos = originpos
+    end
 
     --Projectile creation
     for i = 0,shot_amount-1,1
@@ -557,10 +589,16 @@ function ship_weapons.launch_projectile(custom_def, operator, origin, target, ob
         obj:get_luaentity().target_pos = target
         obj:get_luaentity().target_delay = def.delay
         obj:get_luaentity().object_target = object_target
-        --Combine velocity with launch velocity
-        obj:set_velocity({x=((dir.x+ship_weapons.get_spread(spread))*projectile_speed)+vel.x,
-                        y=((dir.y+ship_weapons.get_spread(spread))*projectile_speed)+vel.y,
-                        z=((dir.z+ship_weapons.get_spread(spread))*projectile_speed)+vel.z})
+        if custom_def.novel == nil then
+            --Combine velocity with launch velocity
+            obj:set_velocity({x=((dir.x+ship_weapons.get_spread(spread))*projectile_speed)+vel.x,
+                            y=((dir.y+ship_weapons.get_spread(spread))*projectile_speed)+vel.y,
+                            z=((dir.z+ship_weapons.get_spread(spread))*projectile_speed)+vel.z})
+        else
+            obj:set_velocity({x=((ship_weapons.get_spread(1))*projectile_speed),
+                            y=((ship_weapons.get_spread(1))*projectile_speed),
+                            z=((ship_weapons.get_spread(1))*projectile_speed)})
+        end
         obj:set_acceleration({x=0, y=projectile_gravity, z=0})
     end
         
