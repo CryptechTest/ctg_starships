@@ -45,6 +45,16 @@ local disallowed_targets = {
     "ship_holodisplay:scanner",
 }
 
+local is_player_near = function(pos)
+    local objs = core.get_objects_inside_radius(pos, 64)
+    for _, obj in pairs(objs) do
+        if obj:is_player() then
+            return true;
+        end
+    end
+    return false;
+end
+
 local update_entities = function(pos)
 	local ominp = {x = (pos.x - 0.5) + 0.001953125, y = pos.y - 0.5, z = (pos.z - 0.5) + 0.001953125}
 	local meta = core.get_meta(pos)
@@ -213,9 +223,11 @@ core.register_node("ship_holodisplay:display", {
 		core.show_formspec(clicker:get_player_name(), "ship_holodisplay", formspec)
 	end,
 	on_timer = function(pos, elapsed)
-        core.add_entity(vector.add(pos, {x = 0, y = -0.5, z =0}), "ship_holodisplay:scanner")
-		update_ships(pos)
-		update_entities(pos)
+		if is_player_near(pos) then
+			core.add_entity(vector.add(pos, {x = 0, y = -0.5, z =0}), "ship_holodisplay:scanner")
+			update_ships(pos)
+			update_entities(pos)
+		end
 		core.get_node_timer(pos):start(2)
 	end,
 	on_blast = function()
