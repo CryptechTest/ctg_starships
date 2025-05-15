@@ -29,9 +29,13 @@ local function is_atmos(name)
     elseif name == "vacuum:vacuum" then
         return true
     elseif name == "vacuum:atmos_thin" then
-        return true   
+        return true
     elseif name == "vacuum:atmos_thick" then
-        return true     
+        return true
+    elseif name == "ctg_airs:atmos_hot" then
+        return true
+    elseif name == "ctg_airs:atmos_warm" then
+        return true
     elseif name == ":asteroid:atmos" then
         return true
     end
@@ -319,6 +323,20 @@ local function entity_physics(pos, radius, drops)
 	end
 end
 
+local function area_fire(pos, radius)
+	local maxp = vector.add(pos, radius * 0.5)
+	local minp = vector.subtract(pos, radius * 0.5)
+	local node_locs = core.find_nodes_in_area(minp, maxp, { "group:cracky", "group:sand", "group:soil" })
+	for _, loc in pairs(node_locs) do
+		--local node = core.get_node(loc)
+		local above = vector.add(loc, {x=0,y=1,z=0})
+		local node_above = core.get_node(above)
+		if node_above.name == "air" and math.random(0,50) == 0 then
+			core.set_node(above, {name = "fire:basic_flame"})
+		end
+	end
+end
+
 local function add_effects_hit_shield(pos, radius)
 	minetest.add_particlespawner({
 		amount = 5 + math.floor(radius + 0.5),
@@ -517,6 +535,9 @@ function ship_weapons.burn(pos, nodename)
 end
 
 local function find_ship_protect(pos)
+	if pos.y < 4000 then
+		return nil
+	end
 	local s = {
 		w = 50,
 		h = 50,
@@ -582,13 +603,134 @@ local function calc_node_damage(n_hit, dist, hp)
 	return 3
 end
 
+local function missile_explode(pos, radius, ignore_protection, ignore_on_blast, owner, explode_center)
+	pos = vector.round(pos)
+	-- scan for adjacent TNT nodes first, and enlarge the explosion
+	local vm1 = VoxelManip()
+	local p1 = vector.subtract(pos, 2)
+	local p2 = vector.add(pos, 2)
+	local minp, maxp = vm1:read_from_map(p1, p2)
+	local a = VoxelArea:new({MinEdge = minp, MaxEdge = maxp})
+	local data = vm1:get_data()
+	local count = 0
+	local c_tnt = minetest.get_content_id("tnt:tnt")
+	local c_tnt_burning = minetest.get_content_id("tnt:tnt_burning")
+	local c_tnt_boom = minetest.get_content_id("tnt:boom")
+	local c_vac = minetest.get_content_id("vacuum:vacuum")
+	local c_air = minetest.get_content_id("air")
+	local c_ignore = minetest.CONTENT_IGNORE
+	-- make sure we still have explosion even when centre node isnt tnt related
+	if explode_center then
+		count = 1
+	end
+
+    if pos.y > 4000 then
+        c_air = c_vac
+    end
+
+	for z = pos.z - 2, pos.z + 2 do
+		for y = pos.y - 2, pos.y + 2 do
+			local vi = a:index(pos.x - 2, y, z)
+			for x = pos.x - 2, pos.x + 2 do
+				local cid = data[vi]
+				if cid == c_tnt or cid == c_tnt_boom or cid == c_tnt_burning then
+					count = count + 1
+					data[vi] = c_air
+				end
+				vi = vi + 1
+			end
+		end
+	end
+
+	vm1:set_data(data)
+	vm1:write_to_map()
+
+	-- recalculate new radius
+	radius = math.floor(radius * math.pow(count, 1/3))
+
+	-- perform the explosion
+	local vm = VoxelManip()
+	local pr = PseudoRandom(os.time())
+	p1 = vector.subtract(pos, radius)
+	p2 = vector.add(pos, radius)
+	minp, maxp = vm:read_from_map(p1, p2)
+	a = VoxelArea:new({MinEdge = minp, MaxEdge = maxp})
+	data = vm:get_data()
+
+	local drops = {}
+	local on_blast_queue = {}
+	local on_construct_queue = {}
+	basic_flame_on_construct = minetest.registered_nodes["fire:basic_flame"].on_construct
+
+	local c_fire = minetest.get_content_id("fire:basic_flame")
+	for z = -radius, radius do
+	for y = -radius, radius do
+	local vi = a:index(pos.x + (-radius), pos.y + y, pos.z + z)
+	for x = -radius, radius do
+		local r = vector.length(vector.new(x, y, z))
+		if (radius * radius) / (r * r) >= (pr:next(80, 125) / 100) then
+			local cid = data[vi]
+			local p = {x = pos.x + x, y = pos.y + y, z = pos.z + z}
+			if cid ~= c_air and cid ~= c_ignore then
+				data[vi] = destroy(drops, p, cid, c_air, c_fire,
+					on_blast_queue, on_construct_queue,
+					ignore_protection, ignore_on_blast, owner)
+			end
+		end
+		vi = vi + 1
+	end
+	end
+	end
+
+	vm:set_data(data)
+	vm:write_to_map()
+	vm:update_map()
+	vm:update_liquids()
+
+	-- call check_single_for_falling for everything within 1.5x blast radius
+	for y = -radius * 1.5, radius * 1.5 do
+	for z = -radius * 1.5, radius * 1.5 do
+	for x = -radius * 1.5, radius * 1.5 do
+		local rad = {x = x, y = y, z = z}
+		local s = vector.add(pos, rad)
+		local r = vector.length(rad)
+		if r / radius < 1.4 then
+			minetest.check_single_for_falling(s)
+		end
+	end
+	end
+	end
+
+	for _, queued_data in pairs(on_blast_queue) do
+		local dist = math.max(1, vector.distance(queued_data.pos, pos))
+		local intensity = (radius * radius) / (dist * dist)
+		if queued_data.on_blast then
+			local node_drops = queued_data.on_blast(queued_data.pos, intensity)
+			if node_drops then
+				for _, item in pairs(node_drops) do
+					add_drop(drops, item)
+				end
+			end
+		end
+	end
+
+	for _, queued_data in pairs(on_construct_queue) do
+		queued_data.fn(queued_data.pos)
+	end
+
+	minetest.log("action", "MISSILE owned by " .. owner .. " detonated at " ..
+		minetest.pos_to_string(pos) .. " with radius " .. radius)
+
+	return drops, radius, 0
+end
+
 local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_blast, owner, explode_center)
 	pos = vector.round(pos)
 	local drops = {}
 	-- scan for nearby ship protection shields
 	local shipp = find_ship_protect(pos)
 	if not shipp then
-		return drops, radius, 0
+		return missile_explode(pos, radius, ignore_protection, ignore_on_blast, owner, explode_center)
 	end
 	-- scan for adjacent TNT nodes first, and enlarge the explosion
 	local vm1 = VoxelManip()
@@ -602,7 +744,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	local c_tnt_burning = minetest.get_content_id("tnt:tnt_burning")
 	local c_tnt_boom = minetest.get_content_id("tnt:boom")
 	local c_vac = minetest.get_content_id("vacuum:vacuum")
-	local c_air = minetest.CONTENT_AIR
+	local c_air = minetest.get_content_id("air")
 	local c_ignore = minetest.CONTENT_IGNORE
 
 	-- make sure we still have explosion even when centre node isnt tnt related
@@ -640,7 +782,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 
 	local ship_meta = minetest.get_meta(shipp)
 
-	local ship_combat_ready = ship_meta:get_int("combat_ready") > 1
+	local ship_combat_ready = ship_meta:get_int("combat_ready") > 1 or false
 	local ship_hp_max = ship_meta:get_int("hp_max") or 1000
 	local ship_hp = ship_meta:get_int("hp") or 1000
 	local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
@@ -790,129 +932,10 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	return drops, radius, ship_shield_prcnt
 end
 
-local function missile_explode(pos, radius, ignore_protection, ignore_on_blast, owner, explode_center)
-	pos = vector.round(pos)
-	-- scan for adjacent TNT nodes first, and enlarge the explosion
-	local vm1 = VoxelManip()
-	local p1 = vector.subtract(pos, 2)
-	local p2 = vector.add(pos, 2)
-	local minp, maxp = vm1:read_from_map(p1, p2)
-	local a = VoxelArea:new({MinEdge = minp, MaxEdge = maxp})
-	local data = vm1:get_data()
-	local count = 0
-	local c_tnt = minetest.get_content_id("tnt:tnt")
-	local c_tnt_burning = minetest.get_content_id("tnt:tnt_burning")
-	local c_tnt_boom = minetest.get_content_id("tnt:boom")
-	local c_vac = minetest.get_content_id("vacuum:vacuum")
-	local c_air = minetest.CONTENT_AIR
-	local c_ignore = minetest.CONTENT_IGNORE
-	-- make sure we still have explosion even when centre node isnt tnt related
-	if explode_center then
-		count = 1
-	end
-
-    if pos.y > 4000 then
-        c_air = c_vac
-    end
-
-	for z = pos.z - 2, pos.z + 2 do
-		for y = pos.y - 2, pos.y + 2 do
-			local vi = a:index(pos.x - 2, y, z)
-			for x = pos.x - 2, pos.x + 2 do
-				local cid = data[vi]
-				if cid == c_tnt or cid == c_tnt_boom or cid == c_tnt_burning then
-					count = count + 1
-					data[vi] = c_air
-				end
-				vi = vi + 1
-			end
-		end
-	end
-
-	vm1:set_data(data)
-	vm1:write_to_map()
-
-	-- recalculate new radius
-	radius = math.floor(radius * math.pow(count, 1/3))
-
-	-- perform the explosion
-	local vm = VoxelManip()
-	local pr = PseudoRandom(os.time())
-	p1 = vector.subtract(pos, radius)
-	p2 = vector.add(pos, radius)
-	minp, maxp = vm:read_from_map(p1, p2)
-	a = VoxelArea:new({MinEdge = minp, MaxEdge = maxp})
-	data = vm:get_data()
-
-	local drops = {}
-	local on_blast_queue = {}
-	local on_construct_queue = {}
-	basic_flame_on_construct = minetest.registered_nodes["fire:basic_flame"].on_construct
-
-	local c_fire = minetest.get_content_id("fire:basic_flame")
-	for z = -radius, radius do
-	for y = -radius, radius do
-	local vi = a:index(pos.x + (-radius), pos.y + y, pos.z + z)
-	for x = -radius, radius do
-		local r = vector.length(vector.new(x, y, z))
-		if (radius * radius) / (r * r) >= (pr:next(80, 125) / 100) then
-			local cid = data[vi]
-			local p = {x = pos.x + x, y = pos.y + y, z = pos.z + z}
-			if cid ~= c_air and cid ~= c_ignore then
-				data[vi] = destroy(drops, p, cid, c_air, c_fire,
-					on_blast_queue, on_construct_queue,
-					ignore_protection, ignore_on_blast, owner)
-			end
-		end
-		vi = vi + 1
-	end
-	end
-	end
-
-	vm:set_data(data)
-	vm:write_to_map()
-	vm:update_map()
-	vm:update_liquids()
-
-	-- call check_single_for_falling for everything within 1.5x blast radius
-	for y = -radius * 1.5, radius * 1.5 do
-	for z = -radius * 1.5, radius * 1.5 do
-	for x = -radius * 1.5, radius * 1.5 do
-		local rad = {x = x, y = y, z = z}
-		local s = vector.add(pos, rad)
-		local r = vector.length(rad)
-		if r / radius < 1.4 then
-			minetest.check_single_for_falling(s)
-		end
-	end
-	end
-	end
-
-	for _, queued_data in pairs(on_blast_queue) do
-		local dist = math.max(1, vector.distance(queued_data.pos, pos))
-		local intensity = (radius * radius) / (dist * dist)
-		local node_drops = queued_data.on_blast(queued_data.pos, intensity)
-		if node_drops then
-			for _, item in pairs(node_drops) do
-				add_drop(drops, item)
-			end
-		end
-	end
-
-	for _, queued_data in pairs(on_construct_queue) do
-		queued_data.fn(queued_data.pos)
-	end
-
-	minetest.log("action", "MISSILE owned by " .. owner .. " detonated at " ..
-		minetest.pos_to_string(pos) .. " with radius " .. radius)
-
-	return drops, radius, 0
-end
-
 function ship_weapons.safe_boom(pos, def)
 	def = def or {}
 	def.radius = def.radius or 1
-	def.damage_radius = def.damage_radius or def.radius * 2
+	def.damage_radius = (def.damage_radius or def.radius) * 2
 	local meta = minetest.get_meta(pos)
 	local owner = meta:get_string("owner")
 	
@@ -935,7 +958,10 @@ function ship_weapons.safe_boom(pos, def)
 	if not def.disable_drops then
 		eject_drops(drops, pos, radius)
 	end
-	add_effects_hit(pos, radius, drops)
+	add_effects_hit(pos, def.damage_radius * 0.67, drops)
+	if def.fire then
+		area_fire(pos, damage_radius)
+	end
 	minetest.log("action", "A SAFE MISSILE explosion occurred at " .. minetest.pos_to_string(pos) ..
 		" with radius " .. radius)
 end
@@ -943,7 +969,7 @@ end
 function ship_weapons.boom(pos, def)
 	def = def or {}
 	def.radius = def.radius or 1
-	def.damage_radius = def.damage_radius or def.radius * 2
+	def.damage_radius = (def.damage_radius or def.radius) * 2
 	local meta = minetest.get_meta(pos)
 	local owner = meta:get_string("owner")
 
@@ -960,7 +986,10 @@ function ship_weapons.boom(pos, def)
 	if not def.disable_drops then
 		eject_drops(drops, pos, radius)
 	end
-	add_effects_hit(pos, radius, drops)
+	add_effects_hit(pos, def.damage_radius * 0.67, drops)
+	if def.fire then
+		area_fire(pos, damage_radius)
+	end
 	minetest.log("action", "A MISSILE explosion occurred at " .. minetest.pos_to_string(pos) ..
 		" with radius " .. radius)
 end

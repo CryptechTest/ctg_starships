@@ -2,6 +2,127 @@ local function round(v)
     return math.floor(v + 0.5)
 end
 
+local function calculatePitch(vector1, vector2)
+    -- Calculate the difference vector
+    local dx = vector2.x - vector1.x
+    local dy = vector2.y - vector1.y
+    local dz = vector2.z - vector1.z
+    -- Calculate the pitch angle
+    local pitch = -math.atan2(dy, math.sqrt(dx * dx + dz * dz))
+    -- Optional: Convert pitch from radians to degrees
+    --local pitch_degrees = pitch * 180 / math.pi
+    local pitch_degrees = math.deg(pitch)
+    return pitch, pitch_degrees
+end
+ship_weapons.calculatePitch = calculatePitch
+
+local function calculateYaw(vector1, vector2)
+    -- Calculate yaw for each vector
+    local yaw = -math.atan2(vector1.x - vector2.x, vector1.z - vector2.z)
+    -- Optional: Convert to degrees
+    --local yaw_degrees = yaw * 180 / math.pi
+    local yaw_degrees = math.deg(yaw) + 0
+    return math.rad(yaw_degrees), yaw_degrees
+end
+ship_weapons.calculateYaw = calculateYaw
+
+local function calculateDisplacement(pos, dir, power, angleForceDirection)
+    -- Convert pitch and yaw to a unit vector for direction in 2D if necessary.
+    local pitch = math.rad(angleForceDirection.pitch or 0)
+    local yaw = math.rad(angleForceDirection.yaw or 0)
+
+    local flipped = false
+    local xz1 = pos.x
+    local xz2 = pos.z
+    local yy1 = pos.y
+    --[[if dir.x == 1 or dir.x == -1 then
+        xz1 = pos.z
+        xz2 = pos.x
+        flipped = true
+    elseif dir.z == 1 or dir.z == -1 then
+        xz1 = pos.x
+        xz2 = pos.z
+    end]] --
+
+    -- Calcaulate displacement
+    local displacementX = xz1 + (power * math.sin(yaw)) * 2 + (10 * dir.x)
+    local displacementY = yy1 + (power * math.sin(pitch)) * 2 + (10 * dir.y)
+    local displacementZ = xz2 + (power * math.cos(yaw)) * 2 + (10 * dir.z)
+    -- Return target coordinates considering force direction.
+    if flipped then
+        return {
+            x = displacementZ,
+            y = displacementY,
+            z = displacementX
+        }
+    else
+        return {
+            x = displacementX,
+            y = displacementY,
+            z = displacementZ
+        }
+    end
+end
+ship_weapons.calculateDisplacement = calculateDisplacement
+
+local function calculateNewPoint(pos, dir, power, pitchDegrees, yawDegrees)
+    local pitch = 90
+    local yaw = 0
+    local vertical = false
+
+    if dir.x == 1 then
+        yaw = -180
+    elseif dir.x == -1 then
+        yaw = 0
+    elseif dir.z == 1 then
+        yaw = -90
+    elseif dir.z == -1 then
+        yaw = 90
+    elseif dir.y == 1 then
+        pitch = 0
+        yaw = 180
+        vertical = true
+    elseif dir.y == -1 then
+        pitch = -180
+        yaw = 0
+        vertical = true
+    end
+
+    -- Spherical to Cartesian coordinates conversion formulae:
+    -- x = r * sin(theta) * cos(phi)
+    -- y = r * sin(theta) * sin(phi)
+    -- z = r * cos(theta)
+
+    if not vertical then
+        -- Convert degrees to radians
+        local pitchRad = math.rad((pitchDegrees * 0.5) - pitch)
+        local yawRad = math.rad(-(yawDegrees * 0.5) + yaw)
+
+        local newX = power * math.sin(pitchRad) * math.cos(yawRad)
+        local newZ = power * math.sin(pitchRad) * math.sin(yawRad)
+        local newY = power * math.cos(pitchRad)
+        return vector.add(pos, {
+            x = newX,
+            y = newY,
+            z = newZ
+        })
+    else
+        -- Convert degrees to radians
+        local pitchRad = math.rad((pitchDegrees * 0.5) + pitch)
+        local yawRad = math.rad(-(yawDegrees * 0.5) + yaw)
+
+        local newX = power * math.sin(pitchRad) * math.cos(yawRad)
+        local newZ = power * math.cos(pitchRad) * math.sin(yawRad)
+        local newY = power * math.cos(pitchRad)
+        return vector.add(pos, {
+            x = newX,
+            y = newY,
+            z = newZ
+        })
+    end
+end
+ship_weapons.calculateNewPoint = calculateNewPoint
+
 -- return list of members as a table
 local get_member_list = function(meta)
 
@@ -47,7 +168,7 @@ ship_weapons.add_member = function(meta, name)
     end
 
     -- does name already exist?
-    if is_owner(meta, name) or ship_weapons.is_member(meta, name) or ship_machine.is_ally(meta, name) then
+    if is_owner(meta, name) or ship_weapons.is_member(meta, name) or ship_weapons.is_ally(meta, name) then
         return
     end
 
@@ -111,7 +232,7 @@ ship_weapons.add_ally = function(meta, name)
         return
     end
     -- does name already exist?
-    if is_owner(meta, name) or ship_machine.is_member(meta, name) or ship_machine.is_ally(meta, name) then
+    if is_owner(meta, name) or ship_weapons.is_member(meta, name) or ship_weapons.is_ally(meta, name) then
         return
     end
     local list = get_ally_list(meta)
@@ -155,6 +276,32 @@ function ship_weapons.get_port_direction(pos)
         dir_y = -1
     elseif param2 == 10 or param2 == 13 or param2 == 4 then
         -- up
+        dir_y = 1
+    end
+    return {
+        x = dir_x,
+        y = dir_y,
+        z = dir_z
+    }
+end
+
+function ship_weapons.get_port_wall_direction(pos)
+    local node = minetest.get_node(pos)
+    local param2 = node.param2
+    local dir_x = 0.0
+    local dir_z = 0.0
+    local dir_y = 0.0
+    if param2 == 2 then -- west
+        dir_x = -1
+    elseif param2 == 5 then -- north?
+        dir_z = 1
+    elseif param2 == 3 then -- east
+        dir_x = 1
+    elseif param2 == 4 then -- south
+        dir_z = -1
+    elseif param2 == 0  then -- down
+        dir_y = -1
+    elseif param2 == 1 then -- up
         dir_y = 1
     end
     return {
@@ -255,7 +402,7 @@ function ship_weapons.update_formspec(data, meta)
                        "label[0.2,0.3;]" .. "button[1,1;3,1;toggle;" .. btnName .. "]" ..
                        "list[current_name;src;4.5,1;1,1;]"
 
-    elseif typename == 'missile_tower_old' then
+    elseif typename == 'missile_tower_old' or typename == 'plasma_cannon' or typename == 'rail_cannon' then
         -- MISSILE TOWER
 
         local charge_percent = 0
@@ -274,8 +421,8 @@ function ship_weapons.update_formspec(data, meta)
         local attack_type = "None"
         if attack_index == 1 then
             attack_type = "None"
-            -- elseif attack_index == 2 then
-            -- attack_type = "Any"
+        elseif attack_index == 2 then
+            attack_type = "Any"
         elseif attack_index == 3 then
             attack_type = "Monster"
         elseif attack_index == 4 then
@@ -285,7 +432,7 @@ function ship_weapons.update_formspec(data, meta)
         end
 
         local attacks = "label[0,0.8;Attack:]" .. -- "label[3.2,0;" .. attack_type .. "]" ..
-                            "dropdown[1.2,0.6;3,0.5;attack_type;None,Monster,Player,Monster/Player;" .. attack_index ..
+                            "dropdown[1.2,0.6;3,0.5;attack_type;None,Any,Monster,Player,Monster/Player;" .. attack_index ..
                             "]"
 
         local members_list = "label[0,1.35;" .. S("Members:") .. "]" .. "button_exit[6,0.1;2.2,0.25;close_me;" ..
@@ -314,11 +461,11 @@ function ship_weapons.update_formspec(data, meta)
             end
         end
 
-        local inv = "list[current_name;src;4.25,0.5;1,1;]"
+        local inv = "list[current_name;src;4.25,0.5;1,1;]" .. "listring[current_name;src]" 
 
         -- "list[current_player;main;0,5;8,4;]" .. "listring[current_player;main]" .. 
-        formspec = "formspec_version[3]" .. "size[8,9;]" .. "real_coordinates[false]" .. inv .. "label[0,0;" ..
-                       machine_desc:format(tier) .. "]" .. attacks .. "button[5.5,0.525;2.7,1;toggle;" .. btnName .. "]" ..
+        formspec = "formspec_version[3]" .. "size[8,9;]" .. "real_coordinates[false]" .. "label[0,0;" ..
+                       machine_desc:format(tier) .. "]" .. inv .. attacks .. "button[5.5,0.525;2.7,1;toggle;" .. btnName .. "]" ..
                        members_list
     elseif typename == 'target_computer' then
         -- TARGET COMPUTER
@@ -419,11 +566,11 @@ function ship_weapons.update_formspec(data, meta)
                        ((ltier == "lv" and input_count) or input_mode)
     end
 
-    if data.upgrade then
+    --[[if data.upgrade then
         formspec = formspec .. "list[current_name;upgrade1;0.5,3;1,1;]" .. "list[current_name;upgrade2;1.5,3;1,1;]" ..
                        "label[0.5,4;" .. S("Upgrade Slots") .. "]" .. "listring[current_name;upgrade1]" ..
                        "listring[current_player;main]" .. "listring[current_name;upgrade2]" ..
                        "listring[current_player;main]"
-    end
+    end]]
     return formspec
 end

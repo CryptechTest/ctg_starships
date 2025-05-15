@@ -278,7 +278,7 @@ function ship_weapons.missile_strike(def, op, origin, pos_target, object_target)
     local dist = vector.distance(origin, target)
     -- minetest.log("missile pew pew! " .. tostring(dist))
 
-    ship_weapons.launch_projectile(def, op, origin, target, object_target)
+    ship_weapons.launch_missile_projectile(def, op, origin, target, object_target)
     return true
 end
 
@@ -292,7 +292,7 @@ function ship_weapons.missile_launch(def, op, origin, pos_target, object_target)
     local dist = vector.distance(origin, target)
     -- minetest.log("missile pew pew! " .. tostring(dist))
 
-    ship_weapons.launch_projectile(def, op, origin, target, object_target)
+    ship_weapons.launch_missile_projectile(def, op, origin, target, object_target)
     return true
 end
 
