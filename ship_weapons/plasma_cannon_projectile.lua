@@ -697,16 +697,22 @@ function ship_weapons.launch_plasma_projectile(custom_def, operator, origin, tar
     local yaw, yaw_deg = calculateYaw(origin, target)
     --Set projectile port origin position
     local function get_port_pos()
-        local port_a = {x = -0.465, y = 0.375 + (dir.y * 1), z = -0.125}
-        local port_b = {x = 0.465, y = 0.375 + (dir.y * 1), z = -0.125}
-        --core.log(pitch_deg)
-        if pitch_deg > 5 then
-            port_a.y = port_a.y + 0.4
-            port_b.y = port_b.y + 0.4
+        if shot_amount == 1 then
+            local port_a = {x = 0, y = 0.675 + (dir.y * 1), z = -0.125}
+            port_a = vector.add(originpos, vector.rotate_around_axis(port_a, {x = 0, y = 1, z = 0}, yaw))
+            return port_a, port_a
+        else
+            local port_a = {x = -0.465, y = 0.375 + (dir.y * 1), z = -0.125}
+            local port_b = {x = 0.465, y = 0.375 + (dir.y * 1), z = -0.125}
+            --core.log(pitch_deg)
+            if pitch_deg > 5 then
+                port_a.y = port_a.y + 0.4
+                port_b.y = port_b.y + 0.4
+            end
+            port_a = vector.add(originpos, vector.rotate_around_axis(port_a, {x = 0, y = 1, z = 0}, yaw))
+            port_b = vector.add(originpos, vector.rotate_around_axis(port_b, {x = 0, y = 1, z = 0}, yaw))
+            return port_a, port_b
         end
-        port_a = vector.add(originpos, vector.rotate_around_axis(port_a, {x = 0, y = 1, z = 0}, yaw))
-        port_b = vector.add(originpos, vector.rotate_around_axis(port_b, {x = 0, y = 1, z = 0}, yaw))
-        return port_a, port_b
     end
     local _port_a, _port_b = get_port_pos()
     local port_a = {x=_port_a.x+dir.x*spawndist, y=_port_a.y+dir.y*spawndist, z=_port_a.z+dir.z*spawndist}
@@ -776,9 +782,9 @@ function ship_weapons.launch_plasma_projectile(custom_def, operator, origin, tar
     --Projectile creation
     for i = 0,shot_amount-1,1
     do
-        local _pos = port_b
+        local _pos = port_a
         if i == 1 then
-            _pos = port_a    
+            _pos = port_b  
             spawn_proj(_pos)
         else 
             spawn_proj(_pos)
