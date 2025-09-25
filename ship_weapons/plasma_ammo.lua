@@ -7,7 +7,8 @@ local function register_ammo(def)
         description = def.description,
         inventory_image = def.texture,
         wield_image = def.texture,
-        stack_max = 64,
+        stack_max = 16,
+	    groups = {not_in_creative_inventory = 1},
     })
 
     if def.recipe then

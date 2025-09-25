@@ -909,21 +909,8 @@ function ship_weapons.register_laser_cannon(data)
         drawtype = "mesh",
         mesh = "ctg_llt_base.gltf",
         tiles = {"llt_base_texture.png"},
-        --tiles = {"lv_laser_cannon_base.png", "lv_laser_cannon_base_top.png"},
-        --[[drawtype = "nodebox",
-        node_box = {
-            type = "fixed",
-            fixed = {
-                {-0.5, -0.5, -0.5, 0.5, -0.3125, 0.5}, -- NodeBox1
-                {-0.375, -0.3125, -0.375, 0.375, -0.125, 0.375}, -- NodeBox2
-                {-0.25, -0.125, -0.25, 0.25, 0.25, 0.25}, -- NodeBox3
-                {-0.1875, 0.25, -0.1875, 0.1875, 0.5, 0.1875}, -- NodeBox4
-            }
-        },]]
-        --inventory_image = "laser_cannon_inv_image.png",
-        --wield_image = "laser_cannon_inv_image.png",
-        inventory_image = ltier .. "_laser_cannon_inv_image.png",
-        wield_image = ltier .. "_laser_cannon_inv_image.png",
+        --inventory_image = ltier .. "_laser_cannon_inv_image.png",
+        --wield_image = ltier .. "_laser_cannon_inv_image.png",
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = groups,
         connect_sides = connect_sides_floor,
