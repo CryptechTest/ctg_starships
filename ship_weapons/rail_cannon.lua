@@ -148,7 +148,7 @@ function ship_weapons.rail_cannon_frag(def, op, origin, pos_target, object_targe
     local origin_str = origin.x .. "," .. origin.y .. "," .. origin.z
     local t_us = core.get_us_time();
     if recent_cannons[origin_str] then
-        if (t_us - recent_cannons[origin_str]) / 1000 <= 3000 then
+        if (t_us - recent_cannons[origin_str]) / 1000 <= 5000 then
             return 1
         end
     end
@@ -188,7 +188,7 @@ function ship_weapons.rail_cannon_frag(def, op, origin, pos_target, object_targe
 
     local rotation_done = false
     local target_found = false
-    local objs = minetest.get_objects_inside_radius(o_origin, 0.45)
+    local objs = minetest.get_objects_inside_radius(o_origin, 0.15)
     for _, obj in pairs(objs) do
         if obj:get_luaentity() then
             local ent = obj:get_luaentity()
@@ -242,7 +242,7 @@ function ship_weapons.rail_cannon_launch(def, op, origin, pos_target, object_tar
     local yaw = ship_weapons.calculateYaw(origin, target)
 
     local rotation_done = false
-    local objs = minetest.get_objects_inside_radius(origin, 0.45)
+    local objs = minetest.get_objects_inside_radius(origin, 0.15)
     for _, obj in pairs(objs) do
         if obj:get_luaentity() then
             local ent = obj:get_luaentity()
@@ -292,9 +292,9 @@ function ship_weapons.register_rail_cannon(data)
         active_groups[k] = v
     end
 
-    local connect_sides_floor = {"bottom"}
-    local connect_sides_wall = {"back"}
-    local connect_sides_ceiling = {"top"}
+    local connect_sides_floor = { bottom = 1 }
+    local connect_sides_wall = { back = 1 }
+    local connect_sides_ceiling = { top = 1 }
 
     local default_digi_data = {
         launch = false,
@@ -343,7 +343,7 @@ function ship_weapons.register_rail_cannon(data)
         --technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_idle")
         meta:set_int("broken", 0);
         local o_pos = vector.add(pos, {x=0,y=0.65,z=0})
-        local objs = minetest.get_objects_inside_radius(o_pos, 0.45)
+        local objs = minetest.get_objects_inside_radius(o_pos, 0.15)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -394,6 +394,8 @@ function ship_weapons.register_rail_cannon(data)
                 attack_type = 4
             elseif attack == 'Monster/Player' then
                 attack_type = 5
+            elseif attack == 'Jumpship' then
+                attack_type = 6
             end
             meta:set_int("attack_type", attack_type)
         end
@@ -436,7 +438,7 @@ function ship_weapons.register_rail_cannon(data)
             o_y = 0.65
         end
         local o_pos = vector.add(pos, {x=0,y=o_y,z=0})
-        local objs = minetest.get_objects_inside_radius(o_pos, 0.25)
+        local objs = minetest.get_objects_inside_radius(o_pos, 0.15)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -471,7 +473,7 @@ function ship_weapons.register_rail_cannon(data)
             o_y = 0.65
         end
         local o_pos = vector.add(pos, {x=o_x,y=o_y,z=o_z})
-        local objs = core.get_objects_inside_radius(o_pos, 0.45)
+        local objs = core.get_objects_inside_radius(o_pos, 0.05)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -672,6 +674,183 @@ function ship_weapons.register_rail_cannon(data)
     end
 
 
+    local function find_ship(pos, r)
+        local ships = {}
+        local bFoundTarget = false
+        local nTargetCount = 0
+        local objs = minetest.get_objects_inside_radius(pos, r + 0.251)
+        for _, obj in pairs(objs) do
+            if nTargetCount >= 3 then
+                break
+            end
+            local obj_pos = obj:get_pos()
+            if obj_pos then
+                -- handle entities
+                if obj:get_luaentity() and not obj:is_player() then
+                    local ent = obj:get_luaentity()
+                    if ent.type and (ent.type == "jumpship") then
+                        -- ships
+                        table.insert(ships, {pos = vector.subtract(obj_pos, {x=0,y=2,z=0})})
+                        nTargetCount = nTargetCount + 1
+                    end
+                end
+            end
+        end
+        return ships
+        --return schem_lib.func.find_nodes_large(pos, r, {"group:jumpdrive"}, {limit = 5})
+    end
+
+    local function find_ship_protect(pos, r)
+        local nodes = minetest.find_nodes_in_area({
+            x = pos.x - r,
+            y = pos.y - r,
+            z = pos.z - r
+        }, {
+            x = pos.x + r,
+            y = pos.y + r,
+            z = pos.z + r
+        }, {"group:ship_protector"})
+        return nodes
+    end
+
+    local function check_path(origin, pos_target)
+        if (not pos_target) then
+            return -1
+        end
+        local bClear = 0;
+        local ray = minetest.raycast(origin, pos_target, true, false)
+        for pointed_thing in ray do
+            if pointed_thing.type == "node" then
+                local pos = pointed_thing.intersection_point
+                if (vector.distance(origin, pos) > 1.25) and (vector.distance(pos_target, pos) > 3) then
+                    local node = minetest.get_node(pos)
+                    if node.name ~= "air" and node.name ~= "vacuum:vacuum" and node.name ~= "vacuum:atmos_thin" and
+                        node.name ~= ":asteroid:atmos" then
+                        bClear = bClear + 1;
+                        break
+                    end
+                end
+            end
+        end
+        return bClear
+    end
+
+    local function find_target_ships(pos, range)
+        local meta = minetest.get_meta(pos)
+        if range > 79 * 2 then
+            range = 79 * 2
+        end
+        -------------------------------------------------------
+        -- strike launch to target object
+        local bFoundTarget = false
+        local nTargetCount = 0
+        local targets = {}
+        local nodes = find_ship(pos, range)
+        local protects = find_ship_protect(pos, 72)
+        local our_ship = nil
+        for _, node in pairs(protects) do
+            local ship_meta = minetest.get_meta(node)
+            local name = ship_meta:get_string("owner")
+            if name == meta:get_string("owner") then
+                our_ship = {
+                    pos = node,
+                    meta = ship_meta
+                }
+            end
+        end
+        if our_ship == nil then
+            --return nTargetCount
+        end
+        for _, node in pairs(nodes) do
+            if nTargetCount >= 1 then
+                break
+            end
+            local node_pos = node.pos
+            -- check for line of sight...
+            local nodes_in_path = check_path(pos, node_pos)
+            if node_pos and nodes_in_path < 48 then
+                local ship_meta = minetest.get_meta(node_pos)
+                local name = ship_meta:get_string("owner")
+                local r = (nodes_in_path * 0.7) + 1
+                local target_pos = vector.add(node_pos, {
+                    x = math.random(-r, r),
+                    y = math.random(-r, r),
+                    z = math.random(-r, r)
+                })
+                -- ships
+                if name ~= meta:get_string("owner") then -- and (our_ship ~= nil and not ship_weapons.is_member(our_ship.meta, name)) 
+                    bFoundTarget = true;
+                    nTargetCount = nTargetCount + 1
+                    table.insert(targets, {ship_pos = node_pos, pos = target_pos})
+                end
+            end
+        end
+        -- end strike
+        return targets
+    end
+
+    local function find_target_ship(pos, target)
+        local meta = minetest.get_meta(pos)
+        -------------------------------------------------------
+        -- strike launch to target object
+        local bFoundTarget = false
+        local nTargetCount = 0
+        -- check for line of sight...
+        local nodes_in_path = check_path(pos, target)
+        if target and nodes_in_path < 48 then
+            local ship_meta = minetest.get_meta(target)
+            local name = ship_meta:get_string("owner")
+            bFoundTarget = true;
+            nTargetCount = nTargetCount + 1
+        end
+        -- end strike
+        return bFoundTarget, target
+    end
+
+
+    local function find_random_target_ship(pos)
+        local meta = core.get_meta(pos)
+        --local p_prcnt = (math.floor((meta:get_int("src_time") / round(time_scl * 10)) * 100))
+        local last_target = core.deserialize(meta:get_string("last_target"))
+        local target = nil
+        if last_target == nil then
+            local targets = find_target_ships(pos, data.range + 1)
+            if #targets > 0 then
+                target = targets[math.random(1, #targets)]
+            end
+        end
+        if last_target == nil and target then
+            meta:set_string("last_target", core.serialize(target.pos))
+            return target
+        elseif target ~= nil then
+            meta:set_string("last_target", core.serialize(target.pos))
+            return target
+        end
+        if last_target ~= nil then
+            local l_targ = vector.add(last_target, {x=0,y=0,z=0});
+            local found, n_target = find_target_ship(pos, l_targ)
+            if found then
+                --core.log("found near retarget...")
+                --meta:set_string("last_target", core.serialize(n_target))
+                return {obj = nil, pos = n_target}
+            end
+            --core.log("no retarget found")
+            meta:set_string("last_target", nil)
+            return {obj = nil, pos = nil}
+        end
+        --[[local found, n_target = find_target(pos, data.range, true)
+        if found then
+            meta:set_string("last_target", core.serialize(n_target))
+            return {obj = nil, pos = n_target}
+        end]]
+        --core.log("no targets...")
+        if last_target then
+            meta:set_string("last_target", nil)
+        end
+        return {obj = nil, pos = last_target}
+    end
+
+
     -- technic run
     local run = function(pos, node)
         local meta = minetest.get_meta(pos)
@@ -785,7 +964,8 @@ function ship_weapons.register_rail_cannon(data)
                     end]]
                     if bFoundTarget then
                         meta:set_int("firing", 1)
-                        meta:set_int("charge", charge - 1)
+                        charge = charge - (10 * nTargetCount)
+                        meta:set_int("charge", charge)
                         digiline_data.count = nTargetCount - 1
                         if digiline_data.count <= 0 then
                             digiline_data.launch = false
@@ -795,6 +975,43 @@ function ship_weapons.register_rail_cannon(data)
                         meta:set_string("digiline_data", minetest.serialize(digiline_data))
                         --break;
                     end
+                elseif meta:get_int("attack_type") == 6 then
+                    -------------------------------------------------------
+                    -- strike launch to target ship
+                    local proj_def = {
+                        delay = 1,
+                        tier = ltier
+                    }
+                    local attack_type = meta:get_int("attack_type")
+                    local bFoundTarget = false
+                    local nTargetCount = 0
+                    local target = find_random_target_ship(pos)
+                    local v = 0
+                    if target ~= nil and target.pos ~= nil then
+                        v = ship_weapons.rail_cannon_frag(proj_def, owner, pos, target.pos, nil)
+                    end
+                    if v > 0 then
+                        meta:set_string("last_target", core.serialize(target.pos)) 
+                        bFoundTarget = true;
+                        if v > 1 then
+                            nTargetCount = nTargetCount + 1
+                        end
+                    else
+                        local _rot = {x = 0, y = 0, z = 0}
+                        meta:set_string("target_dir", core.serialize(_rot))
+                    end
+                    if bFoundTarget then
+                        meta:set_int("firing", 1)
+                        charge = charge - (10 * nTargetCount)
+                        if charge < 0 then
+                            charge = 0
+                        end                        
+                        meta:set_int("charge", charge)
+                        --break;
+                    else
+                        meta:set_int("firing", 0)
+                    end
+                    -- end strike
                 elseif meta:get_int("attack_type") > 1 then
                     -------------------------------------------------------
                     -- strike launch to target object
@@ -824,6 +1041,9 @@ function ship_weapons.register_rail_cannon(data)
                     if bFoundTarget then
                         meta:set_int("firing", 1)
                         charge = charge - (10 * nTargetCount)
+                        if charge < 0 then
+                            charge = 0
+                        end
                         meta:set_int("charge", charge)
                         --break;
                     else
@@ -835,7 +1055,10 @@ function ship_weapons.register_rail_cannon(data)
             end
             if needs_charge(pos) then
                 --technic.swap_node(pos, machine_node .. "_active")
-                local chrg = math.random(1, 2)
+                local chrg = math.random(0, 2)
+                if charge + chrg > charge_max then
+                    chrg = 0;
+                end
                 meta:set_int("charge", charge + chrg)
             end
 
@@ -957,7 +1180,7 @@ function ship_weapons.register_rail_cannon(data)
                 ent_obj:set_rotation({x=0,y=yaw,z=0})
                 meta:set_string("target_dir", core.serialize({x = 0, y = yaw, z = 0}))
             end
-            core.log(mount_dir .. " " .. tostring(wdir))
+            --core.log(mount_dir .. " " .. tostring(wdir))
             meta:set_string("mount_dir", mount_dir)
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
@@ -1189,6 +1412,8 @@ function ship_weapons.register_rail_cannon(data)
     local def_node_broken_floor = table.copy(_def_node_broken)
     local def_node_broken_wall = table.copy(_def_node_broken)
     local def_node_broken_ceiling = table.copy(_def_node_broken)
+    def_node_broken_wall.connect_sides = connect_sides_wall;
+    def_node_broken_ceiling.connect_sides = connect_sides_ceiling;
     def_node_broken_floor.on_place = function(itemstack, placer, pointed_thing)
         local under = pointed_thing.under
         local node = minetest.get_node(under)
@@ -1304,7 +1529,7 @@ function ship_weapons.register_rail_cannon(data)
             local node = core.get_node(pos)
             local meta = core.get_meta(pos)
             if node and not node.name:gsub("_" .. mount_dir, ""):match(ltier .. "_" .. tmachine_name) then
-                core.log('node not match entity')
+                --core.log('node not match entity')
                 self.object:remove()
                 return
             end
@@ -1560,7 +1785,7 @@ function ship_weapons.register_rail_cannon(data)
                         minetest.sound_play("ctg_zap", {
                             pos = target,
                             gain = 0.5,
-                            pitch = randFloat(0.2, 0.25)
+                            pitch = randFloat(5.2, 5.25)
                         })
                     end
 
@@ -1724,11 +1949,11 @@ local function register_lv_rail_cannon(ref)
     data.machine_name = "rail_cannon"
     data.machine_desc = "Rail Cannon"
     data.charge_max = 25
-    data.demand = {1000}
+    data.demand = {8000}
     data.speed = 10
     data.tier = "LV"
     data.typename = "rail_cannon"
-    data.digiline_effector = ship_weapons.missile_tower_digiline_effector
+    data.digiline_effector = ship_weapons.mstatic_turret_digiline_effector
     data.range = 80
     data.hp = 10
     data.repair_length = 300
@@ -1746,11 +1971,11 @@ local function register_mv_rail_cannon(ref)
     data.machine_name = "rail_cannon"
     data.machine_desc = "Rail Cannon"
     data.charge_max = 40
-    data.demand = {1000}
+    data.demand = {8000}
     data.speed = 15
     data.tier = "MV"
     data.typename = "rail_cannon"
-    data.digiline_effector = ship_weapons.missile_tower_digiline_effector
+    data.digiline_effector = ship_weapons.static_turret_digiline_effector
     data.range = 92
     data.hp = 16
     data.repair_length = 300
@@ -1768,11 +1993,11 @@ local function register_hv_rail_cannon(ref)
     data.machine_name = "rail_cannon"
     data.machine_desc = "Rail Cannon"
     data.charge_max = 70
-    data.demand = {1000}
+    data.demand = {8000}
     data.speed = 20
     data.tier = "HV"
     data.typename = "rail_cannon"
-    data.digiline_effector = ship_weapons.missile_tower_digiline_effector
+    data.digiline_effector = ship_weapons.static_turret_digiline_effector
     data.range = 104
     data.hp = 21
     data.repair_length = 300

@@ -1,5 +1,5 @@
-ship_weapons.missile_tower_digiline_effector = function(pos, node, channel, msg)
-    local set_channel = "missile_tower" -- static channel for now
+ship_weapons.static_turret_digiline_effector = function(pos, node, channel, msg)
+    local set_channel = "static_turret" -- static channel for now
     local msgt = type(msg)
     if msgt ~= "table" then
         return

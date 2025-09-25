@@ -340,7 +340,11 @@ core.register_entity("ship_holodisplay:entity", {
 			return self._player .. ";" .. core.pos_to_string(self._player_pos) .. ";" .. self._type
 		end
 		return ""
-	end
+	end,
+	on_blast = function(self, damage)
+		local drops = {}
+		return false, false, drops
+	end,
 })
 
 core.register_entity("ship_holodisplay:scanner", {
@@ -379,7 +383,10 @@ core.register_entity("ship_holodisplay:scanner", {
     on_punch = function(self, puncher)
         return true
     end,
-
+	on_blast = function(self, damage)
+		local drops = {}
+		return false, false, drops
+	end,
 })
 
 
@@ -477,7 +484,11 @@ core.register_entity("ship_holodisplay:ship", {
 	end,
 	get_staticdata = function(self)
 		return self._name .. ";" .. core.pos_to_string(self._pos) .. ";" .. core.pos_to_string(self._size) .. ";" .. self._type .. ";" .. self._owner
-	end
+	end,
+	on_blast = function(self, damage)
+		local drops = {}
+		return false, false, drops
+	end,
 })
 
 core.register_on_player_receive_fields(function(player, formname, fields)

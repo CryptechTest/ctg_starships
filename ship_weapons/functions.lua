@@ -402,7 +402,7 @@ function ship_weapons.update_formspec(data, meta)
                        "label[0.2,0.3;]" .. "button[1,1;3,1;toggle;" .. btnName .. "]" ..
                        "list[current_name;src;4.5,1;1,1;]"
 
-    elseif typename == 'missile_tower_old' or typename == 'plasma_cannon' or typename == 'rail_cannon' then
+    elseif typename == 'missile_tower_old' or typename == 'plasma_cannon' or typename == 'rail_cannon' or typename == 'laser_cannon' then
         -- MISSILE TOWER
 
         local charge_percent = 0
@@ -429,10 +429,12 @@ function ship_weapons.update_formspec(data, meta)
             attack_type = "Player"
         elseif attack_index == 5 then
             attack_type = "Monster/Player"
+        elseif attack_index == 6 then
+            attack_type = "Jumpship"
         end
 
         local attacks = "label[0,0.8;Attack:]" .. -- "label[3.2,0;" .. attack_type .. "]" ..
-                            "dropdown[1.2,0.6;3,0.5;attack_type;None,Any,Monster,Player,Monster/Player;" .. attack_index ..
+                            "dropdown[1.2,0.6;3,0.5;attack_type;None,Any,Monster,Player,Monster/Player,Jumpship;" .. attack_index ..
                             "]"
 
         local members_list = "label[0,1.35;" .. S("Members:") .. "]" .. "button_exit[6,0.1;2.2,0.25;close_me;" ..

@@ -45,45 +45,6 @@ local function has_charge(pos)
     return charge > 0
 end
 
-local function get_plasma_shell(items, tier)
-    local new_input = {}
-    local new_output = nil
-    local found_item = false;
-    for i, stack in ipairs(items) do
-        if stack:get_name() == 'ship_weapons:' .. tier .. '_plasma_energy_shell' then
-            new_input[i] = ItemStack(stack)
-            if new_input[i]:get_count() >= 2 then
-                new_input[i]:take_item(2)
-                new_output = nil
-                found_item = true
-                break
-            end
-        end
-    end
-    if (found_item) then
-        return {
-            new_input = new_input,
-            output = new_output
-        }
-    else
-        return nil
-    end
-end
-
-local function generate_plasma_shell(inv, tier)
-    local stack = ItemStack('ship_weapons:' .. tier .. '_plasma_energy_shell')
-    --stack:set_count(2)
-    local count = 0
-    for i, stack in ipairs(inv:get_list("src")) do
-        if stack:get_name() == 'ship_weapons:' .. tier .. '_plasma_energy_shell' then
-            count = count + stack:get_count()
-        end
-    end
-    if count < 64 then
-        inv:add_item("src", stack)
-    end
-end
-
 -------------------------------------------------------
 -------------------------------------------------------
 -------------------------------------------------------
@@ -169,18 +130,31 @@ end
 
 -------------------------------------------------------
 
-function ship_weapons.cannon_fire(def, op, origin, pos_target, object_target)
-    --origin = vector.add(origin, {x=0,y=0.95,z=0})
+function ship_weapons.laser_cannon_blast(def, op, origin, pos_target, object_target)
+    local o_y = 0
+    local o_x = 0
+    local o_z = 0
+    if def.mount_dir == "ceiling" then
+        o_y = -0.475
+    elseif def.mount_dir == "wall" then
+        o_y = 0
+        local dir = ship_weapons.get_port_wall_direction(origin)
+        o_x = (dir.x * 0.475)
+        o_z = (dir.z * 0.475)
+    else
+        o_y = 0.475
+    end
+    local o_origin = vector.add(origin, {x=o_x,y=o_y,z=o_z}) 
     local origin_str = origin.x .. "," .. origin.y .. "," .. origin.z
     local t_us = core.get_us_time();
     if recent_cannons[origin_str] then
-        if (t_us - recent_cannons[origin_str]) / 1000 <= 5000 then
+        if (t_us - recent_cannons[origin_str]) / 1000 <= 1000 then
             return 1
         end
     end
-    recent_cannons[origin_str] = t_us + (math.random(-1, 4) * 1000 * 1000)
+    recent_cannons[origin_str] = t_us + (math.random(-1, 1) * 1000 * 1000)
 
-    if pos_target == nil or vector.distance(origin, pos_target) < 4.25 then
+    if pos_target == nil or vector.distance(o_origin, pos_target) < 3.25 then
         --core.log("pos_target nil or target too close!")
         return 0
     end
@@ -192,13 +166,13 @@ function ship_weapons.cannon_fire(def, op, origin, pos_target, object_target)
         z = randFloat(-0.12, 0.12)
     })
 
-    local dist = vector.distance(origin, target)
+    local dist = vector.distance(o_origin, target)
     --minetest.log("cannon pew pew! " .. tostring(dist))
 
-    local pitch, pitch_deg = ship_weapons.calculatePitch(origin, target)
-    local yaw, yaw_deg = ship_weapons.calculateYaw(origin, target)
+    local pitch, pitch_deg = ship_weapons.calculatePitch(o_origin, target)
+    local yaw, yaw_deg = ship_weapons.calculateYaw(o_origin, target)
 
-    if pitch > 50 then
+    if pitch > 80 then
         return 0
     end
 
@@ -212,18 +186,13 @@ function ship_weapons.cannon_fire(def, op, origin, pos_target, object_target)
         return actual < target + target_frac and actual >= target - target_frac
     end
 
-    local turret_obj = nil
     local rotation_done = false
     local target_found = false
-    local o_origin = vector.add(origin, {x=0,y=0.35,z=0})
-    local objs = minetest.get_objects_inside_radius(o_origin, 0.45)
-    --core.log("fire!")
+    local objs = minetest.get_objects_inside_radius(o_origin, 0.21)
     for _, obj in pairs(objs) do
         if obj:get_luaentity() then
             local ent = obj:get_luaentity()
-            core.log(ent.name)
-            if ent.name == "ship_weapons:" .. def.tier .. "_heavy_cannon_barrel_base" then
-                turret_obj = obj
+            if ent.name == "ship_weapons:" .. def.tier .. "_laser_cannon_barrel" then
                 local rot = {x = pitch, y = yaw, z = 0}
                 meta:set_string("target_dir", core.serialize(rot))
                 if ent._target_found then
@@ -247,23 +216,46 @@ function ship_weapons.cannon_fire(def, op, origin, pos_target, object_target)
     end
 
     if not target_found then
-        minetest.log("target not found!")
+        --minetest.log("target not found!")
         --return 1
     end
     if not rotation_done then
-        minetest.log("rotation not done!")
+        --minetest.log("rotation not done!")
         return 1
     end
-    --minetest.log("launching volley!")
-    def.count = 1
-    if turret_obj then
-        turret_obj:get_luaentity()._barrel:get_luaentity():fire_anim()
+    --minetest.log("launching frag!")
+    --ship_weapons.launch_energy_laser_projectile(def, op, o_origin, target, object_target)
+
+    minetest.sound_play("ctg_laser_shoot", {pos=o_origin, pitch=math.random(1.025,1.0575), gain=0.5, max_hear_distance=2*28})
+    
+    if ship_weapons.strike_effect(o_origin, target, def.tier, false) then
+
+        local objs = core.get_objects_inside_radius(target, 2 + 0.21)
+        for _, obj in pairs(objs) do
+            local obj_pos = obj:get_pos()
+            if obj:get_luaentity() and not obj:is_player() then
+                local ent = obj:get_luaentity()
+                if ent and ent.health then
+                    ent.health = ent.health - (randFloat(1, 2.7, 1) * 1)
+                else 
+                    local hp = obj:get_hp()
+                    obj:set_hp(hp - 2)
+                end
+            elseif obj:is_player() then
+                local name = obj:get_player_name()
+                local hp = obj:get_hp()
+                obj:set_hp(hp - (randFloat(1, 2.5, 1) * 1))
+            end
+            if obj then
+                obj:move_to({ x = obj_pos.x, y = obj_pos.y + 0.25, z = obj_pos.z })
+            end
+        end
+
     end
-    ship_weapons.launch_plasma_projectile(def, turret_obj, origin, target, object_target)
     return 3
 end
 
---[[function ship_weapons.cannon_launch(def, op, origin, pos_target, object_target)
+function ship_weapons.laser_cannon_launch(def, op, origin, pos_target, object_target)
     local target = vector.add(pos_target, {
         x = randFloat(-0.2, 0.2),
         y = randFloat(-0.2, 0.2),
@@ -277,12 +269,12 @@ end
     local yaw = ship_weapons.calculateYaw(origin, target)
 
     local rotation_done = false
-    local objs = minetest.get_objects_inside_radius(origin, 0.45)
+    local objs = minetest.get_objects_inside_radius(origin, 0.21)
     for _, obj in pairs(objs) do
         if obj:get_luaentity() then
             local ent = obj:get_luaentity()
-            if ent.name == "ship_weapons:" .. def.tier .. "_heavy_cannon_barrel_base" then
-                if ent._rotation_done then
+            if ent.name == "ship_weapons:" .. def.tier .. "_laser_cannon_barrel" then
+                if ent._target_found then
                     rotation_done = true
                 end
                 break
@@ -294,14 +286,14 @@ end
         return false
     end
 
-    ship_weapons.launch_plasma_projectile(def, op, origin, target, object_target)
+    --ship_weapons.launch_plasma_projectile(def, op, origin, target, object_target)
     return true
-end]]
+end
 
 -------------------------------------------------------
 -------------------------------------------------------
 
-function ship_weapons.register_heavy_plasma_cannon(data)
+function ship_weapons.register_laser_cannon(data)
     local tier = data.tier
     local ltier = string.lower(tier)
     local machine_name = data.machine_name
@@ -317,7 +309,7 @@ function ship_weapons.register_heavy_plasma_cannon(data)
         level = 2,
         ship_machine = 1,
         ship_weapon = 1,
-        ship_cannon = 1
+        ship_cannon = 2
     }
 
     local active_groups = {
@@ -327,7 +319,9 @@ function ship_weapons.register_heavy_plasma_cannon(data)
         active_groups[k] = v
     end
 
-    local connect_sides = {"bottom"}
+    local connect_sides_floor = { bottom = 1 }
+    local connect_sides_wall = { back = 1 }
+    local connect_sides_ceiling = { top = 1 }
 
     local default_digi_data = {
         launch = false,
@@ -375,11 +369,12 @@ function ship_weapons.register_heavy_plasma_cannon(data)
         local meta = minetest.get_meta(pos)
         --technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_idle")
         meta:set_int("broken", 0);
-        local objs = minetest.get_objects_inside_radius(pos, 0.45)
+        local o_pos = vector.add(pos, {x=0,y=0.45,z=0})
+        local objs = minetest.get_objects_inside_radius(o_pos, 0.21)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
-                if ent.name == "ship_weapons:" .. ltier .. "_heavy_cannon_barrel_base" then
+                if ent.name == "ship_weapons:" .. ltier .. "_laser_cannon_barrel" then
                     obj:set_properties({
                         is_visible = true
                     })
@@ -458,34 +453,27 @@ function ship_weapons.register_heavy_plasma_cannon(data)
     end
 
     local function remove_attached(pos)
-        local base_pos = vector.add(pos, {x = 0, y = 0.75, z = 0})
-        local objs = minetest.get_objects_inside_radius(base_pos, 0.25)
+        local node = core.get_node(pos)
+        local o_y = 0
+        if node.name:match("_ceiling") then
+            o_y = -0.45
+        elseif node.name:match("_wall") then
+            o_y = 0
+        else
+            o_y = 0.45
+        end
+        local o_pos = vector.add(pos, {x=0,y=o_y,z=0})
+        local objs = minetest.get_objects_inside_radius(o_pos, 0.15)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
-                if ent.name == "ship_weapons:" .. ltier .. "_heavy_cannon_barrel_base" then
-                    local childs = obj:get_children()
-                    for _, child in pairs(childs) do
-                        child:remove()
-                    end
-                    if ent._barrel then
-                        ent._barrel:remove()
-                    end
+                if ent.name == "ship_weapons:" .. ltier .. "_laser_cannon_display" then
+                    obj:remove()
+                elseif ent.name == "ship_weapons:" .. ltier .. "_laser_cannon_barrel" then
                     obj:remove()
                 end
             end
         end
-    end
-    
-    local function create_turret_entity(pos)
-        local base_pos = vector.add(pos, {x = 0, y = 0.15, z = 0})
-        local gun_pos =  vector.add(pos, {x = 0, y = 0.5, z = 0})
-        local gun_ent_pos = {x = 0, y = 0.5, z = 0}
-        local gun_rot = {x = 0, y = 0, z = 0}
-        local turret = core.add_entity(base_pos, "ship_weapons:" .. ltier .. "_heavy_cannon_barrel_base")
-        local barrel = core.add_entity(gun_pos, "ship_weapons:" .. ltier .. "_heavy_cannon_barrel")
-        --barrel:set_attach(turret, "barrel", gun_ent_pos, gun_rot, true)
-        turret:get_luaentity():set_barrel(barrel)
     end
 
     local function check_display(pos)
@@ -493,20 +481,29 @@ function ship_weapons.register_heavy_plasma_cannon(data)
             return
         end
         local found_display = false
-        local base_pos = vector.add(pos, {x = 0, y = 0.15, z = 0})
-        local objs = core.get_objects_inside_radius(base_pos, 0.25)
+        local node = core.get_node(pos)
+        local meta = core.get_meta(pos)
+        local mount_dir = meta:get_string("mount_dir")
+        local o_y = 0
+        local o_x = 0
+        local o_z = 0
+        if mount_dir == "ceiling" then
+            o_y = -0.45
+        elseif mount_dir == "wall" then
+            o_y = 0
+            local dir = ship_weapons.get_port_wall_direction(pos)
+            o_x = (dir.x * 0.45)
+            o_z = (dir.z * 0.45)
+        else
+            o_y = 0.45
+        end
+        local o_pos = vector.add(pos, {x=o_x,y=o_y,z=o_z})
+        local objs = core.get_objects_inside_radius(o_pos, 0.21)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
-                if ent.name == "ship_weapons:" .. ltier .. "_heavy_cannon_barrel_base" then
+                if ent.name == "ship_weapons:" .. ltier .. "_laser_cannon_barrel" then
                     if found_display then
-                        local childs = obj:get_children()
-                        for _, child in pairs(childs) do
-                            child:remove()
-                        end
-                        if ent._barrel then
-                            ent._barrel:remove()
-                        end
                         obj:remove()
                     end
                     found_display = true
@@ -514,7 +511,8 @@ function ship_weapons.register_heavy_plasma_cannon(data)
             end
         end
         if not found_display then
-            create_turret_entity(pos)
+            --local o_pos = vector.add(pos, {x=0,y=0.65,z=0})
+            core.add_entity(o_pos, "ship_weapons:" .. ltier .. "_laser_cannon_barrel")
             core.get_node_timer(pos):start(30)
         end
     end
@@ -522,12 +520,13 @@ function ship_weapons.register_heavy_plasma_cannon(data)
     -------------------------------------------------------
     -------------------------------------------------------
 
-    local function can_see_target(origin, pos_target)
+    local function can_see_target(origin, pos_target, flip_y)
         if vector.distance(origin, pos_target) < 1.25 then
             return true
         end
         local bClear = true;
-        local origin_offset = vector.add(origin, {x = 0, y = -0.225, z = 0})
+        local y = (flip_y and -0.725) or 0.725
+        local origin_offset = vector.add(origin, {x = 0, y = y, z = 0})
         local ray = core.raycast(origin_offset, pos_target, true, false)
         for pointed_thing in ray do
             local pos = pointed_thing.intersection_point
@@ -550,10 +549,15 @@ function ship_weapons.register_heavy_plasma_cannon(data)
 
     local function find_target(pos, range, check_sight, meta)
         local meta = meta or core.get_meta(pos)
+        local node = core.get_node(pos)
+        local flip_y = false
+        if node.name:match("_ceiling") then
+            flip_y = true
+        end
         local attack_type = meta:get_int("attack_type")
         local bFoundTarget = false
         local target_pos = nil
-        local objs = core.get_objects_inside_radius(pos, range + 0.251)
+        local objs = core.get_objects_inside_radius(pos, range + 0.21)
         for _, obj in pairs(objs) do
             local obj_pos = obj:get_pos()
             if obj:get_luaentity() and not obj:is_player() then
@@ -564,7 +568,7 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                     if is_proj == false and check_sight == false then
                         bFoundTarget = true
                         target_pos = obj_pos
-                    elseif is_proj == false and can_see_target(pos, obj_pos) then
+                    elseif is_proj == false and can_see_target(pos, obj_pos, flip_y) then
                         bFoundTarget = true
                         target_pos = obj_pos
                     end
@@ -574,7 +578,7 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                         if check_sight == false then
                             bFoundTarget = true
                             target_pos = obj_pos
-                        elseif can_see_target(pos, obj_pos) then
+                        elseif can_see_target(pos, obj_pos, flip_y) then
                             bFoundTarget = true
                             target_pos = obj_pos
                         end
@@ -584,7 +588,7 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                 local name = obj:get_player_name()
                 -- players
                 if name ~= meta:get_string("owner") and not ship_weapons.is_member(meta, name) and not ship_weapons.is_ally(meta, name) then
-                    if check_sight == false or can_see_target(pos, obj_pos) then
+                    if check_sight == false or can_see_target(pos, obj_pos, flip_y) then
                         bFoundTarget = true
                         target_pos = obj_pos
                     end
@@ -600,10 +604,15 @@ function ship_weapons.register_heavy_plasma_cannon(data)
 
     local function find_targets(pos, count)
         local meta = core.get_meta(pos)
+        local node = core.get_node(pos)
+        local flip_y = false
+        if node.name:match("_ceiling") then
+            flip_y = true
+        end
         local attack_type = meta:get_int("attack_type")
         local bFoundTarget = false
         local targets = {}
-        local objs = core.get_objects_inside_radius(pos, data.range + 0.251)
+        local objs = core.get_objects_inside_radius(pos, data.range + 0.21)
         for _, obj in pairs(objs) do
             local obj_pos = obj:get_pos()
             if obj:get_luaentity() and not obj:is_player() then
@@ -612,14 +621,14 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                     -- objects...
                     local item1 = obj:get_luaentity().itemstring
                     local is_proj = ent.type == "projectile"
-                    if not is_proj and can_see_target(pos, obj_pos) then
+                    if not is_proj and can_see_target(pos, obj_pos, flip_y) then
                         bFoundTarget = true
                         table.insert(targets, {obj = obj, pos = obj_pos})
                     end
                 elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
                     -- monsters
                     if ent.type == "monster" and (attack_type == 2 or attack_type == 3 or attack_type == 5) then
-                        if can_see_target(pos, obj_pos) then
+                        if can_see_target(pos, obj_pos, flip_y) then
                             bFoundTarget = true
                             table.insert(targets, {obj = obj, pos = obj_pos})
                         end
@@ -629,7 +638,7 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                 local name = obj:get_player_name()
                 -- players
                 if name ~= meta:get_string("owner") and not ship_weapons.is_member(meta, name) and not ship_weapons.is_ally(meta, name) then
-                    if can_see_target(pos, obj_pos) then
+                    if can_see_target(pos, obj_pos, flip_y) then
                         bFoundTarget = true
                         table.insert(targets, {obj = obj, pos = obj_pos})
                     end
@@ -645,6 +654,11 @@ function ship_weapons.register_heavy_plasma_cannon(data)
 
     local function find_random_target(pos)
         local meta = core.get_meta(pos)
+        local node = core.get_node(pos)
+        local flip_y = false
+        if node.name:match("_ceiling") then
+            flip_y = true
+        end
         --local p_prcnt = (math.floor((meta:get_int("src_time") / round(time_scl * 10)) * 100))
         local last_target = core.deserialize(meta:get_string("last_target"))
         local target = nil
@@ -663,7 +677,7 @@ function ship_weapons.register_heavy_plasma_cannon(data)
         elseif last_target ~= nil then
             local l_targ = vector.add(last_target, {x=0,y=2.5,z=0});
             local found, n_target = find_target(l_targ, 4.751, false, meta)
-            if found and can_see_target(pos, n_target) then
+            if found and can_see_target(pos, n_target, flip_y) then
                 --core.log("found near retarget...")
                 --meta:set_string("last_target", core.serialize(n_target))
                 return {obj = nil, pos = n_target}
@@ -692,14 +706,15 @@ function ship_weapons.register_heavy_plasma_cannon(data)
         --local operator = minetest.get_player_by_name(owner);
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
+        local mount_dir = meta:get_string("mount_dir") or "floor"
 
         local machine_desc_tier = machine_desc:format(tier)
         local machine_node = data.modname .. ":" .. ltier .. "_" .. machine_name
         local machine_demand_active = data.demand
         local machine_demand_idle = data.demand[1] * 0.1
 
-        local charge_max = meta:get_int("charge_max")
-        local charge = meta:get_int("charge")
+        local charge_max = meta:get_int("charge_max") or 0
+        local charge = meta:get_int("charge") or 0
 
         -- Get digiline data storage
         local digiline_data = minetest.deserialize(meta:get_string("digiline_data")) or default_digi_data
@@ -728,7 +743,13 @@ function ship_weapons.register_heavy_plasma_cannon(data)
             local enabled = meta:get_int("enabled") == 1
 
             if meta:get_int("broken") == 1 then
-                technic.swap_node(pos, machine_node .. "_broken")
+                if mount_dir == "ceiling" then
+                    technic.swap_node(pos, machine_node .. "_ceiling_broken")
+                elseif mount_dir == "wall" then
+                    technic.swap_node(pos, machine_node .. "_wall_broken")
+                else
+                    technic.swap_node(pos, machine_node .. "_broken")
+                end
                 meta:set_string("infotext", machine_desc_tier .. S(" - Damaged"))
                 meta:set_int(tier .. "_EU_demand", machine_demand_idle)
                 meta:set_int("src_time", 0)
@@ -769,14 +790,10 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                 -- meta:set_int(tier .. "_EU_demand", machine_demand_idle)
                 --meta:set_int("src_time", 0)
 
-                if math.random(0,1) == 0 then
-                    generate_plasma_shell(inv, ltier)
-                end
                 -- Get a missile from inventory...
-                local plasma_energy_item = get_plasma_shell(inv:get_list("src"), ltier)
                 local last_target = core.deserialize(meta:get_string("last_target")) or nil
 
-                if plasma_energy_item and digiline_data.launch then
+                if digiline_data.launch then
                     -------------------------------------------------------
                     -- strike launch to target location
                     local proj_def = {
@@ -787,12 +804,12 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                     local bFoundTarget = false
                     local nTargetCount = digiline_data.count
                     local dir = ship_weapons.get_port_direction(pos)
-                    local target_pos = digiline_data.target_pos or
+                    local target_pos = digiline_data.target_pos or 
                             ship_weapons.calculateNewPoint(pos, dir, digiline_data.power, digiline_data.pitch, digiline_data.yaw)
                     -- minetest.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
-                    if ship_weapons.cannon_launch(proj_def, owner, pos, target_pos, nil) then
+                    --[[if ship_weapons.laser_cannon_launch(proj_def, owner, pos, target_pos, nil) then
                         bFoundTarget = true;
-                    end
+                    end]]
                     if bFoundTarget then
                         meta:set_int("firing", 1)
                         meta:set_int("charge", charge - 1)
@@ -803,17 +820,14 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                         end
                         -- Update digiline data...
                         meta:set_string("digiline_data", minetest.serialize(digiline_data))
-                        -- Reduce inventory storage
-                        if (plasma_energy_item.new_input) then
-                            inv:set_list("src", plasma_energy_item.new_input)
-                        end
                         --break;
                     end
-                elseif plasma_energy_item and meta:get_int("attack_type") > 1 then
+                elseif meta:get_int("attack_type") > 1 then
                     -------------------------------------------------------
                     -- strike launch to target object
                     local proj_def = {
-                        delay = 1,
+                        mount_dir = mount_dir,
+                        delay = 0,
                         tier = ltier
                     }
                     local attack_type = meta:get_int("attack_type")
@@ -822,25 +836,22 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                     local target = find_random_target(pos)
                     local v = 0
                     if target ~= nil and target.pos ~= nil then
-                        v = ship_weapons.cannon_fire(proj_def, owner, pos, target.pos, target.obj)
+                        v = ship_weapons.laser_cannon_blast(proj_def, owner, pos, target.pos, target.obj)
+                    else
+                        local _rot = {x = 0, y = 0, z = 0}
+                        meta:set_string("target_dir", core.serialize(_rot))
                     end
                     if v > 0 then
                         meta:set_string("last_target", core.serialize(target.pos)) 
                         bFoundTarget = true;
                         if v > 1 then
-                            nTargetCount = nTargetCount + 2
+                            nTargetCount = nTargetCount + 1
                         end
-                    else
-                        local _rot = {x = 0, y = 0, z = 0}
-                        meta:set_string("target_dir", core.serialize(_rot))
                     end
                     if bFoundTarget then
                         meta:set_int("firing", 1)
-                        meta:set_int("charge", charge - nTargetCount)
-                        -- Reduce inventory storage
-                        if nTargetCount > 0 and (plasma_energy_item.new_input) then
-                            inv:set_list("src", plasma_energy_item.new_input)
-                        end
+                        charge = charge - (3 * nTargetCount)
+                        meta:set_int("charge", charge)
                         --break;
                     else
                         meta:set_int("firing", 0)
@@ -851,7 +862,7 @@ function ship_weapons.register_heavy_plasma_cannon(data)
             end
             if needs_charge(pos) then
                 --technic.swap_node(pos, machine_node .. "_active")
-                local chrg = math.random(0, 2)
+                local chrg = math.random(1, 2)
                 meta:set_int("charge", charge + chrg)
             end
 
@@ -889,27 +900,37 @@ function ship_weapons.register_heavy_plasma_cannon(data)
     -- register machine node
 
     local node_name = data.modname .. ":" .. ltier .. "_" .. machine_name
-    minetest.register_node(node_name .. "", {
+    local _def_node = {
         description = machine_desc,
-        tiles = {ltier .. "_" .. tmachine_name .. "_base.png"},
         param = "light",
-        paramtype2 = "facedir",
-        light_source = 4,
+        --paramtype2 = "facedir",
+	    paramtype2 = "wallmounted",
+        light_source = 5,
         drawtype = "mesh",
-        mesh = "cannon2_base.obj",
-        --inventory_image = "plasma_cannon_inv_image.png",
-        --wield_image = "plasma_cannon_inv_image.png",
-        inventory_image = ltier .. "_plasma_cannon_inv_image.png",
-        wield_image = ltier .. "_plasma_cannon_inv_image.png",
+        mesh = "ctg_llt_base.gltf",
+        tiles = {"llt_base_texture.png"},
+        --tiles = {"lv_laser_cannon_base.png", "lv_laser_cannon_base_top.png"},
+        --[[drawtype = "nodebox",
+        node_box = {
+            type = "fixed",
+            fixed = {
+                {-0.5, -0.5, -0.5, 0.5, -0.3125, 0.5}, -- NodeBox1
+                {-0.375, -0.3125, -0.375, 0.375, -0.125, 0.375}, -- NodeBox2
+                {-0.25, -0.125, -0.25, 0.25, 0.25, 0.25}, -- NodeBox3
+                {-0.1875, 0.25, -0.1875, 0.1875, 0.5, 0.1875}, -- NodeBox4
+            }
+        },]]
+        --inventory_image = "laser_cannon_inv_image.png",
+        --wield_image = "laser_cannon_inv_image.png",
+        inventory_image = ltier .. "_laser_cannon_inv_image.png",
+        wield_image = ltier .. "_laser_cannon_inv_image.png",
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = groups,
-        connect_sides = connect_sides,
-        legacy_facedir_simple = true,
+        connect_sides = connect_sides_floor,
+        --legacy_facedir_simple = true,
         sounds = default.node_sound_metal_defaults(),
         on_rotate = screwdriver.disallow,
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            --minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_plasma_cannon_display")
-            create_turret_entity(pos)
             local meta = minetest.get_meta(pos)
             if placer:is_player() then
                 meta:set_string("owner", placer:get_player_name())
@@ -918,6 +939,50 @@ function ship_weapons.register_heavy_plasma_cannon(data)
             meta:set_int("hp", data.hp)
             meta:set_int("attack_type", 1)
             meta:set_int("last_hit", 0)
+                        
+            local under = pointed_thing.under
+            local above = pointed_thing.above
+            local wdir = minetest.dir_to_wallmounted(vector.subtract(under, above))
+            --local mount_dir = meta:get_string("mount_dir")
+            local gun_pos = pos
+            local mount_dir = "wall"
+            local yaw = 0
+            if wdir == 0 then
+                mount_dir = "ceiling"
+                gun_pos = vector.add(pos, {x = 0, y =-0.45, z = 0})
+            elseif wdir == 1 then
+                mount_dir = "floor"
+                gun_pos = vector.add(pos, {x = 0, y =0.45, z = 0})
+            elseif wdir == 2 then
+                mount_dir = "wall"
+                gun_pos = vector.add(pos, {x = -0.45, y =0, z = 0})
+                yaw = math.rad(270)
+            elseif wdir == 3 then
+                mount_dir = "wall"
+                gun_pos = vector.add(pos, {x = 0.45, y =0, z = 0})
+                yaw = math.rad(90)
+            elseif wdir == 4 then
+                mount_dir = "wall"
+                gun_pos = vector.add(pos, {x = 0, y =0, z = -0.45})
+                yaw = math.rad(0)
+            elseif wdir == 5 then
+                mount_dir = "wall"
+                gun_pos = vector.add(pos, {x = 0, y =0, z = 0.45})
+                yaw = math.rad(180)
+            end
+            local ent_obj = minetest.add_entity(gun_pos, "ship_weapons:" .. ltier .. "_laser_cannon_barrel")
+            if wdir == 1 then
+                ent_obj:set_properties({_mount_dir = "floor"})
+            elseif wdir == 0 then
+                ent_obj:set_properties({_mount_dir = "ceiling"})
+                ent_obj:set_rotation({x=0,y=0,z=math.rad(180)})
+            else
+                ent_obj:set_properties({_mount_dir = "wall"})
+                ent_obj:set_rotation({x=0,y=yaw,z=0})
+                meta:set_string("target_dir", core.serialize({x = 0, y = yaw, z = 0}))
+            end
+            --core.log(mount_dir .. " " .. tostring(wdir))
+            meta:set_string("mount_dir", mount_dir)
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
             remove_attached(pos)
@@ -930,7 +995,7 @@ function ship_weapons.register_heavy_plasma_cannon(data)
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
-            meta:set_string("infotext", "LV Plasma Cannon")
+            meta:set_string("infotext", "LV Laser Cannon")
             local inv = meta:get_inventory()
             inv:set_size("src", 1)
             meta:set_int("enabled", 1)
@@ -943,7 +1008,6 @@ function ship_weapons.register_heavy_plasma_cannon(data)
             meta:set_string("formspec", formspec)
             meta:set_string("digiline_data", minetest.serialize(default_digi_data))
         end,
-
         allow_metadata_inventory_put = technic.machine_inventory_put,
         allow_metadata_inventory_take = function(pos, listname, index, stack, player)
             if listname == "src" then
@@ -953,9 +1017,7 @@ function ship_weapons.register_heavy_plasma_cannon(data)
         end,
         allow_metadata_inventory_move = technic.machine_inventory_move,
         technic_run = run,
-
         on_receive_fields = on_receive_fields,
-
         digiline = {
             receptor = {
                 action = function()
@@ -966,9 +1028,71 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                 action = data.digiline_effector
             }
         },
-        -- on_punch = on_punch,
+        --on_punch = on_punch,
         on_timer = on_timer
-    })
+    }
+    local def_node_floor = table.copy(_def_node)
+    local def_node_ceiling = table.copy(_def_node)
+    local def_node_wall = table.copy(_def_node)
+    def_node_floor.on_place = function(itemstack, placer, pointed_thing)
+        local under = pointed_thing.under
+        local node = minetest.get_node(under)
+        local def = minetest.registered_nodes[node.name]
+        if def and def.on_rightclick and
+            not (placer and placer:is_player() and placer:get_player_control().sneak) then
+            return def.on_rightclick(under, node, placer, itemstack, pointed_thing) or itemstack
+        end
+        local above = pointed_thing.above
+        local wdir = minetest.dir_to_wallmounted(vector.subtract(under, above))
+        local fakestack = itemstack
+        if wdir == 0 then
+            fakestack:set_name(node_name .. "_ceiling")
+        elseif wdir == 1 then
+            fakestack:set_name(node_name)
+        else
+            fakestack:set_name(node_name .. "_wall")
+        end
+        itemstack = minetest.item_place(fakestack, placer, pointed_thing, wdir)
+        itemstack:set_name(node_name)
+        return itemstack
+    end
+    def_node_ceiling.node_box = {
+        type = "fixed",
+        fixed = {
+			{-0.5, 0.3125, -0.5, 0.5, 0.5, 0.5}, -- NodeBox1
+			{-0.375, 0.125, -0.375, 0.375, 0.3125, 0.375}, -- NodeBox2
+			{-0.25, -0.25, -0.25, 0.25, 0.125, 0.25}, -- NodeBox3
+			{-0.1875, -0.5, -0.1875, 0.1875, -0.25, 0.1875}, -- NodeBox4
+        }
+    }
+    --[[def_node_ceiling.after_place_node = function(pos, placer, itemstack, pointed_thing)
+        local gun_pos = vector.add(pos, {x = 0, y =-0.65, z = 0})
+        local ent_obj = minetest.add_entity(gun_pos, "ship_weapons:" .. ltier .. "_laser_cannon_barrel")
+        --local cannon = etc:get_luaentity()
+        ent_obj:set_properties({_mount_dir = "ceiling"})
+        ent_obj:set_rotation({x=0,y=0,z=math.rad(180)})
+        local meta = minetest.get_meta(pos)
+        if placer:is_player() then
+            meta:set_string("owner", placer:get_player_name())
+            meta:set_string("members", "")
+        end
+        meta:set_int("hp", data.hp)
+        meta:set_int("attack_type", 1)
+        meta:set_int("last_hit", 0)
+    end]]
+    --[[def_node_ceiling.tiles = {ltier .. "_" .. tmachine_name .. "_base.png", ltier .. "_" .. tmachine_name .. "_base_top.png",
+             ltier .. "_" .. tmachine_name .. "_base_side.png^[transformFY", ltier .. "_" .. tmachine_name .. "_base_side.png^[transformFY",
+             ltier .. "_" .. tmachine_name .. "_base_side.png^[transformFY",
+             ltier .. "_" .. tmachine_name .. "_base_side.png^[transformFY"}]]
+    def_node_ceiling.connect_sides = connect_sides_ceiling
+    def_node_ceiling.groups = active_groups
+	def_node_ceiling.paramtype2 = "wallmounted"
+    def_node_wall.connect_sides = connect_sides_wall
+    def_node_wall.groups = active_groups
+	def_node_wall.paramtype2 = "wallmounted"
+    minetest.register_node(node_name .. "", def_node_floor)
+    minetest.register_node(node_name .. "_wall", def_node_wall)
+    minetest.register_node(node_name .. "_ceiling", def_node_ceiling)
     
     minetest.register_on_player_receive_fields(function(player, formname, fields)
         if formname ~= data.modname .. ":" .. ltier .. "_" .. tmachine_name then
@@ -987,28 +1111,32 @@ function ship_weapons.register_heavy_plasma_cannon(data)
         core.show_formspec(name, data.modname .. ":" .. ltier .. "_" .. tmachine_name, ship_weapons.update_formspec(data, meta))
     end)
 
-    minetest.register_node(node_name .. "_broken", {
+    local _def_node_broken = {
         description = machine_desc,
         tiles = {ltier .. "_" .. machine_name .. "_base_top_broken.png", ltier .. "_" .. tmachine_name .. "_base_broken.png",
-                 ltier .. "_" .. machine_name .. "_base_broken.png",
-                 ltier .. "_" .. machine_name .. "_base_broken.png",
-                 ltier .. "_" .. machine_name .. "_base_broken.png",
-                 ltier .. "_" .. machine_name .. "_base_broken.png"},
+                 ltier .. "_" .. machine_name .. "_base_side_broken.png",
+                 ltier .. "_" .. machine_name .. "_base_side_broken.png",
+                 ltier .. "_" .. machine_name .. "_base_side_broken.png",
+                 ltier .. "_" .. machine_name .. "_base_side_broken.png"},
         param = "light",
-        paramtype2 = "facedir",
-        drawtype = "nodebox",
+        --paramtype2 = "facedir",
+	    paramtype2 = "wallmounted",
+        drawtype = "mesh",
+        mesh = "cannon_base1.obj",
+        --[[drawtype = "nodebox",
         node_box = {
             type = "fixed",
             fixed = {
-                {-0.5, -0.5, -0.5, 0.5, -0.125, 0.5}, -- NodeBox1
-                {-0.4375, -0.125, -0.4375, 0.4375, 0, 0.4375}, -- NodeBox2
-                {-0.3125, 0, -0.3125, 0.3125, 0.125, 0.3125}, -- NodeBox3
+                {-0.5, -0.5, -0.5, 0.5, -0.3125, 0.5}, -- NodeBox1
+                {-0.375, -0.3125, -0.375, 0.375, -0.125, 0.375}, -- NodeBox2
+                {-0.25, -0.125, -0.25, 0.25, 0.25, 0.25}, -- NodeBox3
+                {-0.1875, 0.25, -0.1875, 0.1875, 0.5, 0.1875}, -- NodeBox4
             }
-        },
+        },]]
         light_source = 1,
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name .. "_broken",
         groups = active_groups,
-        connect_sides = connect_sides,
+        connect_sides = connect_sides_floor,
         legacy_facedir_simple = true,
         sounds = default.node_sound_metal_defaults(),
         on_rotate = screwdriver.disallow,
@@ -1032,12 +1160,9 @@ function ship_weapons.register_heavy_plasma_cannon(data)
         on_construct = function(pos)
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
-            meta:set_string("infotext", "Broken " .. tier .. " Plasma Cannon")
+            meta:set_string("infotext", "Broken " .. tier .. " Laser Cannon")
             local inv = meta:get_inventory()
             inv:set_size("src", 1)
-            inv:set_size("dst", 1)
-            inv:set_size("upgrade1", 1)
-            inv:set_size("upgrade2", 1)
             meta:set_int("enabled", 1)
             meta:set_int("charge", 0)
             meta:set_int("broken", 1)
@@ -1047,14 +1172,11 @@ function ship_weapons.register_heavy_plasma_cannon(data)
             meta:set_string("formspec", formspec)
             meta:set_string("digiline_data", minetest.serialize(default_digi_data))
         end,
-
         allow_metadata_inventory_put = technic.machine_inventory_put,
         allow_metadata_inventory_take = technic.machine_inventory_take,
         allow_metadata_inventory_move = technic.machine_inventory_move,
         technic_run = run,
-
         on_receive_fields = on_receive_fields,
-
         digiline = {
             receptor = {
                 action = function()
@@ -1065,13 +1187,20 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                 action = data.digiline_effector
             }
         },
-
         on_timer = function(pos, elapsed)
             local meta = minetest.get_meta(pos)
             local time = meta:get_int("time") + elapsed
             if time >= 1 then
-                technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name)
+                local mount_dir = meta:get_string("mount_dir")
+                if mount_dir == "floor" then
+                    technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name)
+                elseif mount_dir == "wall" then
+                    technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_wall")
+                elseif mount_dir == "ceiling" then
+                    technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_ceiling")
+                end
                 meta:set_int("broken", 0);
+                --minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_laser_cannon_display")
                 meta:set_int("hp", data.hp)
                 meta:set_int("charge", 0)
             else
@@ -1080,9 +1209,62 @@ function ship_weapons.register_heavy_plasma_cannon(data)
             end
         end
 
-    })
+    }
+    local def_node_broken_floor = table.copy(_def_node_broken)
+    local def_node_broken_wall = table.copy(_def_node_broken)
+    local def_node_broken_ceiling = table.copy(_def_node_broken)
+    def_node_broken_wall.connect_sides = connect_sides_wall;
+    def_node_broken_ceiling.connect_sides = connect_sides_ceiling;
+    def_node_broken_floor.on_place = function(itemstack, placer, pointed_thing)
+        local under = pointed_thing.under
+        local node = minetest.get_node(under)
+        local def = minetest.registered_nodes[node.name]
+        if def and def.on_rightclick and
+            not (placer and placer:is_player() and placer:get_player_control().sneak) then
+            return def.on_rightclick(under, node, placer, itemstack, pointed_thing) or itemstack
+        end
+        local above = pointed_thing.above
+        local wdir = minetest.dir_to_wallmounted(vector.subtract(under, above))
+        local fakestack = itemstack
+        if wdir == 0 then
+            fakestack:set_name(node_name .. "_broken" .. "_ceiling")
+        elseif wdir == 1 then
+            fakestack:set_name(node_name .. "_broken")
+        else
+            fakestack:set_name(node_name .. "_broken" .. "_wall")
+        end
+
+        itemstack = minetest.item_place(fakestack, placer, pointed_thing, wdir)
+        itemstack:set_name(node_name)
+        return itemstack
+    end
+    --[[def_node_broken_ceiling.node_box = {
+        type = "fixed",
+        fixed = {
+			{-0.5, 0.3125, -0.5, 0.5, 0.5, 0.5}, -- NodeBox1
+			{-0.375, 0.125, -0.375, 0.375, 0.3125, 0.375}, -- NodeBox2
+			{-0.25, -0.25, -0.25, 0.25, 0.125, 0.25}, -- NodeBox3
+			{-0.1875, -0.5, -0.1875, 0.1875, -0.25, 0.1875}, -- NodeBox4
+        }
+    }]]
+    --[[def_node_broken_ceiling.tiles = {ltier .. "_" .. tmachine_name .. "_base_broken.png", ltier .. "_" .. tmachine_name .. "_base_top_broken.png",
+             ltier .. "_" .. tmachine_name .. "_base_side_broken.png^[transformFY", ltier .. "_" .. tmachine_name .. "_base_side_broken.png^[transformFY",
+             ltier .. "_" .. tmachine_name .. "_base_side_broken.png^[transformFY",
+             ltier .. "_" .. tmachine_name .. "_base_side_broken.png^[transformFY"}]]
+    def_node_broken_ceiling.connect_sides = connect_sides_ceiling
+    
+	def_node_broken_ceiling.paramtype2 = "wallmounted"
+	def_node_broken_wall.paramtype2 = "wallmounted"
+
+    minetest.register_node(node_name .. "_broken", def_node_broken_floor)
+    minetest.register_node(node_name .. "_wall_broken", def_node_broken_wall)
+    minetest.register_node(node_name .. "_ceiling_broken", def_node_broken_ceiling)
 
     technic.register_machine(tier, node_name, technic.receiver)
+    technic.register_machine(tier, node_name .. "_wall", technic.receiver)
+    technic.register_machine(tier, node_name .. "_wall_broken", technic.receiver)
+    technic.register_machine(tier, node_name .. "_ceiling", technic.receiver)
+    technic.register_machine(tier, node_name .. "_ceiling_broken", technic.receiver)
     technic.register_machine(tier, node_name .. "_broken", technic.receiver)
 
     -------------------------------------------------------
@@ -1091,68 +1273,27 @@ function ship_weapons.register_heavy_plasma_cannon(data)
     -------------------------------------------------------
     -------------------------------------------------------
 
-    local barrel_animations = {
-        idle = { x = 0, y = 0},
-        fire = { x = 0, y = 0.66},
-    }
-
-    local barrel_ent = {
-        initial_properties = {
-            physical = false,
-            collide_with_objects = false,
-            collisionbox = {-0.4375, -0.125, -0.4375, 0.4375, 0.175, 0.4375},
-            visual = "mesh",
-            --mesh = "cannon2_barrel.gltf",
-            mesh = "cannon2_barrel.obj",
-            textures = {ltier .. "_heavy_cannon_barrel.png"},
-            visual_size = {x=1, y=1},
-            type = "turret_barrel",
-            hp_max = data.hp,
-            glow = 4,
-            infotext = "HP: " .. data.hp .. "/" .. data.hp .. "",
-        },
-            
-        _timer = 1,
-        _animation = barrel_animations.idle,
-
-        on_step = function(self, dtime)
-            self._timer = self._timer + 1
-            if self._timer <= 4 then
-                return
-            end
-            self._timer = 0
-            
-        end,
-        
-        on_punch = function()
-            
-        end,
-
-        on_activate = function(self, staticdata, dtime_s)
-            self.object:set_animation(self._animation or barrel_animations.idle, 1, 0)
-        end,
-    }
-    
-    function barrel_ent:fire_anim()
-        self._animation = barrel_animations.fire
-        self.object:set_animation(self._animation or barrel_animations.idle, 1, 0)
-    end
-    
-    -- display entity shown for tower
-    minetest.register_entity("ship_weapons:" .. ltier .. "_heavy_cannon_barrel", barrel_ent)
-
-    local barrel_base = {
+    -- display entity shown for turret top and barrels
+    minetest.register_entity("ship_weapons:" .. ltier .. "_laser_cannon_barrel", {
         initial_properties = {
             physical = true,
             collide_with_objects = true,
-            collisionbox = {-0.4375, -0.125, -0.4375, 0.4375, 0.175, 0.4375},
+            collisionbox = {-0.21875, -0.25, -0.21875, 0.21875, 0.28125, 0.21875},
             visual = "mesh",
-            mesh = "cannon2_barrel_base.obj",
-            textures = {ltier .. "_heavy_cannon_base2.png", ltier .. "_heavy_cannon_base3.png"},
+            mesh = "ctg_llt.gltf",
+            textures = {"llt_texture.png"},
             visual_size = {x=1, y=1},
+            --visual = "wielditem",
+            --wield_item = "ship_weapons:" .. ltier .. "_laser_cannon_barrel_node",
+            --textures = {"ship_weapons:" .. ltier .. "_laser_cannon_barrel_node"},
+            -- wielditem seems to be scaled to 1.5 times original node size
+            --[[visual_size = {
+                x = 0.67,
+                y = 0.67
+            },]]
             type = "turret",
             hp_max = data.hp,
-            glow = 4,
+            glow = 3,
             infotext = "HP: " .. data.hp .. "/" .. data.hp .. "",
         },
 
@@ -1164,43 +1305,41 @@ function ship_weapons.register_heavy_plasma_cannon(data)
         _rotation_dir = 1,
         _target_found = false,
         _reset_tick = 0,
-        _barrel = nil,
-
+        _mount_dir = "floor",
 
         on_step = function(self, dtime)
             self._timer = self._timer + 1
-            if self._timer <= 7 then
+            if self._timer <= 4 then
                 return
             end
             self._timer = 0
-            local pos = vector.subtract(self.object:get_pos(), {x = 0, y = 0.15, z = 0})
+            local t_update = false
+            local pos = nil
+            local mount_dir = ""
+            local pos_ceiling = vector.add(self.object:get_pos(), {x=0,y=0.45,z=0})
+            local pos_wall =  minetest.find_node_near(self.object:get_pos(), 1.05, "group:ship_cannon")
+            if core.get_node(pos_ceiling).name:match("_ceiling") then
+                self._mount_dir = "ceiling"
+                mount_dir = "ceiling"
+                pos = pos_ceiling
+            elseif pos_wall and core.get_node(pos_wall).name:match("_wall") then
+                self._mount_dir = "wall"
+                mount_dir = "wall"
+                pos = pos_wall
+            else
+                self._mount_dir = "floor"
+                mount_dir = "floor"
+                pos = vector.add(self.object:get_pos(), {x=0,y=-0.45,z=0})
+            end
             local node = core.get_node(pos)
             local meta = core.get_meta(pos)
-            if node and not node.name:match(ltier .. "_" .. tmachine_name) then
-                core.log("node not match local")
+            if node and not node.name:gsub("_" .. mount_dir, ""):match(ltier .. "_" .. tmachine_name) then
+                --core.log('node not match entity')
                 self.object:remove()
                 return
             end
-            if node == nil then
-                core.log("node is nil")
-            end
-            if not self._barrel then
-                local objs = core.get_objects_inside_radius(self.object:get_pos(), 0.45)
-                for _, obj in pairs(objs) do
-                    if obj:get_luaentity() then
-                        local ent = obj:get_luaentity()
-                        if ent.name == "ship_weapons:" .. ltier .. "_heavy_cannon_barrel" then
-                            self:set_barrel(obj)
-                            break;
-                        end
-                    end
-                end
-            end
             
             local function num_is_close(target, actual, thrs)
-                if target == 0 and actual == 0 then
-                    return true
-                end
                 local target_frac = (target * 0.001) + thrs
                 return actual < target + target_frac and actual >= target - target_frac
             end
@@ -1211,26 +1350,64 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                 end
                 local cur_pitch_deg = math.deg(rot_from.x)
                 local cur_yaw_deg = math.deg(rot_from.y)
-                local new_pitch_deg = math.deg(rot_to.x)
+                local cur_roll_deg = math.deg(rot_from.z)
+                local new_pitch_deg = math.deg(rot_to.x) - 1.5
                 local new_yaw_deg = math.deg(rot_to.y)
-                if new_pitch_deg > 15 then
-                    new_pitch_deg = 15
-                elseif new_pitch_deg < -40 then
-                    new_pitch_deg = -40
+                local new_roll_deg = 0
+                if mount_dir == "ceiling" then
+                    new_roll_deg = 180
+                    if new_pitch_deg > 60 then
+                        new_pitch_deg = 60
+                    elseif new_pitch_deg < -10 then
+                        new_pitch_deg = -10
+                    end
+                elseif mount_dir == "wall" then
+                    new_roll_deg = 0
+                    local dir = ship_weapons.get_port_wall_direction(pos)
+                    if dir.x == 1 then
+                        if new_yaw_deg > 180 then
+                            new_yaw_deg = math.random(0, 180)
+                            t_update = true
+                        end
+                    elseif dir.x == -1 then
+                        if new_yaw_deg < 180 then
+                            new_yaw_deg = math.random(180, 360)
+                            t_update = true
+                        end
+                    end
+                    if dir.z == 1 then
+                        if new_yaw_deg > 270 or new_yaw_deg < 90 then
+                            new_yaw_deg = math.random(90, 270)
+                            t_update = true
+                        end
+                    elseif dir.z == -1 then
+                        if new_yaw_deg < 270 and new_yaw_deg > 90 then
+                            new_yaw_deg = math.random(-90, 90)
+                            if new_yaw_deg < 0 then
+                                new_yaw_deg = new_yaw_deg + 360
+                            end
+                            t_update = true
+                        end
+                    end
+                    if new_pitch_deg > 60 then
+                        new_pitch_deg = 60
+                    elseif new_pitch_deg < -40 then
+                        new_pitch_deg = -40
+                    end
+                else
+                    if new_pitch_deg > 25 then
+                        new_pitch_deg = 25
+                    elseif new_pitch_deg < -50 then
+                        new_pitch_deg = -50
+                    end
                 end
-                
-                --[[if not num_is_close(new_pitch_deg, cur_pitch_deg, 1.50) or not num_is_close(new_yaw_deg, cur_yaw_deg, 1.50) then
-                    self._rotation_done = false
-                end]]
-
                 --core.log(new_pitch_deg)
-                local n_pitchDegrees = ((cur_pitch_deg * 11) + new_pitch_deg) / 12
+                local n_pitchDegrees = ((cur_pitch_deg * 5) + new_pitch_deg) / 6
                 local n_yawDegrees = cur_yaw_deg
-                if not self._rotation_done and not num_is_close(new_yaw_deg, cur_yaw_deg, 1.251) then
-                    --core.log("change rotation")
-                    local amt = 3
-                    if num_is_close(new_yaw_deg, cur_yaw_deg, 10) then
-                        amt = 0.25
+                if not self._rotation_done and not num_is_close(new_yaw_deg, cur_yaw_deg, 1) then
+                    local amt = 5
+                    if num_is_close(new_yaw_deg, cur_yaw_deg, 8) then
+                        amt = 0.2
                     end
                     local dir_to = self._rotation_dir or 1
                     if not self._rotating and cur_yaw_deg > new_yaw_deg then
@@ -1260,30 +1437,22 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                 elseif not self._rotation_done and self._rotating then
                     n_yawDegrees = ((cur_yaw_deg * 5) + new_yaw_deg) / 6
                 end
-                --core.log("new_pitch_deg= " .. new_pitch_deg .. "  n_pitchDegrees= " .. n_pitchDegrees)
-                --core.log("new_yaw_deg= " .. new_yaw_deg .. "  n_yawDegrees= " .. n_yawDegrees)
                 --self._rotation_done = false
-                --core.log("rot done= " .. tostring(self._rotation_done))
-                if num_is_close(new_pitch_deg, n_pitchDegrees, 1.65) and num_is_close(new_yaw_deg, n_yawDegrees, 1.45) then
+                if num_is_close(new_pitch_deg, n_pitchDegrees, 1.25) and num_is_close(new_yaw_deg, n_yawDegrees, 1.45) then
                     self._rotation_done = true
-                    --core.log("rot done!!!!")
+                    self._rotating = false
                     --return false
                 end
                 local pitchRad = math.rad(n_pitchDegrees)
                 local yawRad = math.rad(n_yawDegrees)
-                local rot_base = {x = 0, y = yawRad, z = 0}
-                self.object:set_rotation(rot_base);
-                if self._barrel then
-                    local rot_barrel = {x = pitchRad, y = yawRad, z = 0}
-                    self._barrel:set_rotation(rot_barrel);
-                    --self._barrel:get_luaentity():fire_anim()
+                local rollRad = math.rad(new_roll_deg)
+                local rot = {x = pitchRad, y = yawRad, z = rollRad}
+                self.object:set_rotation(rot);
+                if t_update then
+                    local t_rot = {x = rot_to.x, y = math.rad(new_yaw_deg), z = rot_to.z}
+                    meta:set_string("target_dir", core.serialize(t_rot))
+                    self._rotation_set = t_rot
                 end
-
-                --local rot = {x = pitchRad, y = yawRad, z = 0}
-                --[[local rot_base = {x = 0, y = yawRad, z = 0}
-                local rot_barrel = {x = n_pitchDegrees, y = 0, z = 0}
-                self.object:set_rotation(rot_base);
-                self.object:set_bone_override("barrel", { position = nil, rotation = rot_barrel, scale = nil })]]
                 return true
             end
 
@@ -1292,11 +1461,10 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                 self._rotation_set = target_rot
                 self._target_found = true
                 self._reset_tick = 0
-                core.log("setting fire_tick")
                 local a_yaw = math.abs(math.deg(self.object:get_rotation().y))
                 local t_yaw = math.abs(math.deg(target_rot.y))
-                if math.abs(a_yaw - t_yaw) > 5 then
-                    core.log("resetting fire_tick")
+                if math.abs(a_yaw - t_yaw) > 7 then
+                    --core.log("resetting fire_tick")
                     self._rotation_done = false
                     self._target_found = false
                     self._time_idler = 0
@@ -1310,65 +1478,99 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                 self._rotation_set = new_rot
                 self._rotation_done = false
             end
-
-            if self._reset_tick < 100 then
+            
+            if self._reset_tick < 500 then
                 self._reset_tick = self._reset_tick + 1
             else                
                 self._reset_tick = 0
                 self._target_found = false
                 local new_rot = { x = 0, y = 0, z = 0}
                 meta:set_string("target_dir", core.serialize(new_rot))
+                local new_rot = { x = math.rad(-(math.random(-5, 35))), y = math.rad((math.random(0, 360))), z = 0}
+                self._rotation_set = new_rot
             end
 
             self._time_idler = self._time_idler + 1
-            local t_pitch = 0
-            if self._barrel then
-                t_pitch = self._barrel:get_rotation().x
+            if self.object and not do_move(self.object:get_rotation(), self._rotation_set) then
+                self._time_idler = self._time_idler + math.random(1, 2)
             end
-            local base_rot = { x = t_pitch, y = self.object:get_rotation().y, z = 0 }
-            if self.object and not do_move(base_rot, self._rotation_set) then
-                self._time_idler = self._time_idler + 1
-            end
-            
-            if self._time_idler > 50 and self._rotation_done then
+
+            if self._time_idler > 200 and self._rotation_done then
                 self._time_idler = 0
                 if not self._target_found then
-                    core.log("set rotation to search")
                     self._rotation_done = false
                     self._reset_tick = 0
-                    local new_rot = { x = math.rad(-(math.random(-5, 35))), y = math.rad((math.random(0, 360))), z = 0}
-                    self._rotation_set = new_rot
+                    if mount_dir == "ceiling" then
+                        local new_rot = { x = math.rad(-(math.random(-40, 0))), y = math.rad((math.random(0, 360))), z = 0}
+                        self._rotation_set = new_rot
+                    else
+                        local new_rot = { x = math.rad(-(math.random(-5, 35))), y = math.rad((math.random(0, 360))), z = 0}
+                        self._rotation_set = new_rot
+                    end
                 end
             end
         end,
 
         on_death = function(self, killer)
             local pos = self.object:get_pos()
-            technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
-            if pos then
-                spawn_particle2(pos, ltier)
+            local y = -0.45
+            local _tmachine_name = tmachine_name
+            local o_pos = pos
+            if self._mount_dir == "ceiling" then
+                y = 0.45
+                o_pos = vector.add(pos, {x=0,y=y,z=0})
+            elseif self._mount_dir == "wall" then
+                local pos_wall =  minetest.find_node_near(self.object:get_pos(), 1.05, "group:ship_cannon")
+                o_pos = pos_wall
+            end
+            local o_pos = vector.add(pos, {x=0,y=y,z=0}) 
+            technic.swap_node(o_pos, "ship_weapons:" .. ltier .. "_" .. _tmachine_name .. "_broken")
+            if o_pos then
+                spawn_particle2(o_pos, ltier)
                 minetest.get_node_timer(pos):start(30)
-                local meta = core.get_meta(pos)
+                local meta = core.get_meta(o_pos)
                 meta:set_int("broken", 1)
                 meta:set_int("hp", 0)
             end
         end,
 
         on_rightclick = function(self, clicker)
-            local pos = self.object:get_pos()
-            local node = core.get_node(pos)
-            core.registered_nodes[node.name].on_rightclick(pos, node, clicker, nil)
+            local pos = self.object:get_pos()            
+            local y = -0.45
+            local o_pos = vector.add(pos, {x=0,y=y,z=0})
+            if self._mount_dir == "ceiling" then
+                y = 0.45
+                o_pos = vector.add(pos, {x=0,y=y,z=0})
+            elseif self._mount_dir == "wall" then
+                local pos_wall =  minetest.find_node_near(self.object:get_pos(), 1.05, "group:ship_cannon")
+                o_pos = pos_wall
+            end
+            local node = core.get_node(o_pos)
+            core.registered_nodes[node.name].on_rightclick(o_pos, node, clicker, nil)
         end,
 
         on_punch = function(puncher, time_from_last_punch, tool_capabilities, direction, damage)
 
             local function on_hit(self, target)
-
+                local o_y = -0.45
+                local _tmachine_name = tmachine_name
+                local _target = vector.add(target, {x=0,y=o_y,z=0}) 
+                if self._mount_dir == "ceiling" then
+                    o_y = 0.45
+                    _target = vector.add(target, {x=0,y=o_y,z=0}) 
+                    _tmachine_name = tmachine_name .. "_ceiling"
+                elseif self._mount_dir == "wall" then
+                    local pos_wall =  minetest.find_node_near(target, 1.07, "group:ship_cannon")
+                    o_y = 0
+                    _target = pos_wall
+                    _tmachine_name = tmachine_name .. "_wall"
+                end
+                target = _target
                 local node = minetest.get_node(target)
                 local meta = minetest.get_meta(target)
                 -- minetest.log("hit " .. node.name)
 
-                if node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name then
+                if node.name == "ship_weapons:" .. ltier .. "_" .. _tmachine_name then
                     --technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "")
                     spawn_particle2(target, ltier)
 
@@ -1381,19 +1583,19 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                     })
 
                     if hp - 1 <= 0 then
-                        technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
+                        technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. _tmachine_name .. "_broken")
                         meta:set_int("broken", 1)
                         self.object:remove()
                         minetest.get_node_timer(target):start(math.random(data.repair_length, data.repair_length + 30))
                         minetest.sound_play("ctg_zap", {
                             pos = target,
                             gain = 0.5,
-                            pitch = randFloat(0.2, 0.25)
+                            pitch = randFloat(5.2, 5.25)
                         })
                     end
 
                     return true
-                elseif node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken" then
+                elseif node.name == "ship_weapons:" .. ltier .. "_" .. _tmachine_name .. "_broken" then
                     local meta = minetest.get_meta(target)
                     if meta:get_int("broken") == 1 then
                         self.object:remove()
@@ -1410,55 +1612,154 @@ function ship_weapons.register_heavy_plasma_cannon(data)
 
             return damage;
         end
-    }
+    })
 
-    function barrel_base:set_barrel(obj)
-        self._barrel = obj
-    end
+    -- Display-zone node, Do NOT place the display as a node,
+    -- it is made to be used as an entity (see above)
 
-    minetest.register_entity("ship_weapons:" .. ltier .. "_heavy_cannon_barrel_base", barrel_base)
+    minetest.register_node("ship_weapons:" .. ltier .. "_laser_cannon_barrel_node", {
+        tiles = {
+            ltier .. "_laser_cannon_top.png", -- top
+            ltier .. "_laser_cannon_bottom.png", -- bottom
+            ltier .. "_laser_cannon_right.png", -- right
+            ltier .. "_laser_cannon_left.png", -- left
+            ltier .. "_laser_cannon_back.png", -- back
+            ltier .. "_laser_cannon_front.png" -- front
+        },
+        use_texture_alpha = "clip",
+        walkable = false,
+        drawtype = "nodebox",
+        node_box = {
+            type = "fixed",
+            fixed = {
+                {-0.1875, -0.1875, -0.1875, 0.1875, 0.1875, 0.1875}, -- base1
+                {-0.09375, -0.125, -0.375, 0.09375, 0.125, -0.25}, -- base2
+                {-0.0625, -0.0625, -0.625, 0.0625, 0.0625, -0.375}, -- base_arm
+                {-0.046875, 0.03125, -1, 0.046875, 0.0625, -0.625}, -- arm_top
+                {0.03125, -0.0625, -1.125, 0.0625, 0, -0.625}, -- arm_right
+                {-0.0625, -0.0625, -1.125, -0.03125, 0, -0.625}, -- arm_left
+                {-0.125, -0.15625, -0.25, 0.125, 0.15625, -0.1875}, -- base3
+                {-0.125, -0.1875, 0.1875, 0.125, 0.125, 0.25}, -- base4
+                {-0.125, 0.1875, 0, 0.125, 0.21875, 0.1875}, -- base_top
+                {-0.125, -0.25, -0.125, 0.125, -0.1875, 0.125}, -- base_bottom
+                {-0.0625, 0.1875, -0.1875, 0.0625, 0.25, 0.0625}, -- base_top2
+            }
+        },
+        collision_box = {
+            type = "fixed",
+            fixed = {
+                {-0.21875, -0.25, -0.21875, 0.21875, 0.28125, 0.21875}
+            }
+        },
+        selection_box = {
+            type = "fixed",
+            fixed = {
+                {-0.21875, -0.25, -0.21875, 0.21875, 0.28125, 0.21875}
+            }
+        },
+        paramtype = "light",
+        groups = {
+            dig_immediate = 3,
+            not_in_creative_inventory = 1
+        },
+        drop = ""
+
+    })
 
     -------------------------------------------------------
 
+    local function spawn_particle_area(pos, tier)
+        local dir = ship_weapons.get_port_wall_direction(pos)
+        local meta = minetest.get_meta(pos)
+        local hp = meta:get_int("hp")
+        --local amount = hp + math.random(1, hp + 1)
+        local def = {
+            amount = 20,
+            time = randFloat(2.6, 5.2),
+            collisiondetection = true,
+            collision_removal = false,
+            object_collision = false,
+            vertical = false,
+                texture = {
+                name = "ctg_beam_effect2_".. tier .. ".png",
+                alpha_tween = {1, 0.2},
+                scale_tween = {{
+                    x = 2.0,
+                    y = 2.2
+                }, {
+                    x = 0.1,
+                    y = 0.0
+                }},
+                blend = "alpha"
+            },
+            glow = 13,
+                minpos = {
+                x = pos.x + (0.66 * dir.x),
+                y = pos.y + (0.67 * dir.y),
+                z = pos.z + (0.66 * dir.z)
+            },
+            maxpos = {
+                x = pos.x + (0.76 * dir.x),
+                y = pos.y + (0.74 * dir.y),
+                z = pos.z + (0.76 * dir.z)
+            },
+            minvel = {
+                x = -0.13,
+                y = 0.09,
+                z = -0.13
+            },
+            maxvel = {
+                x = 0.13 + (dir.x * 0.25),
+                y = 0.12 + (dir.y * 0.25),
+                z = 0.13 + (dir.z * 0.25)
+            },
+            minacc = {
+                x = -0.07,
+                y = -0.08,
+                z = -0.07
+            },
+            maxacc = {
+                x = 0.07,
+                y = 0.12,
+                z = 0.07
+            },
+            minexptime = 4.6,
+            maxexptime = 6.8,
+            minsize = 0.5,
+            maxsize = 0.8
+        }
+    
+        minetest.add_particlespawner(def);
+    end
+
+    minetest.register_abm({
+        label = "rail cannon effect",
+        nodenames = {"ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken", "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_wall_broken", "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_ceiling_broken"},
+        interval = 2,
+        chance = 3,
+        -- min_y = 0,
+        action = function(pos)
+            spawn_particle_area(pos, ltier)
+        end
+    })
+
 end
 
 -------------------------------------------------------
 -------------------------------------------------------
 
-local function register_lv_plasma_cannon(ref)
+local function register_lv_laser_cannon(ref)
     local data = ref or {}
     data.modname = "ship_weapons"
-    data.machine_name = "heavy_cannon"
-    data.machine_desc = "Heavy Plasma Cannon"
-    data.charge_max = 16
+    data.machine_name = "laser_cannon"
+    data.machine_desc = "Laser Cannon"
+    data.charge_max = 20
     data.demand = {1000}
     data.speed = 10
     data.tier = "LV"
-    data.typename = "plasma_cannon"
+    data.typename = "laser_cannon"
     data.digiline_effector = ship_weapons.mstatic_turret_digiline_effector
-    data.range = 88
-    data.hp = 8
-    data.repair_length = 300
-    data.targets = 1
-    data.damage = 1.0
-    data.connect_sides = {
-        bottom = 1
-    }
-    ship_weapons.register_heavy_plasma_cannon(data)
-end
-
-local function register_mv_plasma_cannon(ref)
-    local data = ref or {}
-    data.modname = "ship_weapons"
-    data.machine_name = "heavy_cannon"
-    data.machine_desc = "Heavy Plasma Cannon"
-    data.charge_max = 16
-    data.demand = {1000}
-    data.speed = 15
-    data.tier = "MV"
-    data.typename = "plasma_cannon"
-    data.digiline_effector = ship_weapons.mstatic_turret_digiline_effector
-    data.range = 97
+    data.range = 80
     data.hp = 10
     data.repair_length = 300
     data.targets = 1
@@ -1466,31 +1767,53 @@ local function register_mv_plasma_cannon(ref)
     data.connect_sides = {
         bottom = 1
     }
-    ship_weapons.register_heavy_plasma_cannon(data)
+    ship_weapons.register_laser_cannon(data)
 end
 
-local function register_hv_plasma_cannon(ref)
+local function register_mv_laser_cannon(ref)
     local data = ref or {}
     data.modname = "ship_weapons"
-    data.machine_name = "heavy_cannon"
-    data.machine_desc = "Heavy Plasma Cannon"
-    data.charge_max = 16
-    data.demand = {1000}
-    data.speed = 20
-    data.tier = "HV"
-    data.typename = "plasma_cannon"
+    data.machine_name = "laser_cannon"
+    data.machine_desc = "Laser Cannon"
+    data.charge_max = 30
+    data.demand = {2000}
+    data.speed = 15
+    data.tier = "MV"
+    data.typename = "laser_cannon"
     data.digiline_effector = ship_weapons.mstatic_turret_digiline_effector
-    data.range = 113
-    data.hp = 13
+    data.range = 92
+    data.hp = 16
     data.repair_length = 300
     data.targets = 1
     data.damage = 1.0
     data.connect_sides = {
         bottom = 1
     }
-    ship_weapons.register_heavy_plasma_cannon(data)
+    ship_weapons.register_laser_cannon(data)
 end
 
-register_lv_plasma_cannon()
---register_mv_plasma_cannon()
---register_hv_plasma_cannon()
+local function register_hv_laser_cannon(ref)
+    local data = ref or {}
+    data.modname = "ship_weapons"
+    data.machine_name = "laser_cannon"
+    data.machine_desc = "Laser Cannon"
+    data.charge_max = 50
+    data.demand = {3000}
+    data.speed = 20
+    data.tier = "HV"
+    data.typename = "laser_cannon"
+    data.digiline_effector = ship_weapons.mstatic_turret_digiline_effector
+    data.range = 104
+    data.hp = 21
+    data.repair_length = 300
+    data.targets = 1
+    data.damage = 1.0
+    data.connect_sides = {
+        bottom = 1
+    }
+    ship_weapons.register_laser_cannon(data)
+end
+
+register_lv_laser_cannon()
+--register_mv_laser_cannon()
+--register_hv_laser_cannon()

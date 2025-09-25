@@ -369,7 +369,10 @@ local function spawn_particle_area(pos, tier)
     minetest.add_particlespawner(def);
 end
 
-function ship_weapons.strike_effect(pos1, pos2, tier)
+function ship_weapons.strike_effect(pos1, pos2, tier, doSound)
+    if doSound == nil then
+        doSound = true
+    end
     local bClear = true;
     local ray = minetest.raycast(pos1, pos2, true, false)
     for pointed_thing in ray do
@@ -404,13 +407,15 @@ function ship_weapons.strike_effect(pos1, pos2, tier)
         z = step_min
     })
 
-    minetest.after(0, function()
-        minetest.sound_play("ctg_zap", {
-            pos = pos1,
-            gain = 1.3,
-            pitch = randFloat(1.3, 1.5)
-        })
-    end)
+    if doSound then
+        minetest.after(0, function()
+            minetest.sound_play("ctg_zap", {
+                pos = pos1,
+                gain = 1.3,
+                pitch = randFloat(1.3, 1.5)
+            })
+        end)
+    end
 
     -- minetest.log("pew pew! " .. tostring(dist))
 
@@ -432,11 +437,13 @@ function ship_weapons.strike_effect(pos1, pos2, tier)
     minetest.after(0.1, function()
         spawn_particle_hit(target, tier)
         spawn_particle_hit2(target, tier)
-        minetest.sound_play("ctg_zap", {
-            pos = target,
-            gain = 0.4,
-            pitch = randFloat(1.4, 1.6)
-        })
+        if doSound then
+            minetest.sound_play("ctg_zap", {
+                pos = target,
+                gain = 0.4,
+                pitch = randFloat(1.4, 1.6)
+            })
+        end
         minetest.sound_play("ctg_hit3", {
             pos = target,
             gain = 0.3,

@@ -33,7 +33,29 @@ local function check_path(origin, pos_target)
 end
 
 local function find_ship(pos, d, r)
-    return schem_lib.func.find_nodes_large(pos, r, {"group:jumpdrive"}, {limit = 5, dir = d})
+    local ships = {}
+    local bFoundTarget = false
+    local nTargetCount = 0
+    local objs = minetest.get_objects_inside_radius(pos, r + 0.251)
+    for _, obj in pairs(objs) do
+        if nTargetCount >= 3 then
+            break
+        end
+        local obj_pos = obj:get_pos()
+        if obj_pos then
+            -- handle entities
+            if obj:get_luaentity() and not obj:is_player() then
+                local ent = obj:get_luaentity()
+                if ent.type and (ent.type == "jumpship") then
+                    -- ships
+                    table.insert(ships, {pos = vector.subtract(obj_pos, {x=0,y=2,z=0})})
+                    nTargetCount = nTargetCount + 1
+                end
+            end
+        end
+    end
+    --return schem_lib.func.find_nodes_large(pos, r, {"group:jumpdrive"}, {limit = 5, dir = d})
+    return ships
 end
 
 local function find_ship_protect(pos, r)
@@ -75,7 +97,7 @@ local function do_strike_obj(pos, mode, ltier)
                     if ent.type == "monster" and (mode == 5) then
                         bFoundTarget = true;
                         nTargetCount = nTargetCount + 1
-                        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
+                        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
                             command = "targeting_set",
                             target_entry = {
                                 pos = obj_pos
@@ -90,7 +112,7 @@ local function do_strike_obj(pos, mode, ltier)
                 if name ~= ship_meta:get_string("owner") and not ship_weapons.is_member(ship_meta, name) and not ship_weapons.is_ally(ship_meta, name) then
                     bFoundTarget = true;
                     nTargetCount = nTargetCount + 1
-                    digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
+                    digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
                         command = "targeting_set",
                         target_entry = {
                             pos = obj_pos
@@ -102,7 +124,7 @@ local function do_strike_obj(pos, mode, ltier)
     end
     if bFoundTarget then
         meta:set_int("firing", 1)
-        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
             command = "targeting_launch",
             launch_entry = {
                 count = 1,
@@ -149,7 +171,7 @@ local function do_strike_ship(pos, mode, ltier)
         end
     end
     if our_ship == nil then
-        return nTargetCount
+        --return nTargetCount
     end
     for _, node in pairs(nodes) do
         if nTargetCount >= 1 then
@@ -168,10 +190,19 @@ local function do_strike_ship(pos, mode, ltier)
                 z = math.random(-r, r)
             })
             -- ships
-            if name ~= meta:get_string("owner") and not ship_weapons.is_member(our_ship.meta, name) then
+            if our_ship ~= nil and name ~= meta:get_string("owner") and not ship_weapons.is_member(our_ship.meta, name) then
                 bFoundTarget = true;
                 nTargetCount = nTargetCount + 1
-                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
+                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
+                    command = "targeting_set",
+                    target_entry = {
+                        pos = target_pos
+                    }
+                })
+            elseif name ~= meta:get_string("owner") then
+                bFoundTarget = true;
+                nTargetCount = nTargetCount + 1
+                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
                     command = "targeting_set",
                     target_entry = {
                         pos = target_pos
@@ -182,7 +213,7 @@ local function do_strike_ship(pos, mode, ltier)
     end
     if bFoundTarget then
         meta:set_int("firing", 1)
-        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
             command = "targeting_launch",
             launch_entry = {
                 count = 1,
@@ -453,7 +484,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
             meta:set_float("target_power", power)
             meta:set_float("target_pitch", pitch)
             meta:set_float("target_yaw", yaw)
-            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
+            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
                 command = "targeting_entry",
                 target_entry = {
                     power = power,
@@ -504,7 +535,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         end
 
         if fields.submit_launch and locked and attack_mode == 1 then
-            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "missile_tower", {
+            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
                 command = "targeting_launch",
                 launch_entry = {
                     count = count,

@@ -6,6 +6,80 @@ end
 
 local time_scl = 10
 
+local function reg_effect_ent()
+    minetest.register_entity("ship_machine:jump_drive_effect", {
+        initial_properties = {
+            physical = false,
+            collisionbox = {0, 0, 0, 0, 0, 0},            
+            visual = "mesh",
+            mesh = "jump_effect_col.gltf",
+            textures = {"ctg_protect_col2.png"},
+            use_texture_alpha = true,
+            visual_size = {x=1, y=1},
+            automatic_rotate = 2,
+            pointable = false,
+            glow = 11,
+            type = "jumpship"
+        },
+        type = "jumpship",
+        timer = 0,
+        on_step = function(self, dtime)
+            self.timer = self.timer + dtime
+            if self.timer > 3 then
+                local pos = self.object:get_pos()
+                local j_pos = vector.subtract(pos, {x=0,y=2,z=0})
+                local j_node = core.get_node(j_pos)
+                if not string.find(j_node.name, "jump_drive") then
+                    self.object:remove()
+                end
+            end
+        end,
+        on_blast = function(self, damage)
+            local drops = {}
+            local pos = self.object:get_pos()
+            local j_pos = vector.subtract(pos, {x=0,y=2,z=0})
+            local j_node = core.get_node(j_pos)
+            if not string.find(j_node.name, "jump_drive") then
+                self.object:remove()
+            end
+            return false, false, drops
+        end,
+    })
+end
+
+reg_effect_ent();
+
+local function check_display(pos)
+    if not core.compare_block_status(pos, "active") then
+        return
+    end
+    local found_display = false
+    local node = core.get_node(pos)
+    local meta = core.get_meta(pos)
+    local mount_dir = meta:get_string("mount_dir")
+    local o_y = 2
+    local o_x = 0
+    local o_z = 0
+    local o_pos = vector.add(pos, {x=o_x,y=o_y,z=o_z})
+    local objs = core.get_objects_inside_radius(o_pos, 0.21)
+    for _, obj in pairs(objs) do
+        if obj:get_luaentity() then
+            local ent = obj:get_luaentity()
+            if ent.name == "ship_machine:" .. "jump_drive_effect" then
+                if found_display then
+                    obj:remove()
+                end
+                found_display = true
+            end
+        end
+    end
+    if not found_display then
+        --local o_pos = vector.add(pos, {x=0,y=0.65,z=0})
+        core.add_entity(o_pos, "ship_machine:" .. "jump_drive_effect")
+        core.get_node_timer(pos):start(30)
+    end
+end
+
 function ship_machine.register_jumpship(data)
 
     data.tier = data.tier or "LV"
@@ -42,6 +116,8 @@ function ship_machine.register_jumpship(data)
         local machine_desc_tier = data.machine_desc:format(tier)
         local machine_node = data.modname .. ":" .. data.machine_name
         local machine_demand_active = data.demand
+
+        check_display(pos);
 
         -- Setup meta data if it does not exist.
         if not eu_input then

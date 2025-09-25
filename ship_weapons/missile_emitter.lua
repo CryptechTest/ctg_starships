@@ -1117,7 +1117,16 @@ function ship_weapons.register_missile_tower(data)
             end
 
             return damage;
-        end
+        end,
+        on_blast = function(self, damage)
+            local drops = {}
+            local pos = self.object:get_pos()
+            local j_node = core.get_node(pos)
+            if not string.find(j_node.name, "missile") then
+                self.object:remove()
+            end
+            return false, false, drops
+        end,
     })
 
     -- Display-zone node, Do NOT place the display as a node,
@@ -1186,7 +1195,7 @@ local function register_lv_missile_tower(ref)
     data.speed = 20
     data.tier = "LV"
     data.typename = "missile_tower"
-    data.digiline_effector = ship_weapons.missile_tower_digiline_effector
+    data.digiline_effector = ship_weapons.static_turret_digiline_effector
     data.range = 64
     data.hp = 5
     data.repair_length = 300
@@ -1209,7 +1218,7 @@ local function register_mv_missile_tower(ref)
     data.speed = 25
     data.tier = "MV"
     data.typename = "missile_tower"
-    data.digiline_effector = ship_weapons.missile_tower_digiline_effector
+    data.digiline_effector = ship_weapons.static_turret_digiline_effector
     data.range = 72
     data.hp = 10
     data.repair_length = 270
@@ -1232,7 +1241,7 @@ local function register_hv_missile_tower(ref)
     data.speed = 30
     data.tier = "HV"
     data.typename = "missile_tower"
-    data.digiline_effector = ship_weapons.missile_tower_digiline_effector
+    data.digiline_effector = ship_weapons.static_turret_digiline_effector
     data.range = 85
     data.hp = 15
     data.repair_length = 250

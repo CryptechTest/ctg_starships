@@ -603,7 +603,7 @@ local function calc_node_damage(n_hit, dist, hp)
 	return 3
 end
 
-local function missile_explode(pos, radius, ignore_protection, ignore_on_blast, owner, explode_center)
+local function plasma_explode(pos, radius, ignore_protection, ignore_on_blast, owner, explode_center)
 	pos = vector.round(pos)
 	-- scan for adjacent TNT nodes first, and enlarge the explosion
 	local vm1 = VoxelManip()
@@ -724,13 +724,13 @@ local function missile_explode(pos, radius, ignore_protection, ignore_on_blast, 
 	return drops, radius, 0
 end
 
-local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_blast, owner, explode_center)
+local function plasma_safe_explode(pos, radius, damage, ignore_protection, ignore_on_blast, owner, explode_center)
 	pos = vector.round(pos)
 	local drops = {}
 	-- scan for nearby ship protection shields
 	local shipp = find_ship_protect(pos)
 	if not shipp then
-		return missile_explode(pos, radius, ignore_protection, ignore_on_blast, owner, explode_center)
+		return plasma_explode(pos, radius, ignore_protection, ignore_on_blast, owner, explode_center)
 	end
 	-- scan for adjacent TNT nodes first, and enlarge the explosion
 	local vm1 = VoxelManip()
@@ -914,7 +914,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 		ship_shield_hit = ship_shield_hit + math.random(1, 3)
 		ship_meta:set_int("shield_hit", ship_shield_hit)
 		if ship_shield > 0 then
-			hit_damage = hit_damage + 1
+			hit_damage = hit_damage + damage
 			ship_shield = ship_shield - math.floor(hit_damage * 5 + radius + 0.5)
 			if ship_shield <= 0 then
 				ship_shield = 0
@@ -922,7 +922,7 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 			ship_meta:set_int("shield", ship_shield)
 		end
 		if ship_hp > 0 and ship_shield <= 0 then
-			hit_damage = hit_damage + 1
+			hit_damage = hit_damage + damage
 			ship_hp = ship_hp - math.floor(hit_damage * 3 + radius + 0.5)
 			ship_meta:set_int("hp", ship_hp)
 		end
@@ -934,21 +934,22 @@ local function missile_safe_explode(pos, radius, ignore_protection, ignore_on_bl
 	return drops, radius, ship_shield_prcnt
 end
 
-function ship_weapons.safe_boom(pos, def)
+function ship_weapons.safe_plasma_boom(pos, def)
 	def = def or {}
 	def.radius = def.radius or 1
 	def.damage_radius = (def.damage_radius or def.radius) * 2
+	def.damage = (def.damage or 1)
 	local meta = minetest.get_meta(pos)
 	local owner = meta:get_string("owner")
 	
-	-- do missile explode
-	local drops, radius, shield = missile_safe_explode(pos, def.radius, def.ignore_protection,
+	-- do plasma explode
+	local drops, radius, shield = plasma_safe_explode(pos, def.radius, def.damage, def.ignore_protection,
 			def.ignore_on_blast, owner, true)
 
-	local pitch = 1
+	local pitch = 1.1
 	if shield > 0 then
 		pitch = 1.0 + (shield * 0.01)
-		minetest.sound_play("ctg_shield_hit", {pos = pos, gain = 1.5, pitch = math.random(0.25,0.35),
+		minetest.sound_play("ctg_shield_hit", {pos = pos, gain = 1.5, pitch = math.random(0.25,0.30),
 				max_hear_distance = math.min(def.radius * 20, 128)}, true)
 	end
 	local sound = def.sound or "tnt_explode"
@@ -964,23 +965,25 @@ function ship_weapons.safe_boom(pos, def)
 	if def.fire then
 		area_fire(pos, damage_radius)
 	end
-	minetest.log("action", "A SAFE MISSILE explosion occurred at " .. minetest.pos_to_string(pos) ..
+	minetest.log("action", "A SAFE PLASMA explosion occurred at " .. minetest.pos_to_string(pos) ..
 		" with radius " .. radius)
 end
 
-function ship_weapons.boom(pos, def)
+function ship_weapons.plasma_boom(pos, def)
 	def = def or {}
 	def.radius = def.radius or 1
 	def.damage_radius = (def.damage_radius or def.radius) * 2
+	def.damage = (def.damage or 1)
 	local meta = minetest.get_meta(pos)
 	local owner = meta:get_string("owner")
 
-	-- do missile explode
-	local drops, radius, shield = missile_explode(pos, def.radius, def.ignore_protection,
+	-- do plasma explode
+	local drops, radius, shield = plasma_explode(pos, def.radius, def.ignore_protection,
 			def.ignore_on_blast, owner, true)
 
+	local pitch = 1.1
 	local sound = def.sound or "tnt_explode"
-	minetest.sound_play(sound, {pos = pos, gain = 2.5,
+	minetest.sound_play(sound, {pos = pos, gain = 2.5, pitch = pitch,
 			max_hear_distance = math.min(def.radius * 20, 128)}, true)
 	-- append entity drops
 	local damage_radius = (radius / math.max(1, def.radius)) * def.damage_radius
@@ -992,6 +995,6 @@ function ship_weapons.boom(pos, def)
 	if def.fire then
 		area_fire(pos, damage_radius)
 	end
-	minetest.log("action", "A MISSILE explosion occurred at " .. minetest.pos_to_string(pos) ..
+	minetest.log("action", "A PLASMA explosion occurred at " .. minetest.pos_to_string(pos) ..
 		" with radius " .. radius)
 end

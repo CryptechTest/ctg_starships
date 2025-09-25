@@ -571,16 +571,16 @@ local function setup_projectile_register(tier)
         projectile_visual_size = 0.648,
         on_hit = function(self, target)
             if not minetest.is_protected(target.intersection_point, "") then
-                ship_weapons.boom(target.intersection_point, { radius = radius, ignore_protection = false, fire = true })
+                ship_weapons.plasma_boom(target.intersection_point, { radius = radius, damage = damage, ignore_protection = false, fire = true })
             else
-                ship_weapons.safe_boom(target.intersection_point, { radius = radius, ignore_protection = false, fire = true })
+                ship_weapons.safe_plasma_boom(target.intersection_point, { radius = radius, damage = damage, ignore_protection = false, fire = true })
             end
         end,
         on_timeout = function(self)
             if not minetest.is_protected(self.previous_pos, "") then
-                ship_weapons.boom(self.previous_pos, { radius = radius, ignore_protection = false, fire = true })
+                ship_weapons.plasma_boom(self.previous_pos, { radius = radius, damage = damage, ignore_protection = false, fire = true })
             else
-                ship_weapons.safe_boom(self.previous_pos, { radius = radius, ignore_protection = false, fire = true })
+                ship_weapons.safe_plasma_boom(self.previous_pos, { radius = radius, damage = damage, ignore_protection = false, fire = true })
             end
         end,
     }
