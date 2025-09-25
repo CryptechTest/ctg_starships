@@ -12,11 +12,11 @@ local function reg_effect_ent()
             physical = false,
             collisionbox = {0, 0, 0, 0, 0, 0},            
             visual = "mesh",
-            mesh = "jump_effect_col.gltf",
-            textures = {"ctg_protect_col2.png"},
+            mesh = "jump_effect_col3.gltf",
+            textures = {"ctg_protect_col3.png"},
             use_texture_alpha = true,
             visual_size = {x=1, y=1},
-            automatic_rotate = 2,
+            automatic_rotate = 3,
             pointable = false,
             glow = 11,
             type = "jumpship"
@@ -79,6 +79,7 @@ local function check_display(pos)
         core.get_node_timer(pos):start(30)
     end
 end
+
 
 function ship_machine.register_jumpship(data)
 
@@ -205,6 +206,7 @@ function ship_machine.register_jumpship(data)
             meta:set_string("owner", placer:get_player_name())
             local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
             meta:set_string("formspec", formspec)
+		    core.get_node_timer(pos):start(5)
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
 
@@ -258,6 +260,7 @@ function ship_machine.register_jumpship(data)
                 -- meta:set_string("formspec", '')
                 return
             end
+		    core.get_node_timer(pos):start(5)
             local node = minetest.get_node(pos)
             local owner_name = ""
             if fields.set_owner and fields.owner_name then
@@ -308,7 +311,13 @@ function ship_machine.register_jumpship(data)
             effector = {
                 action = ship_machine.jumpdrive_digiline_effector
             }
-        }
+        },
+
+        on_timer = function(pos, elapsed)
+            check_display(pos);
+            core.get_node_timer(pos):start(5)
+        end,
+
     })
 
     technic.register_machine(tier, nodename, technic.receiver)

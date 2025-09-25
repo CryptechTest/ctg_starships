@@ -863,7 +863,7 @@ function ship_weapons.register_rail_cannon(data)
         local machine_desc_tier = machine_desc:format(tier)
         local machine_node = data.modname .. ":" .. ltier .. "_" .. machine_name
         local machine_demand_active = data.demand
-        local machine_demand_idle = data.demand[1] * 0.1
+        local machine_demand_idle = data.demand[1] * 0.20
 
         local charge_max = meta:get_int("charge_max") or 0
         local charge = meta:get_int("charge") or 0
