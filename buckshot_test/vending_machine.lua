@@ -37,32 +37,6 @@ local function get_shelf_formspec(pos)
 		"listring[current_player;main]"
 end
 
-local function rightclick(pos, clicker, n)
-	if n == 1 then
-		local meta = minetest.get_meta(pos)
-		local name = clicker:get_player_name()
-        local locked = meta:get_int("locked") == 1
-		local is_protected = locked and core.is_protected(pos, name);
-		if meta and not is_protected then
-			--minetest.show_formspec(name, "buckshot_test:vendor_form", get_shelf_formspec(pos))
-		end
-	elseif n == 2 then
-		pos = vector.subtract(pos, {x=0,y=1,z=0})
-		local node = core.get_node(pos)
-		--local adef = core.registered_nodes[node.name]
-		local meta = minetest.get_meta(pos)
-		local name = clicker:get_player_name()
-		--adef.on_rightclick(pos, node, clicker, nil, nil)
-        local locked = meta:get_int("locked") == 1
-        local is_protected = locked and core.is_protected(pos, name);
-		if meta and not is_protected then
-            player_pos[name] = pos
-			minetest.show_formspec(name, "buckshot_test:vendor_form", get_shelf_formspec(pos))
-		end
-	end
-    return nil
-end
-
 local function check_for_ceiling(pointed_thing)
 	if pointed_thing.above.x == pointed_thing.under.x
 	  and pointed_thing.above.z == pointed_thing.under.z
@@ -114,7 +88,27 @@ local function update_shelf(pos, listname, index, stack, player)
 	end
 end
 
-local function on_construct(pos, player)
+local function rightclick(pos, clicker, n)
+    if n == 2 then
+		pos = vector.subtract(pos, {x=0,y=1,z=0})
+	end
+    local name = clicker:get_player_name()
+    local meta = core.get_meta(pos)
+    local locked = meta:get_int("locked") == 1
+    local is_protected = locked and core.is_protected(pos, name);
+    player_pos[name] = pos
+    if meta and is_protected then
+        player_pos[name] = nil
+        --core.show_formspec(name, "buckshot_test:vendor_form", "size[1,0.5]")
+        ---core.chat_send_player(name, "Snack access denied!")
+        --core.close_formspec(name, "buckshot_test:vendor_form")
+    elseif meta and not is_protected then
+        core.show_formspec(name, "buckshot_test:vendor_form", get_shelf_formspec(pos))
+    end
+    return nil
+end
+
+local function setup_vendor(pos, player)
 	-- Initialize inventory
 	local meta = core.get_meta(pos)
     meta:set_string("owner", player)
@@ -122,7 +116,7 @@ local function on_construct(pos, player)
 	local inv = meta:get_inventory()
 	inv:set_size("main", vendor_capacity or 6)
 	-- Initialize formspec
-	meta:set_string("formspec", get_shelf_formspec(pos))
+	--meta:set_string("formspec", get_shelf_formspec(pos))
 end
     
 local function create_vendor(itemstack, placer, pointed_thing, n)
@@ -133,10 +127,6 @@ local function create_vendor(itemstack, placer, pointed_thing, n)
 	local anode = core.get_node(above)
 	local adef = core.registered_nodes[anode.name]
 
-	--local under = pointed_thing.under
-	--local unode = core.get_node(under)
-	--local udef = core.registered_nodes[unode.name]
-
 	local under1 = vector.subtract(pointed_thing.under, {x=0,y=2,z=0})
 	local node_1 = core.get_node(under1)
 	local udef_1 = core.registered_nodes[node_1.name]
@@ -146,8 +136,6 @@ local function create_vendor(itemstack, placer, pointed_thing, n)
 		pos = above
 	elseif udef_1 and udef_1.buildable_to and check_for_ceiling(pointed_thing) then
 		pos = under1
-	--elseif udef and udef.buildable_to then -- this doesn't matter since we are two node tall
-	--	pos = under
 	else
 		pos = above
 	end
@@ -184,7 +172,7 @@ local function create_vendor(itemstack, placer, pointed_thing, n)
 	core.set_node(pos, { name = mod .. name .. "_bottom_empty", param2 = dir })
 	core.set_node(toppos, { name = mod .. name .. "_top_empty", param2 = dir })
 
-	on_construct(pos, player_name)
+	setup_vendor(pos, player_name)
 
 	if not core.is_creative_enabled(player_name) then
 		itemstack:take_item()
@@ -208,37 +196,55 @@ end
 
 -- check formspec buttons or when name entered
 minetest.register_on_player_receive_fields(function(player, formname, fields)
-
+    -- check if our form
     if formname ~= "buckshot_test:vendor_form" then
+        core.log(formname)
         return
     end
 
     local name = player:get_player_name()
     local pos = player_pos[name]
-
     if not name or not pos then
+        core.chat_send_player(name, "Access Denied for Snack Machine!")
         return
     end
 
     -- reset formspec until close button pressed
     if (fields.close_me or fields.quit) then
+        player_pos[name] = nil
         return
     end
 
     local meta = core.get_meta(pos)
-    local locked = meta:get_int("locked")
+    local locked = meta:get_int("locked") > 0
+    local owner = meta:get_string("owner") or ""
+
+    if locked and name ~= owner then
+        core.show_formspec(name, formname, get_shelf_formspec(pos))
+        core.chat_send_player(name, "No Access for Snacks!")
+        return
+    elseif fields.locked and name ~= owner then
+        player_pos[name] = nil
+        core.close_formspec(name, "buckshot_test:vendor_form")
+        core.chat_send_player(name, "Access Denied for Snack Machine Lock!")
+        return
+    end
+
     if fields.locked or fields.locked ~= nil then
-        if locked == 1 then
-            locked = 0
-        else
+        if fields.locked == 'true' then
             locked = 1
+        else
+            locked = 0
         end
         meta:set_int("locked", locked)
     end
-    meta:set_string("formspec", get_shelf_formspec(pos, meta))
 
-    minetest.show_formspec(name, formname, get_shelf_formspec(pos))
+    core.show_formspec(name, formname, get_shelf_formspec(pos))
 end)
+
+-------------------------------------------------------
+-------------------------------------------------------
+-- node def
 
 local vending_def_top = {
 	description = S("Snack Machine"),
@@ -361,13 +367,12 @@ local vending_def_bottom = {
     is_ground_content = false,
     drop = "buckshot_test:vending_machine_bottom",
 	sounds = default.node_sound_metal_defaults(),
-	--[[on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
-		rightclick(pos, clicker, 1)
-		return nil
-	end,]]
+	on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
+		return rightclick(pos, clicker, 1)
+	end,
 	on_rotate = screwdriver.disallow,
 	on_construct = function(pos) 
-		return on_construct(pos)
+		return setup_vendor(pos)
 	end,
 	on_place = function(itemstack, placer, pointed_thing)
 		local under = pointed_thing.under
@@ -401,9 +406,19 @@ local vending_def_bottom = {
 		end
 		local stackname = stack:get_name()
 		local is_comsumable = minetest.get_item_group(stackname, "hunger_amount") or 0
-		local is_food = minetest.get_item_group(stackname, "food") or 0
-		local is_drink = minetest.get_item_group(stackname, "drink") or 0
-		if is_comsumable == 0 and is_food == 0 and is_drink == 0 then
+		local is_food_group = minetest.get_item_group(stackname, "food") or 0
+        local is_food_shroom = minetest.get_item_group(stackname, "food_mushroom") or 0
+        local is_food_wheat = minetest.get_item_group(stackname, "food_wheat") or 0
+        local is_food_flour = minetest.get_item_group(stackname, "food_flour") or 0        
+        local is_food_fish = minetest.get_item_group(stackname, "food_fish_raw") or 0
+        local is_food = is_food_group or is_food_shroom or is_food_wheat or is_food_flour or is_food_fish
+		local is_drink_group = minetest.get_item_group(stackname, "drink") or 0
+        local is_drink_water = minetest.get_item_group(stackname, "food_water") or 0
+        local is_drink_coffee = minetest.get_item_group(stackname, "food_coffee") or 0
+        local is_drink_milk = minetest.get_item_group(stackname, "food_milk") or 0
+        local is_drink = is_drink_group or is_drink_water or is_drink_coffee or is_drink_milk
+        local is_bottle = minetest.get_item_group(stackname, "vessel") or 0
+		if is_comsumable == 0 and is_food == 0 and is_drink == 0 and is_bottle == 0 then
 			return 0
 		end
 		return stack:get_count()
@@ -420,9 +435,13 @@ local vending_def_bottom = {
 	on_metadata_inventory_take = update_shelf,
 	on_dig = function(pos, node, digger)
 		local drop = "buckshot_test:vending_machine_bottom"
-		-- Pop-up items
-		minetest.add_item(pos, drop)
-		local meta = minetest.get_meta(pos)
+		local meta = core.get_meta(pos)
+        local locked = meta:get_int("locked") == 1
+		if locked and core.is_protected(pos, digger:get_player_name()) then
+			return
+		end
+        -- Pop-up items
+		core.add_item(pos, drop)
 		local list = meta:get_inventory():get_list("main")
 		if list then
 			for _,item in pairs(list) do
@@ -430,46 +449,33 @@ local vending_def_bottom = {
 					x=math.random(pos.x - 0.5, pos.x + 0.5),
 					y=math.random(pos.y - 0.0, pos.x + 0.5),
 					z=math.random(pos.z - 0.5, pos.z + 0.5)}
-				minetest.add_item(pos, item:to_string())
+				core.add_item(pos, item:to_string())
 			end
 		end
 		-- Remove node
-		minetest.remove_node(pos)
+		core.remove_node(pos)
 		destruct_vendor(pos, 1)
 	end,
 	on_blast = function(pos)
     	local drop = "buckshot_test:vending_machine_bottom"
-		minetest.add_item(pos, drop)
-		local meta = minetest.get_meta(pos)
+		core.add_item(pos, drop)
+		local meta = core.get_meta(pos)
 		local list = meta:get_inventory():get_list("main")
 		if list then
 			for _,item in pairs(list) do
 				local drop_pos = {x=math.random(pos.x - 0.5, pos.x + 0.5), y=pos.y, z=math.random(pos.z - 0.5, pos.z + 0.5)}
-				minetest.add_item(pos, item:to_string())
+				core.add_item(pos, item:to_string())
 			end
 		end
 		-- Remove node
-		minetest.remove_node(pos)
+		core.remove_node(pos)
 		destruct_vendor(pos, 1)
 		return nil
 	end,
-    on_receive_fields = function(pos, formname, fields, sender)
-        if fields.quit then
-            return
-        end
-        local meta = core.get_meta(pos)
-        local locked = meta:get_int("locked")
-        if fields.locked or fields.locked ~= nil then
-            if locked == 1 then
-                locked = 0
-            else
-                locked = 1
-            end
-            meta:set_int("locked", locked)
-        end
-        meta:set_string("formspec", get_shelf_formspec(pos, meta))
-    end,
 }
+
+-------------------------------------------------------
+-- node registration
 
 local vending_def_top_1 = deepcopy(vending_def_top)
 local vending_def_top_2 = deepcopy(vending_def_top)
