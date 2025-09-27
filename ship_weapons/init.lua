@@ -24,4 +24,5 @@ dofile(default_path .. DIR_DELIM .. "plasma_cannon.lua")
 --dofile(default_path .. DIR_DELIM .. "plasma_cannon_heavy.lua") -- TODO: finish this?
 dofile(default_path .. DIR_DELIM .. "rail_cannon_projectile.lua")
 dofile(default_path .. DIR_DELIM .. "rail_cannon.lua")
-dofile(default_path .. DIR_DELIM .. "laser_cannon.lua")
+-- disable till done..
+--dofile(default_path .. DIR_DELIM .. "laser_cannon.lua")
