@@ -569,10 +569,14 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
 
         if dish_ping == 0 then
             meta:set_int("dish_ping", 30)
-            meta:set_string("dish_pos", '')
-            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "targeting_dish", {
-                command = "pos_self"
-            })
+            meta:set_string("dish_pos", '') 
+            local node = digilines.get_node_force(pos)
+            local spec = digilines.getspec(node)
+            if spec and spec.effector and spec.effector.action then
+                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "targeting_dish", {
+                    command = "pos_self"
+                })
+            end
         end
         if dish_ping > 0 then
             meta:set_int("dish_ping", dish_ping - 1)
