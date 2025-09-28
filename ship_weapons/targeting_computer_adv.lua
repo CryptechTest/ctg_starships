@@ -573,9 +573,10 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
             local node = digilines.get_node_force(pos)
             local spec = digilines.getspec(node)
             if spec and spec.effector and spec.effector.action then
-                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "targeting_dish", {
+                core.log("digilines.receptor_send : placeholder")
+                --[[digilines.receptor_send(pos, technic.digilines.rules_allfaces, "targeting_dish", {
                     command = "pos_self"
-                })
+                })]]
             end
         end
         if dish_ping > 0 then
