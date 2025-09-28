@@ -185,7 +185,8 @@ function ship_engine.register_engine(data)
             end
 
             if not has_mese and meta:get_int("src_tick") <= 0 then
-                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine", "request_mese")
+                --digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine", "request_mese")
+                core.log('receptor_send : request_mese');
             end
 
             if meta:get_int('last_input_type') > 0 then
