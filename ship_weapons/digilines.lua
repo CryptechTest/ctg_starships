@@ -141,11 +141,17 @@ ship_weapons.targeting_dish_digiline_effector = function(pos, node, channel, msg
     if msg.command == "pos_self" then
         local meta = minetest.get_meta(pos)
         if (meta:get_int("enabled") == 1) then
-            meta:set_int("pinged", 1)
-            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "targeting_computer_adv", {
-                command = "dish_pos",
-                dish_pos = minetest.serialize(pos)
-            })
+            local node = digilines.get_node_force(pos)
+            local spec = digilines.getspec(node)
+            if spec then
+                if spec.effector and spec.effector.action then
+                    meta:set_int("pinged", 1)
+                    digilines.receptor_send(pos, technic.digilines.rules_allfaces, "targeting_computer_adv", {
+                        command = "dish_pos",
+                        dish_pos = minetest.serialize(pos)
+                    })
+                end
+            end
             local dir = ship_weapons.get_port_direction(pos);
             meta:set_string("dish_dir", minetest.serialize(dir))
         end

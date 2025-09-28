@@ -707,8 +707,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         digiline = {
             receptor = {
                 rules = technic.digilines.rules_allfaces,
-                action = function()
-                end
+                action = {}
             },
             effector = {
                 rules = technic.digilines.rules_allfaces,
