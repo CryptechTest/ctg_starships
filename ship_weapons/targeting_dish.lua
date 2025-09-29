@@ -160,10 +160,10 @@ function ship_weapons.register_targeting_dish(custom_data)
         technic_run = run,
 
         digiline = {
-            --[[receptor = {
+            receptor = {
                 rules = technic.digilines.rules_allfaces,
                 action = {}
-            },]]
+            },
             effector = {
                 rules = technic.digilines.rules_allfaces,
                 action = ship_weapons.targeting_dish_digiline_effector

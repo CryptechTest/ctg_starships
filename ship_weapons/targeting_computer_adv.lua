@@ -710,10 +710,10 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         technic_run = run,
 
         digiline = {
-            --[[receptor = {
+            receptor = {
                 rules = technic.digilines.rules_allfaces,
                 action = {}
-            },]]--
+            },
             effector = {
                 rules = technic.digilines.rules_allfaces,
                 action = ship_weapons.targeting_computer_adv_digiline_effector
