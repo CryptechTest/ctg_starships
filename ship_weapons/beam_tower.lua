@@ -873,6 +873,16 @@ function ship_weapons.register_beam_tower(data)
             -- return
         end
     end
+    
+    local digilines = {}
+    if data.digiline_effector then
+        digilines = {
+            effector = {
+                rules = technic.digilines.rules_allfaces,
+                action = data.digiline_effector
+            }
+        }
+    end
 
     -------------------------------------------------------
     -- register machine node
@@ -935,15 +945,7 @@ function ship_weapons.register_beam_tower(data)
 
         on_receive_fields = on_receive_fields,
 
-        digiline = {
-            receptor = {
-                action = function()
-                end
-            },
-            effector = {
-                action = data.digiline_effector
-            }
-        },
+        digiline = digilines,
         -- on_punch = on_punch,
         on_timer = on_timer
     })
@@ -989,15 +991,7 @@ function ship_weapons.register_beam_tower(data)
 
         on_receive_fields = on_receive_fields,
 
-        digiline = {
-            receptor = {
-                action = function()
-                end
-            },
-            effector = {
-                action = data.digiline_effector
-            }
-        },
+        digiline = digilines,
         -- on_punch = on_punch,
         on_timer = on_timer
     })
@@ -1034,15 +1028,7 @@ function ship_weapons.register_beam_tower(data)
 
         on_receive_fields = on_receive_fields,
 
-        digiline = {
-            receptor = {
-                action = function()
-                end
-            },
-            effector = {
-                action = data.digiline_effector
-            }
-        },
+        digiline = digilines,
         -- on_punch = on_punch,
         on_timer = on_timer
     })
@@ -1106,15 +1092,7 @@ function ship_weapons.register_beam_tower(data)
 
         on_receive_fields = on_receive_fields,
 
-        digiline = {
-            receptor = {
-                action = function()
-                end
-            },
-            effector = {
-                action = data.digiline_effector
-            }
-        },
+        digiline = digilines,
 
         on_timer = function(pos, elapsed)
             local meta = minetest.get_meta(pos)
