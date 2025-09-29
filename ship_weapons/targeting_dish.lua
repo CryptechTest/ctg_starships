@@ -166,7 +166,7 @@ function ship_weapons.register_targeting_dish(custom_data)
             },]]
             effector = {
                 rules = technic.digilines.rules_allfaces,
-                action = ship_weapons.targeting_dish_digiline_effector or {}
+                action = ship_weapons.targeting_dish_digiline_effector
             }
         }
     })

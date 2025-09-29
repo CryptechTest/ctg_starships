@@ -457,7 +457,7 @@ function ship_engine.register_engine(data)
 
         digiline = {
             effector = {
-                action = data.engine_digiline_effector or {}
+                action = data.engine_digiline_effector
             }
         }
     })
