@@ -390,12 +390,8 @@ function ship_engine.register_engine(data)
         end,
 
         digiline = {
-            receptor = {
-                action = function()
-                end
-            },
             effector = {
-                action = data.engine_digiline_effector
+                action = data.engine_digiline_effector or {}
             }
         }
     })
@@ -460,12 +456,8 @@ function ship_engine.register_engine(data)
         end,
 
         digiline = {
-            receptor = {
-                action = function()
-                end
-            },
             effector = {
-                action = data.engine_digiline_effector
+                action = data.engine_digiline_effector or {}
             }
         }
     })
@@ -685,12 +677,8 @@ function ship_engine.register_engine_core(data)
         end,
 
         digiline = {
-            receptor = {
-                action = function()
-                end
-            },
             effector = {
-                action = ship_engine.engine_digiline_effector
+                action = ship_engine.engine_digiline_effector or {}
             }
         }
     })
@@ -754,12 +742,8 @@ function ship_engine.register_engine_core(data)
         end,
 
         digiline = {
-            receptor = {
-                action = function()
-                end
-            },
             effector = {
-                action = ship_engine.engine_digiline_effector
+                action = ship_engine.engine_digiline_effector or {}
             }
         }
     })
