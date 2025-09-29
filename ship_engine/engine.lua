@@ -391,7 +391,7 @@ function ship_engine.register_engine(data)
 
         digiline = {
             effector = {
-                action = data.engine_digiline_effector or {}
+                action = data.engine_digiline_effector
             }
         }
     })
@@ -678,7 +678,7 @@ function ship_engine.register_engine_core(data)
 
         digiline = {
             effector = {
-                action = ship_engine.engine_digiline_effector or {}
+                action = ship_engine.engine_digiline_effector
             }
         }
     })
@@ -743,7 +743,7 @@ function ship_engine.register_engine_core(data)
 
         digiline = {
             effector = {
-                action = ship_engine.engine_digiline_effector or {}
+                action = ship_engine.engine_digiline_effector
             }
         }
     })
