@@ -185,11 +185,17 @@ function ship_engine.register_engine(data)
             end
 
             if not has_mese and meta:get_int("src_tick") <= 0 then
-                --core.log('receptor_send : request_mese');
-                if string.find(machine_name, '_l') then
-                    digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine_p", "request_mese")
+                local flipflop = meta:get_int('flipflop') or 0
+                if flipflop == 0 then
+                    meta:set_int('flipflop', 1)
+                    --core.log('receptor_send : request_mese');
+                    if string.find(machine_name, '_l') then
+                        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine_p", "request_mese")
+                    else
+                        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine_s", "request_mese")
+                    end
                 else
-                    digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine_s", "request_mese")
+                    meta:set_int('flipflop', 0)
                 end
             end
 
