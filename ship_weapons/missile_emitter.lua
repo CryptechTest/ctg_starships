@@ -374,11 +374,71 @@ function ship_weapons.register_missile_tower(data)
         on_hit(pos, pos)
     end
 
+    local function get_dir(pos)
+        local node = minetest.get_node(pos)
+        local param2 = node.param2
+        local dir_x = 0
+        local dir_z = 0
+        local dir_y = 0
+        local dir = math.floor(param2 / 4)
+        local rot = param2 % 4
+        if dir == 0 or dir == 5 then
+            if rot == 0 then
+                dir_z = 1
+            elseif rot == 1 then
+                dir_x = 1
+            elseif rot == 2 then
+                dir_z = -1
+            elseif rot == 3 then
+                dir_x = -1
+            end
+        elseif dir == 1 or dir == 3 then
+            if rot == 0 then
+                dir_y = -1
+            elseif rot == 1 then
+                dir_y = -1
+            elseif rot == 2 then
+                dir_y = 1
+            elseif rot == 3 then
+                dir_y = 1
+            end
+        elseif dir == 2 or dir == 4 then
+            if rot == 0 then
+                dir_y = 1
+            elseif rot == 1 then
+                dir_y = 1
+            elseif rot == 2 then
+                dir_y = 1
+            elseif rot == 3 then
+                dir_y = 1
+            end
+        end
+        return {x=dir_x, y=dir_y, z=dir_z}
+    end
+
+    local function get_yaw(pos)
+        local pi = math.pi
+        local rotation = minetest.get_node(pos).param2
+        if rotation > 3 then
+            rotation = rotation % 4 -- Mask colorfacedir values
+        end
+        if rotation == 1 then
+            return pi / 2, rotation
+        elseif rotation == 3 then
+            return -pi / 2, rotation
+        elseif rotation == 0 then
+            return pi, rotation
+        else
+            return 0, rotation
+        end
+    end
+
     local on_timer = function(pos, elapsed)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_idle")
         meta:set_int("broken", 0);
-        local objs = minetest.get_objects_inside_radius(pos, 0.45)
+        local yawRad, rotation = get_yaw(pos)
+        local objs = core.get_objects_inside_radius(pos, 0.45)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -386,6 +446,9 @@ function ship_weapons.register_missile_tower(data)
                     obj:set_properties({
                         is_visible = true
                     })
+                    local rot = {x = 0, y = yawRad, z = 0}
+                    obj:set_rotation(rot)
+                    core.log(dump(rot))
                     break
                 end
             end
@@ -475,6 +538,9 @@ function ship_weapons.register_missile_tower(data)
         if not minetest.compare_block_status(pos, "active") then
             return
         end
+        local yawRad, rotation = get_yaw(pos)
+        local dir = get_dir(pos)
+        local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
         local found_display = false
         local objs = minetest.get_objects_inside_radius(pos, 0.5)
         for _, obj in pairs(objs) do
@@ -489,8 +555,10 @@ function ship_weapons.register_missile_tower(data)
             end
         end
         if not found_display then
-            minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
+            local obj = minetest.add_entity(e_pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
             minetest.get_node_timer(pos):start(30)
+            local rot = {x = 0, y = yawRad, z = 0}
+            obj:set_rotation(rot)
         end
     end
 
@@ -753,8 +821,12 @@ function ship_weapons.register_missile_tower(data)
             if data.tube then
                 pipeworks.after_place(pos)
             end
-            minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
-
+            local dir = get_dir(pos)
+            local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
+            local obj = minetest.add_entity(e_pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
+            local yawRad, rotation = get_yaw(pos)
+            local rot = {x = 0, y = yawRad, z = 0}
+            obj:set_rotation(rot)
             local meta = minetest.get_meta(pos)
             if placer:is_player() then
                 meta:set_string("owner", placer:get_player_name())
@@ -992,6 +1064,8 @@ function ship_weapons.register_missile_tower(data)
             if time >= 1 then
                 technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name)
                 meta:set_int("broken", 0);
+                local dir = get_dir(pos)
+                local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
                 minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
                 meta:set_int("hp", data.hp)
                 meta:set_int("charge", 0)
@@ -1015,7 +1089,7 @@ function ship_weapons.register_missile_tower(data)
     minetest.register_entity("ship_weapons:" .. ltier .. "_missile_tower_display", {
         initial_properties = {
             physical = false,
-            collisionbox = {-0.75, -0.75, -0.75, 0.75, 0.75, 0.75},
+            collisionbox = {-0.55, -0.55, -0.55, 0.55, 0.55, -0.55},
             visual = "wielditem",
             -- wielditem seems to be scaled to 1.5 times original node size
             visual_size = {
@@ -1132,9 +1206,9 @@ function ship_weapons.register_missile_tower(data)
     -- Display-zone node, Do NOT place the display as a node,
     -- it is made to be used as an entity (see above)
 
-    local x = 0.2
-    local y = 0.2
-    local z = 0.2
+    local x = 0.0
+    local y = 0.0
+    local z = -0.2
     minetest.register_node("ship_weapons:" .. ltier .. "_missile_tower_display_node", {
         tiles = {"ctg_tower_select_" .. ltier .. ".png"},
         use_texture_alpha = "clip",
