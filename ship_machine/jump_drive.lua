@@ -173,7 +173,10 @@ function ship_machine.register_jumpship(data)
             level = 2,
             jumpdrive = 1,
             ship_machine = 1,
-            not_in_creative_inventory = 1
+            not_in_creative_inventory = 1,
+            ship_size_w = data.size.w,
+            ship_size_l = data.size.l,
+            ship_size_h = data.size.h,
         },
         sounds = default.node_sound_metal_defaults(),
         drop = nodename,

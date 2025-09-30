@@ -154,7 +154,8 @@ function ship_engine.get_mese(items, take)
     if (c > 0) then
         return {
             new_input = new_input,
-            input_type = input_type
+            input_type = input_type,
+            count = c
         }
     else
         return nil

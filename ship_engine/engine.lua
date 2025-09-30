@@ -186,13 +186,17 @@ function ship_engine.register_engine(data)
 
             if not has_mese and meta:get_int("src_tick") <= 0 then
                 --core.log('receptor_send : request_mese');
-                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine", "request_mese")
+                if string.find(machine_name, '_l') then
+                    digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine_p", "request_mese")
+                else
+                    digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine_s", "request_mese")
+                end
             end
 
             if meta:get_int('last_input_type') > 0 then
                 meta:set_int(tier .. "_EU_supply", data.supply)
                 if needs_charge then
-                    meta:set_int("src_tick", meta:get_int("src_tick") + 10)
+                    meta:set_int("src_tick", meta:get_int("src_tick") + 2)
                 else
                     meta:set_int("src_tick", meta:get_int("src_tick") + 1)
                 end
@@ -201,7 +205,7 @@ function ship_engine.register_engine(data)
             end
 
             if meta:get_int('last_input_type') == 0 and meta:get_int("src_tick") > 0 then
-                meta:set_int("src_tick", 0)
+                meta:set_int("src_tick", meta:get_int("src_tick") - 10)
             end
 
             local item_percent = ((meta:get_int("src_time") / round(time_scl * 10)) * 100)

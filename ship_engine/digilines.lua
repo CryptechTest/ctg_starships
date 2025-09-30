@@ -18,8 +18,36 @@ ship_engine.engine_digiline_effector_l = function(pos, node, channel, msg)
             charge = meta:get_int("charge"),
             demand = meta:get_int("demand"),
             enable = meta:get_int("enabled"),
-            charge_max = meta:get_int("charge_max")
+            charge_max = meta:get_int("charge_max"),
+            xclear = meta:get_int("exhaust_clear") == 1,
         })
+    end
+
+    if msg.command == "fuel" then
+        local meta = core.get_meta(pos)
+        local inv = meta:get_inventory()
+        local mese = ship_engine.get_mese(inv:get_list("src"))
+        local last_input = meta:get_int('last_input_type')
+        if mese ~= nil then
+            local stackname = mese.new_input:get_name()
+            local count = mese.count
+            local value = mese.input_type
+            digilines.receptor_send(pos, digilines.rules.default, channel, {
+                command = msg.command .. "_ack",
+                fuelname = stackname,
+                amount = count,
+                value = value,
+                active = last_input > 0
+            })
+        else
+            digilines.receptor_send(pos, digilines.rules.default, channel, {
+                command = msg.command .. "_ack",
+                fuelname = 'nil',
+                amount = 0,
+                value = last_input,
+                active = last_input > 0
+            })
+        end
     end
 
     if msg.command == "ready" then
@@ -68,8 +96,36 @@ ship_engine.engine_digiline_effector_r = function(pos, node, channel, msg)
             charge = meta:get_int("charge"),
             demand = meta:get_int("demand"),
             enable = meta:get_int("enabled"),
-            charge_max = meta:get_int("charge_max")
+            charge_max = meta:get_int("charge_max"),
+            xclear = meta:get_int("exhaust_clear") == 1,
         })
+    end
+
+    if msg.command == "fuel" then
+        local meta = core.get_meta(pos)
+        local inv = meta:get_inventory()
+        local mese = ship_engine.get_mese(inv:get_list("src"))
+        local last_input = meta:get_int('last_input_type')
+        if mese ~= nil then
+            local stackname = mese.new_input:get_name()
+            local count = mese.count
+            local value = mese.input_type
+            digilines.receptor_send(pos, digilines.rules.default, channel, {
+                command = msg.command .. "_ack",
+                fuelname = stackname,
+                amount = count,
+                value = value,
+                active = last_input > 0
+            })
+        else
+            digilines.receptor_send(pos, digilines.rules.default, channel, {
+                command = msg.command .. "_ack",
+                fuelname = 'nil',
+                amount = 0,
+                value = last_input,
+                active = last_input > 0
+            })
+        end
     end
 
     if msg.command == "ready" then

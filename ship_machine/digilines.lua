@@ -111,25 +111,54 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
         return
     end
 
-    minetest.log(dump(msg))
+    -- minetest.log(dump(msg))
     if msg.command == 'jump' then
-        if (not msg.dest) then
+        if (not msg.offset) then
             return
         end
-        minetest.log(dump(msg.dest))
-        local meta = minetest.get_meta(pos)
+        --minetest.log(dump(msg.offset))
+        local node = core.get_node(pos)
+        local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
+        local enabled = meta:get_int("enable") == 1
+        local w = core.get_item_group(node.name, 'ship_size_w')
+        local h = core.get_item_group(node.name, 'ship_size_h')
+        local l = core.get_item_group(node.name, 'ship_size_l')
         local size = {
-            w = 20,
-            h = 18,
-            l = 34
+            w = w,
+            h = h,
+            l = l
         }
-        if ship_machine.check_engines_charged(pos) then
-            digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', {
-                command = 'jumping'
-            })
-            ship_machine.engines_charged_spend(pos)
-            --ship_machine.transport_jumpship(pos, msg.dest, size, owner)
+        if enabled then
+            local function jump_callback(j)
+                local success = false
+                local message = ""
+                if j == 1 then
+                    success = true
+                    message = "Performing Jump!"
+                elseif j == 0 then
+                    message = "FTL Engines require more charge..."
+                elseif j == -1 then
+                    message = "Travel obstructed at destination."
+                elseif j == -3 then
+                    message = "FTL Jump Drive not found..."
+                else
+                    message = "FTL Engines Failed to Start?"
+                end
+                local msg = {
+                    success,
+                    message
+                }
+                digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', msg)
+            end
+            -- async jump with callback
+            ship_machine.engine_do_jump(pos, size, jump_callback, msg.offset)
+        else
+            local msg = {
+                success = false,
+                message = "FTL Drive not enabled."
+            }
+            digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', msg)
         end
     end
 
@@ -141,6 +170,12 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
     if msg.command == "disable" then
         local meta = minetest.get_meta(pos)
         meta:set_int("enabled", 0)
+    end
+
+    if msg.command == "pos" then
+        digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', {
+            pos = minetest.serialize(pos)
+        })
     end
 
 end
