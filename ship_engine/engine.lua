@@ -395,6 +395,7 @@ function ship_engine.register_engine(data)
                 end
             },
             effector = {
+                rules = technic.digilines.rules_allfaces,
                 action = data.engine_digiline_effector
             }
         }
@@ -465,6 +466,7 @@ function ship_engine.register_engine(data)
                 end
             },
             effector = {
+                rules = technic.digilines.rules_allfaces,
                 action = data.engine_digiline_effector
             }
         }
@@ -690,6 +692,7 @@ function ship_engine.register_engine_core(data)
                 end
             },
             effector = {
+                rules = technic.digilines.rules_allfaces,
                 action = ship_engine.engine_digiline_effector
             }
         }
@@ -759,6 +762,7 @@ function ship_engine.register_engine_core(data)
                 end
             },
             effector = {
+                rules = technic.digilines.rules_allfaces,
                 action = ship_engine.engine_digiline_effector
             }
         }
