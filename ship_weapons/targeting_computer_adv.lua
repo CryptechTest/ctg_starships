@@ -75,6 +75,9 @@ local function do_strike_obj(pos, mode, ltier)
     local meta = minetest.get_meta(pos)
     local ship_pos = find_ship_protect(pos, 72)
     local dish_pos = minetest.deserialize(meta:get_string("dish_pos")) or nil
+    if dish_pos == nil then
+        return 0
+    end
     local meta_dish = minetest.get_meta(dish_pos)
     local range = meta_dish:get_int("range")
     -------------------------------------------------------

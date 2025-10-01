@@ -198,7 +198,7 @@ end
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- check if our form
     if formname ~= "buckshot_test:vendor_form" then
-        core.log(formname)
+        --core.log(formname)
         return
     end
 
