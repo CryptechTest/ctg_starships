@@ -146,10 +146,13 @@ local function show_door_form(pos, player)
 end
 
 local function is_protected(pos, placer)
+    local meta = core.get_meta(pos)
+    local owner = meta:get_string("owner") or ""
     local player_name = placer and placer:get_player_name() or ""
     local protect_bypass = core.check_player_privs(player_name, "protection_bypass")
+    local is_owner = owner == player_name
     local is_protected = core.is_protected(pos, player_name)
-    if not is_protected and not protect_bypass then
+    if not is_protected and not protect_bypass and not is_owner then
         --core.record_protection_violation(pos, player_name)
         return true
     end
