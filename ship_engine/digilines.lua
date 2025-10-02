@@ -1,7 +1,7 @@
 ship_engine.engine_digiline_effector_l = function(pos, node, channel, msg)
     local meta = minetest.get_meta(pos)
-    local channel = meta:get_string("digiline_channel")
-    local set_channel = channel or "ship_engine_p"
+    local digiline_channel = meta:get_string("digiline_channel")
+    local set_channel = digiline_channel or "ship_engine_p"
 
     local msgt = type(msg)
 
@@ -75,8 +75,8 @@ end
 
 ship_engine.engine_digiline_effector_r = function(pos, node, channel, msg)
     local meta = minetest.get_meta(pos)
-    local channel = meta:get_string("digiline_channel")
-    local set_channel = channel or "ship_engine_s"
+    local digiline_channel = meta:get_string("digiline_channel")
+    local set_channel = digiline_channel or "ship_engine_s"
 
     local msgt = type(msg)
 
