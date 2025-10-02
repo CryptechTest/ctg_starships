@@ -148,6 +148,7 @@ function ship_engine.register_engine(data)
             local enabled = meta:get_int("enabled") == 1
             local chrg = meta:get_int('last_input_type')
             local xclear = meta:get_int("exhaust_clear") >= 1
+            local editing = meta:get_int("editing") > 0
 
             if needs_charge then
                 meta:set_int(tier .. "_EU_demand", machine_demand[1])
@@ -168,9 +169,11 @@ function ship_engine.register_engine(data)
                 meta:set_int(tier .. "_EU_supply", 0)
                 meta:set_int("src_time", 0)
                 meta:set_int("exhaust_clear", 1)
-                local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max,
-                    eu_input, eu_supply, meta:get_int("src_tick"), tick_scl)
-                meta:set_string("formspec", formspec)
+                if not editing then
+                    local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max,
+                        eu_input, eu_supply, meta:get_int("src_tick"), tick_scl, meta:get_string("digiline_channel"))
+                    meta:set_string("formspec", formspec)
+                end
                 return
             end
 
@@ -179,9 +182,11 @@ function ship_engine.register_engine(data)
                 meta:set_string("infotext", machine_desc_tier .. S(" Exhaust Blocked"):format())
                 meta:set_int(tier .. "_EU_demand", 0)
                 meta:set_int(tier .. "_EU_supply", 0)
-                local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max,
-                    eu_input, eu_supply, meta:get_int("src_tick"), tick_scl)
-                meta:set_string("formspec", formspec)
+                if not editing then
+                    local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max,
+                        eu_input, eu_supply, meta:get_int("src_tick"), tick_scl, meta:get_string("digiline_channel"))
+                    meta:set_string("formspec", formspec)
+                end
                 return
             end
 
@@ -236,16 +241,20 @@ function ship_engine.register_engine(data)
                     time_scl = time_tick * (out_res * 0.1)
                     meta:set_int("src_tick", meta:get_int("src_tick") + 1)
                 end
-                item_percent = ((meta:get_int("src_time") / round(time_scl * 10)) * 100)
-                local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, item_percent, charge,
-                    charge_max, eu_input, eu_supply, meta:get_int("src_tick"), tick_scl)
-                meta:set_string("formspec", formspec)
+                if not editing then
+                    item_percent = ((meta:get_int("src_time") / round(time_scl * 10)) * 100)
+                    local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, item_percent, charge,
+                        charge_max, eu_input, eu_supply, meta:get_int("src_tick"), tick_scl, meta:get_string("digiline_channel"))
+                    meta:set_string("formspec", formspec)
+                end
                 return
             end
 
-            local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, item_percent, charge,
-                charge_max, eu_input, eu_supply, meta:get_int("src_tick"), tick_scl)
-            meta:set_string("formspec", formspec)
+            if not editing then
+                local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, item_percent, charge,
+                    charge_max, eu_input, eu_supply, meta:get_int("src_tick"), tick_scl, meta:get_string("digiline_channel"))
+                meta:set_string("formspec", formspec)
+            end
 
             if needs_charge == false then
                 if meta:get_int("src_time") < round(data.speed * 10.0 * 2) then
@@ -359,11 +368,19 @@ function ship_engine.register_engine(data)
         technic_run = run,
 
         on_receive_fields = function(pos, formname, fields, sender)
+            local meta = minetest.get_meta(pos)
             if fields.quit then
+                meta:set_int("editing", 0)
+                return
+            end
+            local name = sender:get_player_name()
+            local owner = meta:get_string("owner")
+            local is_owner = owner == name
+            local is_protected = core.is_protected(pos, name)
+            if not is_owner and is_protected then
                 return
             end
             local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
             local charge_max = meta:get_int("charge_max")
             local charge = meta:get_int("charge")
             local eu_input = meta:get_int(tier .. "_EU_input")
@@ -377,8 +394,17 @@ function ship_engine.register_engine(data)
                     enabled = true
                 end
             end
+            if fields.editing then
+                meta:set_int("editing", 1)
+            end
+            if fields.digiline_save then
+                if fields.digiline then
+                    meta:set_string("digiline_channel", fields.digiline)
+                    meta:set_int("editing", 0)
+                end
+            end
             local formspec = ship_engine.update_formspec(data, false, enabled, false, 0, charge, charge_max, eu_input,
-                eu_supply, meta:get_int("src_tick"), tick_scl)
+                eu_supply, meta:get_int("src_tick"), tick_scl, meta:get_string("digiline_channel"), meta:get_int("editing") > 0)
             meta:set_string("formspec", formspec)
         end,
 
@@ -449,7 +475,7 @@ function ship_engine.register_engine(data)
                 end
             end
             local formspec = ship_engine.update_formspec(data, false, enabled, false, 0, charge, charge_max, eu_input,
-                eu_supply, meta:get_int("src_tick"), tick_scl)
+                eu_supply, meta:get_int("src_tick"), tick_scl, meta:get_string("digiline_channel"))
             meta:set_string("formspec", formspec)
         end,
 

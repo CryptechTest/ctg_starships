@@ -13,7 +13,7 @@ local function round(number, steps)
 end
 
 function ship_engine.update_formspec(data, running, enabled, has_mese, percent, charge, charge_max, eu_input, eu_supply,
-    tick, tick_max)
+    tick, tick_max, digi_channel, editing)
     local machine_name = data.machine_name
     local machine_desc = "Jumpship " .. data.machine_desc
     local typename = data.typename
@@ -22,6 +22,17 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
     local formspec = nil
     if percent then
         percent = round(percent, 100)
+    end
+    local digi_channel = digi_channel or machine_name
+    local editing = editing or false
+
+    if typename == 'engine' and editing then
+        formspec = "size[6,2.75;]" ..
+            "background[0.65,0.75;4.35,1.125;console_bg.png]"..
+            "field[0.95,1.25;3.2,1;digiline;Digiline Channel;"..digi_channel.."]"..
+            "button[3.75,0.95;1.25,1;digiline_save;Save]"
+
+        return formspec
     end
 
     if typename == 'engine' then
@@ -56,12 +67,16 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
                        ":gui_furnace_arrow_fg.png^[transformR270]" .. "listring[current_name;dst]" ..
                        "listring[current_player;main]" .. "listring[current_name;src]" ..
                        "listring[current_player;main]" .. "image[2,1;1,1;" .. mese_image_mask .. "]" ..
-                       "button[3,3;4,1;toggle;" .. btnName .. "]" .. "label[2,2;Charge " .. tostring(charge) .. " of " ..
+                       "button[3,2.5;3,1;toggle;" .. btnName .. "]" .. "label[2,2;Charge " .. tostring(charge) .. " of " ..
                        tostring(charge_max) .. "]" .. "label[5,2;" .. tostring(charge_percent) .. "%" .. "]" ..
                        power_field .. input_field .. output_field ..
                        "image[3,1.25;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
                        ":gui_furnace_arrow_fg.png^[transformR270]" .. "label[4,0.6;" .. tostring(tick_percent) .. "%" ..
-                       "]" -- .. "label[2,0.6;" .. tostring(percent) .. "%" .. "]" ..
+                       "]".. -- .. "label[2,0.6;" .. tostring(percent) .. "%" .. "]" ..
+                       "button[6.75,3.95;1.25,1;editing;Edit]"..
+                       "background[3.65,3.75;4.35,1.125;console_bg.png]"..
+                       "field[3.95,4.25;3.2,1;digiline;Digiline Channel;"..digi_channel.."]"
+                       --"button[6.75,3.95;1.25,1;digiline_save;Save]"
     end
 
     if typename == 'engine_core' then

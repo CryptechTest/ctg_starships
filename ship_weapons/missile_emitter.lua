@@ -469,6 +469,11 @@ function ship_weapons.register_missile_tower(data)
         if name ~= owner then
             return
         end
+        if fields.digiline_save then
+            if fields.digiline then
+                meta:set_string("digiline_channel", fields.digiline)
+            end
+        end
         local enabled = meta:get_int("enabled") == 1
         if fields.toggle then
             if meta:get_int("enabled") == 1 then
@@ -658,6 +663,17 @@ function ship_weapons.register_missile_tower(data)
                 -- Get a missile from inventory...
                 local missile_item = get_missile(inv:get_list("src"), ltier)
 
+                if digiline_data.launch then
+                    local launch_timeout = (meta:get_int("launch_timeout") or 0) + 1
+                    if launch_timeout >= 30 then
+                        launch_timeout = 0
+                        digiline_data.launch = false
+                        meta:set_string("digiline_data", minetest.serialize(digiline_data))
+                        meta:set_int("firing", 0)
+                    end
+                    meta:set_int("launch_timeout", launch_timeout)
+                end
+
                 if missile_item and digiline_data.launch then
                     -------------------------------------------------------
                     -- strike launch to target location
@@ -743,6 +759,7 @@ function ship_weapons.register_missile_tower(data)
                     end
 
                     if bFoundTarget then
+                        meta:set_int("launch_timeout", 0)
                         meta:set_int("firing", 1)
                         meta:set_int("charge", charge - nTargetCount)
                         -- Reduce inventory storage
@@ -860,9 +877,10 @@ function ship_weapons.register_missile_tower(data)
             meta:set_int("broken", 0)
             meta:set_int("charge_max", data.charge_max)
             meta:set_int("demand", data.demand[1])
+            meta:set_string("digiline_channel", 'static_turret')
+            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
             local formspec = ship_weapons.update_formspec(data, meta)
             meta:set_string("formspec", formspec)
-            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
         end,
 
         allow_metadata_inventory_put = technic.machine_inventory_put,
@@ -1035,9 +1053,10 @@ function ship_weapons.register_missile_tower(data)
             meta:set_int("broken", 1)
             meta:set_int("charge_max", data.charge_max)
             meta:set_int("demand", data.demand[1])
+            meta:set_string("digiline_channel", 'static_turret')
+            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
             local formspec = ship_weapons.update_formspec(data, meta)
             meta:set_string("formspec", formspec)
-            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
         end,
 
         allow_metadata_inventory_put = technic.machine_inventory_put,

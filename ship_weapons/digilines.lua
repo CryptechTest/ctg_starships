@@ -1,5 +1,7 @@
 ship_weapons.static_turret_digiline_effector = function(pos, node, channel, msg)
-    local set_channel = "static_turret" -- static channel for now
+    local meta = minetest.get_meta(pos)
+    local channel = meta:get_string("digiline_channel")
+    local set_channel = channel or "static_turret"
     local msgt = type(msg)
     if msgt ~= "table" then
         return
@@ -9,17 +11,14 @@ ship_weapons.static_turret_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "enable" then
-        local meta = minetest.get_meta(pos)
         meta:set_int("enabled", 1)
     end
 
     if msg.command == "disable" then
-        local meta = minetest.get_meta(pos)
         meta:set_int("enabled", 0)
     end
 
     if msg.command == "status" then
-        local meta = minetest.get_meta(pos)
         local inv = meta:get_inventory()
         local inv_src = inv:get_list("src")[1]
         local count = 0
@@ -34,7 +33,6 @@ ship_weapons.static_turret_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "targeting_entry" then
-        local meta = minetest.get_meta(pos)
         local te = msg.target_entry
 
         -- Get digiline data storage
@@ -53,7 +51,6 @@ ship_weapons.static_turret_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "targeting_launch" then
-        local meta = minetest.get_meta(pos)
         local le = msg.launch_entry
 
         -- Get digiline data storage
@@ -71,7 +68,6 @@ ship_weapons.static_turret_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "targeting_set" then
-        local meta = minetest.get_meta(pos)
         local te = msg.target_entry
 
         -- Get digiline data storage
@@ -89,7 +85,9 @@ ship_weapons.static_turret_digiline_effector = function(pos, node, channel, msg)
 end
 
 ship_weapons.targeting_computer_adv_digiline_effector = function(pos, node, channel, msg)
-    local set_channel = "targeting_computer_adv" -- static channel for now
+    local meta = minetest.get_meta(pos)
+    local channel = meta:get_string("digiline_channel")
+    local set_channel = channel or "targeting_computer_adv"
     local msgt = type(msg)
     if msgt ~= "table" then
         return
@@ -129,7 +127,9 @@ ship_weapons.targeting_computer_adv_digiline_effector = function(pos, node, chan
 end
 
 ship_weapons.targeting_dish_digiline_effector = function(pos, node, channel, msg)
-    local set_channel = "targeting_dish" -- static channel for now
+    local meta = minetest.get_meta(pos)
+    local channel = meta:get_string("digiline_channel")
+    local set_channel = channel or "targeting_dish"
     local msgt = type(msg)
     if msgt ~= "table" then
         return

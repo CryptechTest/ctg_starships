@@ -71,7 +71,7 @@ local function find_ship_protect(pos, r)
     return nodes
 end
 
-local function do_strike_obj(pos, mode, ltier)
+local function do_strike_obj(pos, mode, ltier, digi_channel_emit)
     local meta = minetest.get_meta(pos)
     local ship_pos = find_ship_protect(pos, 72)
     local dish_pos = minetest.deserialize(meta:get_string("dish_pos")) or nil
@@ -100,7 +100,7 @@ local function do_strike_obj(pos, mode, ltier)
                     if ent.type == "monster" and (mode == 5) then
                         bFoundTarget = true;
                         nTargetCount = nTargetCount + 1
-                        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
+                        digilines.receptor_send(pos, technic.digilines.rules_allfaces, digi_channel_emit, {
                             command = "targeting_set",
                             target_entry = {
                                 pos = obj_pos
@@ -115,7 +115,7 @@ local function do_strike_obj(pos, mode, ltier)
                 if name ~= ship_meta:get_string("owner") and not ship_weapons.is_member(ship_meta, name) and not ship_weapons.is_ally(ship_meta, name) then
                     bFoundTarget = true;
                     nTargetCount = nTargetCount + 1
-                    digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
+                    digilines.receptor_send(pos, technic.digilines.rules_allfaces, digi_channel_emit, {
                         command = "targeting_set",
                         target_entry = {
                             pos = obj_pos
@@ -127,7 +127,7 @@ local function do_strike_obj(pos, mode, ltier)
     end
     if bFoundTarget then
         meta:set_int("firing", 1)
-        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, digi_channel_emit, {
             command = "targeting_launch",
             launch_entry = {
                 count = 1,
@@ -141,7 +141,7 @@ local function do_strike_obj(pos, mode, ltier)
     return nTargetCount
 end
 
-local function do_strike_ship(pos, mode, ltier)
+local function do_strike_ship(pos, mode, ltier, digi_channel_emit)
     local meta = minetest.get_meta(pos)
     local dish_pos = minetest.deserialize(meta:get_string("dish_pos")) or nil
     if not dish_pos then
@@ -196,7 +196,7 @@ local function do_strike_ship(pos, mode, ltier)
             if our_ship ~= nil and name ~= meta:get_string("owner") and not ship_weapons.is_member(our_ship.meta, name) then
                 bFoundTarget = true;
                 nTargetCount = nTargetCount + 1
-                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
+                digilines.receptor_send(pos, technic.digilines.rules_allfaces, digi_channel_emit, {
                     command = "targeting_set",
                     target_entry = {
                         pos = target_pos
@@ -205,7 +205,7 @@ local function do_strike_ship(pos, mode, ltier)
             elseif name ~= meta:get_string("owner") then
                 bFoundTarget = true;
                 nTargetCount = nTargetCount + 1
-                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
+                digilines.receptor_send(pos, technic.digilines.rules_allfaces, digi_channel_emit, {
                     command = "targeting_set",
                     target_entry = {
                         pos = target_pos
@@ -216,7 +216,7 @@ local function do_strike_ship(pos, mode, ltier)
     end
     if bFoundTarget then
         meta:set_int("firing", 1)
-        digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
+        digilines.receptor_send(pos, technic.digilines.rules_allfaces, digi_channel_emit, {
             command = "targeting_launch",
             launch_entry = {
                 count = 1,
@@ -265,11 +265,24 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
     local connect_sides = {"top", "bottom", "left", "right"}
 
     local on_receive_fields = function(pos, formname, fields, sender)
-        if fields.quit then
-            return
-        end
         local node = minetest.get_node(pos)
         local meta = minetest.get_meta(pos)
+        local name = sender:get_player_name()
+        if not name or not pos then
+            return
+        end
+        local owner = meta:get_string("owner")
+        local is_owner = owner == name
+        local is_protected = core.is_protected(pos, name)
+        if not is_owner and is_protected then
+            return
+        end
+        if fields.quit then
+            meta:set_int("manage_edit", 0)
+            local formspec = ship_weapons.update_formspec(data, meta)
+            meta:set_string("formspec", formspec)
+            return
+        end
 
         local enabled = meta:get_int("enabled") == 1
         if fields.toggle then
@@ -285,6 +298,29 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
             local formspec = ship_weapons.update_formspec(data, meta)
             meta:set_string("formspec", formspec)
             return
+        end
+
+        if fields.btn_manage then
+            meta:set_int("manage_edit", 1)
+            local formspec = ship_weapons.update_formspec(data, meta)
+            meta:set_string("formspec", formspec)
+            return
+        end
+
+        if fields.digiline_save then
+            if fields.digiline_local then
+                meta:set_string("digiline_channel", fields.digiline_local)
+            end
+            if fields.digiline_dish then
+                meta:set_string("digiline_channel_dish", fields.digiline_dish)
+            end
+            if fields.digiline_emit then
+                meta:set_string("digiline_channel_emit", fields.digiline_emit)
+            end
+            meta:set_int("manage_edit", 0)
+            local formspec = ship_weapons.update_formspec(data, meta)
+            meta:set_string("formspec", formspec)
+            return;
         end
 
         local attack_mode = meta:get_int("attack_mode")
@@ -482,12 +518,17 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
             meta:set_int("attack_mode", attack_mode)
         end
 
+        local digi_channel_emit = meta:get_string("digiline_channel_emit")
+        if not digi_channel_emit or #digi_channel_emit == 0 then
+            digi_channel_emit = "static_turret"
+        end
+
         if fields.submit_target and not isNumError and attack_mode == 1 then
             meta:set_int("target_locked", 1)
             meta:set_float("target_power", power)
             meta:set_float("target_pitch", pitch)
             meta:set_float("target_yaw", yaw)
-            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
+            digilines.receptor_send(pos, technic.digilines.rules_allfaces, digi_channel_emit, {
                 command = "targeting_entry",
                 target_entry = {
                     power = power,
@@ -538,7 +579,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         end
 
         if fields.submit_launch and locked and attack_mode == 1 then
-            digilines.receptor_send(pos, technic.digilines.rules_allfaces, "static_turret", {
+            digilines.receptor_send(pos, technic.digilines.rules_allfaces, digi_channel_emit, {
                 command = "targeting_launch",
                 launch_entry = {
                     count = count,
@@ -570,6 +611,15 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         local dish_ping = meta:get_int("dish_ping")
         local dish_pos = minetest.deserialize(meta:get_string("dish_pos")) or nil
 
+        local digi_channel_dish = meta:get_string("digiline_channel_dish")
+        local digi_channel_emit = meta:get_string("digiline_channel_emit")
+        if not digi_channel_dish or #digi_channel_dish == 0 then
+            digi_channel_dish = "targeting_dish"
+        end
+        if not digi_channel_emit or #digi_channel_emit == 0 then
+            digi_channel_emit = "static_turret"
+        end
+
         if dish_ping == 0 then
             meta:set_int("dish_ping", 30)
             meta:set_string("dish_pos", '') 
@@ -577,7 +627,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
             local spec = digilines.getspec(node)
             if spec and spec.effector and spec.effector.action then
                 --core.log("digilines.receptor_send : pos_self")
-                digilines.receptor_send(pos, technic.digilines.rules_allfaces, "targeting_dish", {
+                digilines.receptor_send(pos, technic.digilines.rules_allfaces, digi_channel_dish, {
                     command = "pos_self"
                 })
             end
@@ -638,13 +688,13 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
             if attack_mode == 1 then
 
             elseif attack_mode == 2 and dish_pos then
-                if do_strike_obj(pos, attack_mode, ltier) == 0 then
+                if do_strike_obj(pos, attack_mode, ltier, digi_channel_emit) == 0 then
                     do_strike_ship(pos, attack_mode, ltier)
                 end
             elseif attack_mode == 3 and dish_pos then
-                do_strike_obj(pos, attack_mode, ltier)
+                do_strike_obj(pos, attack_mode, ltier, digi_channel_emit)
             elseif attack_mode == 4 and dish_pos then
-                do_strike_ship(pos, attack_mode, ltier)
+                do_strike_ship(pos, attack_mode, ltier, digi_channel_emit)
             end
 
             meta:set_int("src_time", meta:get_int("src_time") - round(time_scl * 10))
@@ -704,6 +754,10 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
             meta:set_float("target_yaw", 0.0)
             meta:set_int("dish_ping", 0)
             meta:set_string("dish_pos", '')
+            meta:set_string("digiline_channel", 'targeting_computer_adv')
+            meta:set_string("digiline_channel_dish", 'targeting_dish')
+            meta:set_string("digiline_channel_emit", 'static_turret')
+            meta:set_int("manage_edit", 0)
         end,
 
         on_punch = function(pos, node, puncher)

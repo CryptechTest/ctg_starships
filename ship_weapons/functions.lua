@@ -325,6 +325,8 @@ function ship_weapons.update_formspec(data, meta)
     local charge_max = meta:get_int("charge_max") or 1
     local attack_index = meta:get_int("attack_type") or 1
     local enabled = meta:get_int("enabled") == 1
+    local digi_channel = meta:get_string("digiline_channel")
+    local manage_edit = meta:get_int("manage_edit") > 0 or false
 
     if typename == 'beam_tower' then
         -- BEAM TOWER
@@ -398,9 +400,12 @@ function ship_weapons.update_formspec(data, meta)
             btnName = btnName .. "<Disabled>"
         end
 
-        formspec = "formspec_version[8]" .. "size[6.5,3]" .. "label[0.2,0.3;" .. machine_desc:format(tier) .. "]" ..
+        formspec = "formspec_version[8]" .. "size[6.55,5.0]" .. "label[0.2,0.3;" .. machine_desc:format(tier) .. "]" ..
                        "label[0.2,0.3;]" .. "button[1,1;3,1;toggle;" .. btnName .. "]" ..
-                       "list[current_name;src;4.5,1;1,1;]"
+                       "list[current_name;src;4.5,1;1,1;]"..
+                        "background[0.65,2.75;5.25,1.75;console_bg.png]"..
+                        "field[0.95,3.25;3.35,1;digiline;Digiline Channel;"..digi_channel.."]"..
+                        "button[4.4,3.25;1.25,1;digiline_save;Save]"
 
     elseif typename == 'missile_tower_old' or typename == 'plasma_cannon' or typename == 'rail_cannon' or typename == 'laser_cannon' then
         -- MISSILE TOWER
@@ -471,6 +476,35 @@ function ship_weapons.update_formspec(data, meta)
                        members_list
     elseif typename == 'target_computer' then
         -- TARGET COMPUTER
+
+        if manage_edit then
+
+            if not digi_channel or #digi_channel == 0 then
+                digi_channel = ltier == "lv" and "target_computer" or ltier == "mv" and "target_computer_adv"
+            end
+            local digi_channel_dish = meta:get_string("digiline_channel_dish")
+            local digi_channel_emit = meta:get_string("digiline_channel_emit")
+            if not digi_channel_dish or #digi_channel_dish == 0 then
+                digi_channel_dish = "targeting_dish"
+            end
+            if not digi_channel_emit or #digi_channel_emit == 0 then
+                digi_channel_emit = "static_turret"
+            end
+
+            local dish_field = ''
+            if ltier == "mv" then
+                dish_field = "field[0.95,2.50;3.3,1;digiline_dish;Digiline Channel Dish;"..digi_channel_dish.."]"
+            end
+            
+            formspec = "size[6,5.75]" .. "label[-0.2,-0.3;" .. machine_desc:format(tier) .. "]" ..
+                --"background[0.65,0.75;4.35,1.125;console_bg.png]"..
+                "field[0.95,1.25;3.3,1;digiline_local;Digiline Channel Local;"..digi_channel.."]"..
+                dish_field..
+                "field[0.95,3.75;3.3,1;digiline_missile;Digiline Channel Emitter;"..digi_channel_emit.."]"..
+                "button[4.25,4.95;1.75,1;digiline_save;Save]"
+
+            return formspec
+        end
 
         local mode_index = meta:get_int("attack_mode") or 1
         local sel = meta:get_int("selected_dir")
@@ -562,9 +596,11 @@ function ship_weapons.update_formspec(data, meta)
         local btn_lnc = "image_button[6.5,1.0;2,1;b_launch.png" .. btn_lnc_clr ..
                             ";submit_launch;Launch;0;1;b_launch_press.png" .. btn_lnc_clr .. "]"
 
+        local btn_manage = "button[6.5,0.1;2,0.7;btn_manage;Manage]"
+
         -- "list[current_player;main;0,5;8,4;]" .. "listring[current_player;main]" .. 
         formspec = "formspec_version[8]" .. "size[9.5,8]" .. "label[0.2,0.3;" .. machine_desc:format(tier) .. "]" ..
-                       fsetup .. input_field .. btn_tgt .. btn_lnc .. input_delay ..
+                       btn_manage .. fsetup .. input_field .. btn_tgt .. btn_lnc .. input_delay ..
                        ((ltier == "lv" and input_count) or input_mode)
     end
 

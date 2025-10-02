@@ -10,6 +10,17 @@ local function round(v)
     return math.floor(v + 0.5)
 end
 
+local function update_formspec(pos)
+    local meta = core.get_meta(pos)
+    local digi_channel = meta:get_string("digiline_channel")
+    local formspec = "size[6,2.75;]" ..
+        "background[0.65,0.75;4.65,1.125;console_bg.png]"..
+        "field[0.95,1.25;3.4,1;digiline;Digiline Channel;"..digi_channel.."]"..
+        "button[3.95,0.95;1.25,1;digiline_save;Save]"
+
+    return formspec
+end
+
 function ship_weapons.register_targeting_dish(custom_data)
 
     local data = custom_data or {}
@@ -152,6 +163,9 @@ function ship_weapons.register_targeting_dish(custom_data)
             -- local inv = meta:get_inventory()
             meta:set_int("enabled", 0)
             meta:set_int("range", data.range)
+            meta:set_string("digiline_channel", 'targeting_dish')
+            local formspec = update_formspec(pos)
+            meta:set_string("formspec", formspec)
         end,
 
         on_punch = function(pos, node, puncher)
@@ -168,7 +182,27 @@ function ship_weapons.register_targeting_dish(custom_data)
                 rules = technic.digilines.rules_allfaces,
                 action = ship_weapons.targeting_dish_digiline_effector
             }
-        }
+        },
+
+        on_receive_fields = function(pos, formname, fields, sender)
+            local meta = minetest.get_meta(pos)
+            if fields.quit then
+                return
+            end
+            local name = sender:get_player_name()
+            local owner = meta:get_string("owner")
+            if name ~= owner then
+                return
+            end
+            if fields.digiline_save then
+                if fields.digiline then
+                    meta:set_string("digiline_channel", fields.digiline)
+                    meta:set_int("editing", 0)
+                end
+            end
+            local formspec = update_formspec(pos)
+            meta:set_string("formspec", formspec)
+        end,
     })
 
     technic.register_machine(tier, node_name, technic.receiver)

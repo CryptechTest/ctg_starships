@@ -1,5 +1,7 @@
 ship_engine.engine_digiline_effector_l = function(pos, node, channel, msg)
-    local set_channel = "ship_engine_l" -- static channel for now
+    local meta = minetest.get_meta(pos)
+    local channel = meta:get_string("digiline_channel")
+    local set_channel = channel or "ship_engine_p"
 
     local msgt = type(msg)
 
@@ -12,7 +14,6 @@ ship_engine.engine_digiline_effector_l = function(pos, node, channel, msg)
     end
 
     if msg.command == "status" then
-        local meta = minetest.get_meta(pos)
         digilines.receptor_send(pos, digilines.rules.default, channel, {
             command = msg.command .. "_ack",
             charge = meta:get_int("charge"),
@@ -24,7 +25,6 @@ ship_engine.engine_digiline_effector_l = function(pos, node, channel, msg)
     end
 
     if msg.command == "fuel" then
-        local meta = core.get_meta(pos)
         local inv = meta:get_inventory()
         local mese = ship_engine.get_mese(inv:get_list("src"))
         local last_input = meta:get_int('last_input_type')
@@ -51,7 +51,6 @@ ship_engine.engine_digiline_effector_l = function(pos, node, channel, msg)
     end
 
     if msg.command == "ready" then
-        local meta = minetest.get_meta(pos)
         local max = meta:get_int("charge_max")
         local chg = meta:get_int("charge")
         local ready = "NOT RDY E2"
@@ -65,19 +64,19 @@ ship_engine.engine_digiline_effector_l = function(pos, node, channel, msg)
     end
 
     if msg.command == "enable" then
-        local meta = minetest.get_meta(pos)
         meta:set_int("enabled", 1)
     end
 
     if msg.command == "disable" then
-        local meta = minetest.get_meta(pos)
         meta:set_int("enabled", 0)
     end
 
 end
 
 ship_engine.engine_digiline_effector_r = function(pos, node, channel, msg)
-    local set_channel = "ship_engine_r" -- static channel for now
+    local meta = minetest.get_meta(pos)
+    local channel = meta:get_string("digiline_channel")
+    local set_channel = channel or "ship_engine_s"
 
     local msgt = type(msg)
 
@@ -90,7 +89,6 @@ ship_engine.engine_digiline_effector_r = function(pos, node, channel, msg)
     end
 
     if msg.command == "status" then
-        local meta = minetest.get_meta(pos)
         digilines.receptor_send(pos, digilines.rules.default, channel, {
             command = msg.command .. "_ack",
             charge = meta:get_int("charge"),
@@ -102,7 +100,6 @@ ship_engine.engine_digiline_effector_r = function(pos, node, channel, msg)
     end
 
     if msg.command == "fuel" then
-        local meta = core.get_meta(pos)
         local inv = meta:get_inventory()
         local mese = ship_engine.get_mese(inv:get_list("src"))
         local last_input = meta:get_int('last_input_type')
@@ -129,7 +126,6 @@ ship_engine.engine_digiline_effector_r = function(pos, node, channel, msg)
     end
 
     if msg.command == "ready" then
-        local meta = minetest.get_meta(pos)
         local max = meta:get_int("charge_max")
         local chg = meta:get_int("charge")
         local ready = "NOT RDY E1"
@@ -143,12 +139,10 @@ ship_engine.engine_digiline_effector_r = function(pos, node, channel, msg)
     end
 
     if msg.command == "enable" then
-        local meta = minetest.get_meta(pos)
         meta:set_int("enabled", 1)
     end
 
     if msg.command == "disable" then
-        local meta = minetest.get_meta(pos)
         meta:set_int("enabled", 0)
     end
 
