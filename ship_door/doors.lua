@@ -152,7 +152,7 @@ local function is_protected(pos, placer)
     local protect_bypass = core.check_player_privs(player_name, "protection_bypass")
     local is_owner = owner == player_name
     local is_protected = core.is_protected(pos, player_name)
-    if not is_protected and not protect_bypass and not is_owner then
+    if is_protected and not protect_bypass and not is_owner then
         --core.record_protection_violation(pos, player_name)
         return true
     end
@@ -283,8 +283,8 @@ for _, current_door in ipairs(doors) do
         core.sound_play(sound,{
             max_hear_distance = 16,
             pos = pos,
-            gain = 0.9,
-            pitch = math.random(0.925, 1.025)
+            gain = 1.0,
+            --pitch = math.random(0.925, 1.025)
         })
 
         core.swap_node(pos, {name=opened, param2=node.param2})
@@ -320,7 +320,7 @@ for _, current_door in ipairs(doors) do
             max_hear_distance = 16,
             pos = pos,
             gain = 0.88,
-            pitch = math.random(0.905, 1.05),
+            --pitch = math.random(0.905, 1.05),
         })
 
         core.swap_node(pos, {name=closed, param2=node.param2})
