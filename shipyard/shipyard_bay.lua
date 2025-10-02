@@ -75,7 +75,8 @@ local function register_assembler_bay(data)
             
             "button[2.6,3.0;3.5,0.6;begin_prefab;Begin Prefab]",
             "button[2.6,3.6;3.5,0.6;begin_custom;Begin Framed]",
-            "button[2.6,4.2;3.5,0.6;begin_empty;Begin Empty]"
+            "button[2.6,4.2;3.5,0.6;begin_empty;Begin Empty]",
+            "button[2.6,4.8;3.5,0.6;begin_shuttle;Begin Shuttle]",
 
         }
             
@@ -98,12 +99,12 @@ local function register_assembler_bay(data)
             end
         end
 
-        if fields.begin_prefab then
+        if fields.begin_shuttle then
             local inv = meta:get_inventory()
-            local rdy = get_count(inv, "ship1", "ship_parts:proto_ship_key") > 0
+            local rdy = get_count(inv, "ship1", "ship_parts:shuttle_ship_key") > 0
             if sender and not rdy then
                 minetest.chat_send_player(sender:get_player_name(),
-                    S("Assembly is blocked. You require a key to use this..."))
+                    S("Assembly is blocked. You require a Green key to use this..."))
             elseif sender then
                 local offset = {x = 0, y = 2, z = 1 + 2 + 14}
                 local core_pos = vector.add(pos, offset)
@@ -122,9 +123,62 @@ local function register_assembler_bay(data)
                 meta:set_string("operator", op)
 
                 shipyard.do_particle_effects(core_pos, 70);
+                minetest.chat_send_player(sender:get_player_name(), S("Assembling Jumpship..."))
 
+                -- load shuttle
+                load_schematic_ship_shell(core_pos, "small_shuttle_0");
+
+                minetest.after(5, function()   
+                    minetest.set_node(core_pos, {
+                        name = "ship_shuttle:jump_drive_shuttle"
+                    })
+                    local core_meta = minetest.get_meta(core_pos);
+                    core_meta:set_string("owner", op)
+                    core_meta:set_int("locked", 1)
+                    
+                    local prot_pos = vector.add(core_pos, {x = 0, y = 2, z = 0})
+                    minetest.set_node(prot_pos, {
+                        name = "ship_shuttle:shield_protect"
+                    })
+                    local prot_meta = minetest.get_meta(prot_pos);
+                    prot_meta:set_string("owner", op)
+                    prot_meta:set_string("members", "")
+                    prot_meta:set_string("infotext", S("Protection (owned by @1)", op))
+                    prot_meta:set_int("p_width", 12);
+                    prot_meta:set_int("p_length", 7);
+                    prot_meta:set_int("p_height", 5);
+                    ship_machine.update_ship_owner_all(core_pos, {l = 7, w = 12, h = 5}, op)
+                    minetest.chat_send_player(sender:get_player_name(),
+                        S("Jumpship Assembly Ready!"))
+                end)
+            end
+        elseif fields.begin_prefab then
+            local inv = meta:get_inventory()
+            local rdy = get_count(inv, "ship1", "ship_parts:proto_ship_key") > 0
+            if sender and not rdy then
                 minetest.chat_send_player(sender:get_player_name(),
-                    S("Assembling Jumpship..."))
+                    S("Assembly is blocked. You require a Blue key to use this..."))
+            elseif sender then
+                local offset = {x = 0, y = 2, z = 1 + 2 + 14}
+                local core_pos = vector.add(pos, offset)
+
+                if minetest.get_node(core_pos).name:match("jump_drive") then
+                    minetest.chat_send_player(sender:get_player_name(),
+                    S("This shipyard bay is occupied..."))
+                    return
+                end
+
+                local items = inv:get_list("ship1")
+                items[1] = nil
+                inv:set_list("ship1", items)
+
+                local op =  sender:get_player_name();
+                meta:set_string("operator", op)
+
+                shipyard.do_particle_effects(core_pos, 70);
+                minetest.chat_send_player(sender:get_player_name(), S("Assembling Jumpship..."))
+
+                -- load ship
                 load_schematic_ship_shell(core_pos, "proto_scout_3");
 
                 minetest.after(7, function()   
@@ -156,12 +210,12 @@ local function register_assembler_bay(data)
             local rdy = get_count(inv, "ship1", "ship_parts:proto_ship_key") > 0
             if sender and not rdy then
                 minetest.chat_send_player(sender:get_player_name(),
-                    S("Assembly is blocked. You require a key to use this..."))
+                    S("Assembly is blocked. You require a Blue key to use this..."))
             elseif sender then
                 local offset = {x = 0, y = 2, z = 1 + 2 + 14}
                 local core_pos = vector.add(pos, offset)
 
-                if minetest.get_node(core_pos).name == "ship_machine:jump_drive" then
+                if minetest.get_node(core_pos).name:match("jump_drive") then
                     minetest.chat_send_player(sender:get_player_name(),
                     S("This shipyard bay is occupied..."))
                     return
@@ -177,12 +231,12 @@ local function register_assembler_bay(data)
                 shipyard.do_particle_effects(core_pos, 70);
 
                 if fields.begin_custom then
-                    minetest.chat_send_player(sender:get_player_name(),
-                        S("Assembling Jumpship Frame..."))
+                    minetest.chat_send_player(sender:get_player_name(), S("Assembling Jumpship Frame..."))
+                    -- load ship
                     load_schematic_ship_shell(core_pos, "ship_frame1");
                 else
-                    minetest.chat_send_player(sender:get_player_name(),
-                        S("Assembling Jumpship Skeleton..."))
+                    minetest.chat_send_player(sender:get_player_name(), S("Assembling Jumpship Skeleton..."))
+                    -- load ship
                     load_schematic_ship_shell(core_pos, "ship_frame0");
                 end
 

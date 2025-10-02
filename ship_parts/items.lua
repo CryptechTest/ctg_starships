@@ -176,8 +176,16 @@ minetest.register_craftitem("ship_parts:engine_part5", {
 
 -- Proto-Ship Blue KeyCard
 minetest.register_craftitem("ship_parts:proto_ship_key", {
-	description = S("Proto-Ship Blue Assembly"),
+	description = S("Scout - Ship Blue Assembly"),
 	inventory_image = "proto_ship_blue_keycard.png",
+    wield_scale = {x = 0.9, y = 0.9, z = 0.9},
+	stack_max = 1,
+})
+
+-- Shuttle-Ship Green KeyCard
+minetest.register_craftitem("ship_parts:shuttle_ship_key", {
+	description = S("Shuttle - Ship Green Assembly"),
+	inventory_image = "proto_ship_green_keycard.png",
     wield_scale = {x = 0.9, y = 0.9, z = 0.9},
 	stack_max = 1,
 })

@@ -1,0 +1,505 @@
+local S = minetest.get_translator(minetest.get_current_modname())
+
+
+
+local recipe_def_scout = {
+    chull1 = 100,
+    hull1 = {25,25,25,25},
+    hull1_item = "ship_parts:hull_plating",
+    chull2 = 100,
+    hull2 = {25,25,25,25},
+    hull2_item = "ship_parts:hull_plating",
+    cship1 = 198,
+    ship1 = {99,99},
+    ship1_item = "scifi_nodes:white2",
+    cship2 = 198,
+    ship2 = {99,99},
+    ship2_item = "scifi_nodes:white2",
+    ccommand1 = 10,
+    command1 = {10},
+    command1_item = "ship_parts:command_capsule",
+    ccommand2 = 20,
+    command2 = {20},
+    command2_item = "ship_parts:system_capsule",
+    csystems1 = 40,
+    systems1 = {40},
+    systems1_item = "ship_parts:solar_array",
+    csystems2 = 30,
+    systems2 = {30},
+    systems2_item = "ship_parts:eviromental_sys",
+    cenv = 198,
+    env = {99,99},
+    env_item = "ctg_airs:air_duct_S",
+    ceng1 = 3,
+    eng1 = {3},
+    eng1_item = "ship_parts:mass_aggregator",
+    ceng2 = 3,
+    eng2 = {3},
+    eng2_item = "ship_parts:mass_aggregator",
+}
+
+local recipe_def_shuttle = {
+    chull1 = 20,
+    hull1 = {5,5,5,5},
+    hull1_item = "ship_parts:hull_plating",
+    chull2 = 20,
+    hull2 = {5,5,5,5},
+    hull2_item = "ship_parts:hull_plating",
+    cship1 = 110,
+    ship1 = {99,11},
+    ship1_item = "scifi_nodes:white2",
+    cship2 = 110,
+    ship2 = {99,11},
+    ship2_item = "scifi_nodes:white2",
+    ccommand1 = 8,
+    command1 = {8},
+    command1_item = "ship_parts:command_capsule",
+    ccommand2 = 10,
+    command2 = {10},
+    command2_item = "ship_parts:system_capsule",
+    csystems1 = 10,
+    systems1 = {10},
+    systems1_item = "ship_parts:solar_array",
+    csystems2 = 10,
+    systems2 = {10},
+    systems2_item = "ship_parts:eviromental_sys",
+    cenv = 100,
+    env = {50,50},
+    env_item = "ctg_airs:air_duct_S",
+    ceng1 = 1,
+    eng1 = {1},
+    eng1_item = "ship_parts:mass_aggregator",
+    ceng2 = 1,
+    eng2 = {1},
+    eng2_item = "ship_parts:mass_aggregator",
+}
+
+local function machine_can_dig(pos, player)
+    local meta = minetest.get_meta(pos)
+    local inv = meta:get_inventory()
+    if not inv:is_empty("hull1") or not inv:is_empty("hull2")
+            or not inv:is_empty("ship1") or not inv:is_empty("ship2")
+            or not inv:is_empty("command") or not inv:is_empty("systems")
+            or not inv:is_empty("env") or not inv:is_empty("enabled") 
+            or not inv:is_empty("eng1") or not inv:is_empty("eng2") then
+        if player then
+            minetest.chat_send_player(player:get_player_name(),
+                S("Assembler cannot be removed because it is not empty"))
+        end
+        return false
+    end
+
+    return true
+end
+
+local function get_count(inv, name, itm)
+    local balance = 0
+    local items = inv:get_list(name)
+    if items and #items > 0 then
+        for _, item in ipairs(items) do
+            if item ~= nil and not item:is_empty() and item:get_name() == itm then
+                balance = balance + item:get_count()
+            end
+        end
+    end
+    return balance
+end
+
+local function assembler_is_full(pos, def)
+    local meta = minetest.get_meta(pos)
+    local inv = meta:get_inventory()
+    if not inv:is_empty("hull1") and not inv:is_empty("hull2")
+            and not inv:is_empty("ship1") and not inv:is_empty("ship2")
+            and not inv:is_empty("command") and not inv:is_empty("systems")
+            and not inv:is_empty("env") and not inv:is_empty("eng1") and not inv:is_empty("eng2") then
+        local chull1 = get_count(inv, "hull1", def.hull1_item)
+        local chull2 = get_count(inv, "hull2", def.hull2_item)
+        local cship1 = get_count(inv, "ship1", def.ship1_item)
+        local cship2 = get_count(inv, "ship2", def.ship2_item)
+        local ccommand1 = get_count(inv, "command", def.command1_item)
+        local ccommand2 = get_count(inv, "command", def.command2_item)
+        local csystems1 = get_count(inv, "systems", def.systems1_item)
+        local csystems2 = get_count(inv, "systems", def.systems2_item)
+        local cenv = get_count(inv, "env", def.env_item)
+        local ceng1 = get_count(inv, "eng1", def.eng1_item)
+        local ceng2 = get_count(inv, "eng2", def.eng2_item)
+
+        local ready = false
+        if chull1 == def.chull1 and chull2 == def.chull2 and 
+                cship1 == def.cship1 and cship2 == def.cship2 and
+                ccommand1 == def.ccommand1 and ccommand2 == def.ccommand2 and
+                csystems1== def.csystems1 and csystems2 == def.csystems2 and
+                cenv == def.cenv and 
+                ceng1 == def.ceng1 and ceng2 == def.ceng2 then
+            ready = true
+        end
+        return ready
+    end
+
+    return false
+end
+
+
+local function clear_assembler(pos, def)
+    local meta = minetest.get_meta(pos)
+    local inv = meta:get_inventory()
+    inv:set_list("hull1", {})
+    inv:set_list("hull2", {})
+    inv:set_list("ship1", {})
+    inv:set_list("ship2", {})
+    inv:set_list("command", {})
+    inv:set_list("systems", {})
+    inv:set_list("env", {})
+    inv:set_list("eng1", {})
+    inv:set_list("eng2", {})
+    local chull1 = get_count(inv, "hull1", def.hull1_item)
+    local chull2 = get_count(inv, "hull2", def.hull2_item)
+    local cship1 = get_count(inv, "ship1", def.ship1_item)
+    local cship2 = get_count(inv, "ship2", def.ship2_item)
+    local ccommand1 = get_count(inv, "command", def.command1_item)
+    local ccommand2 = get_count(inv, "command", def.command2_item)
+    local csystems1 = get_count(inv, "systems", def.systems1_item)
+    local csystems2 = get_count(inv, "systems", def.systems2_item)
+    local cenv = get_count(inv, "env", def.env_item)
+    local ceng1 = get_count(inv, "eng1", def.eng1_item)
+    local ceng2 = get_count(inv, "eng2", def.eng2_item)
+    return chull1 == 0 and chull2 == 0 and cship1 == 0 and cship2 == 0 and
+        ccommand1 == 0 and ccommand2 == 0 and csystems1== 0 and csystems2 == 0 and
+        cenv == 0 and ceng1 == 0 and ceng2 == 0
+end
+
+local function check_full(sender, stack)
+	local one_item_stack = ItemStack(stack)
+	one_item_stack:set_count(1)
+	if not sender:get_inventory():room_for_item("main", one_item_stack) then
+		return true
+	end
+    return false
+end
+
+local function register_assembler(data)
+
+    local machine_name = string.lower(data.name)
+    local machine_desc = data.name
+    local ship_key = data.ship_key_item
+    local recipe_def = data.recipe_def
+    local recipe_type = data.recipe_type
+
+    local update_formspec = function(pos, data)
+        --local formspec = nil
+
+        local btnName = "Launch"
+
+        local bg = "image[0,0;10,6.0;starfield_2.png]"
+
+        local formspec = {}
+
+        if recipe_type == 'scout' then
+            formspec = {
+                "formspec_version[6]",
+                "size[10,11.15]", bg,
+                "image[0,0;3.5,0.5;console_bg.png]",
+                "label[0.2,0.3;Assembler: Scout]",
+
+                -- player inv
+                "list[current_player;main;0.15,6.25;8,4;]",
+                "listring[current_player;main]",
+
+                -- topbar
+                --"button[4,0;2,0.5;crew;Crew]",
+                "button[6,0;3,0.5;launch;Launch]",
+                "button_exit[9,0;1,0.5;exit;Exit]",
+
+                -- hull 1
+                "image[1,1;1,1;ship_hull_plating_sq.png]",
+                "image[1,2.25;1,1;ship_hull_plating_sq.png]",
+                "image[1,3.5;1,1;ship_hull_plating_sq.png]",
+                "image[1,4.75;1,1;ship_hull_plating_sq.png]",
+                "list[current_name;hull1;1,1;1,4;0]",
+                "listring[current_name;hull1]",
+                "label[1.6,1.2;25]",
+                "label[1.6,2.4;25]",
+                "label[1.6,3.7;25]",
+                "label[1.6,4.9;25]",
+                -- hull 2
+                "image[8,1;1,1;ship_hull_plating_sq.png]",
+                "image[8,2.25;1,1;ship_hull_plating_sq.png]",
+                "image[8,3.5;1,1;ship_hull_plating_sq.png]",
+                "image[8,4.75;1,1;ship_hull_plating_sq.png]",
+                "list[current_name;hull2;8,1;1,4;0]",
+                "listring[current_name;hull2]",
+                "label[8.6,1.2;25]",
+                "label[8.6,2.4;25]",
+                "label[8.6,3.7;25]",
+                "label[8.6,4.9;25]",
+                -- command
+                "image[3.9,1;1,1;ship_command_module.png]",
+                "image[5.15,1;1,1;ship_systems_module.png]",
+                "list[current_name;command;3.9,1;2,1;0]",
+                "listring[current_name;command]",
+                "label[4.5,1.2;10]",
+                "label[5.7,1.2;20]",
+                -- ship 1
+                "image[2.5,1;1,1;ship_parts_plastic_icon.png]",
+                "image[2.5,2.25;1,1;ship_parts_plastic_icon.png]",
+                "list[current_name;ship1;2.5,1;1,2;0]",
+                "listring[current_name;ship1]",
+                "label[3.1,1.2;99]",
+                "label[3.1,2.4;99]",
+                -- ship 2
+                "image[6.5,1;1,1;ship_parts_plastic_icon.png]",
+                "image[6.5,2.25;1,1;ship_parts_plastic_icon.png]",
+                "list[current_name;ship2;6.5,1;1,2;0]",
+                "listring[current_name;ship2]",
+                "label[7.1,1.2;99]",
+                "label[7.1,2.4;99]",
+                -- systems
+                "image[3.9,3;1,1;ship_solar_array.png]",
+                "image[5.15,3;1,1;ship_eviromental_comp.png]",
+                "list[current_name;systems;3.9,3;2,1;0]",
+                "listring[current_name;systems]",
+                "label[4.5,3.2;40]",
+                "label[5.7,3.2;30]",
+                -- env
+                "image[3.9,4.7;1,1;ship_parts_duct_icon.png]",
+                "image[5.15,4.7;1,1;ship_parts_duct_icon.png]",
+                "list[current_name;env;3.9,4.7;2,1;0]",
+                "listring[current_name;env]",
+                "label[4.5,4.9;99]",
+                "label[5.7,4.9;99]",
+                -- eng 1
+                "image[2.5,4.7;1,1;ship_mass_aggregator.png]",
+                "list[current_name;eng1;2.5,4.7;1,1;0]",
+                "listring[current_name;eng1]",
+                "label[3,4.9;3]",
+                -- eng 2
+                "image[6.5,4.7;1,1;ship_mass_aggregator.png]",
+                "list[current_name;eng2;6.5,4.7;1,1;0]",
+                "listring[current_name;eng2]",
+                "label[7,4.9;3]",
+                -- labels
+                "label[1.2,0.8;Hull]",
+                "label[8.2,0.8;Hull]",
+                "label[2.6,0.8;Ship]",
+                "label[6.7,0.8;Ship]",
+                "label[4.2,0.8;Command]",
+                "label[2.5,4.5;Engine]",
+                "label[6.5,4.5;Engine]",
+                "label[3.9,4.5;Environmental]",
+                "label[4.3,2.8;Systems]",
+            }
+
+        elseif recipe_type == "shuttle" then
+            formspec = {
+                "formspec_version[6]",
+                "size[10,11.15]", bg,
+                "image[0,0;3.5,0.5;console_bg.png]",
+                "label[0.2,0.3;Assembler: Shuttle]",
+
+                -- player inv
+                "list[current_player;main;0.15,6.25;8,4;]",
+                "listring[current_player;main]",
+
+                -- topbar
+                --"button[4,0;2,0.5;crew;Crew]",
+                "button[6,0;3,0.5;launch;Launch]",
+                "button_exit[9,0;1,0.5;exit;Exit]",
+
+                -- hull 1
+                "image[1,1;1,1;ship_hull_plating_sq.png]",
+                "image[1,2.25;1,1;ship_hull_plating_sq.png]",
+                "image[1,3.5;1,1;ship_hull_plating_sq.png]",
+                "image[1,4.75;1,1;ship_hull_plating_sq.png]",
+                "list[current_name;hull1;1,1;1,4;0]",
+                "listring[current_name;hull1]",
+                "label[1.6,1.2;5]",
+                "label[1.6,2.4;5]",
+                "label[1.6,3.7;5]",
+                "label[1.6,4.9;5]",
+                -- hull 2
+                "image[8,1;1,1;ship_hull_plating_sq.png]",
+                "image[8,2.25;1,1;ship_hull_plating_sq.png]",
+                "image[8,3.5;1,1;ship_hull_plating_sq.png]",
+                "image[8,4.75;1,1;ship_hull_plating_sq.png]",
+                "list[current_name;hull2;8,1;1,4;0]",
+                "listring[current_name;hull2]",
+                "label[8.6,1.2;5]",
+                "label[8.6,2.4;5]",
+                "label[8.6,3.7;5]",
+                "label[8.6,4.9;5]",
+                -- command
+                "image[3.9,1;1,1;ship_command_module.png]",
+                "image[5.15,1;1,1;ship_systems_module.png]",
+                "list[current_name;command;3.9,1;2,1;0]",
+                "listring[current_name;command]",
+                "label[4.5,1.2;8]",
+                "label[5.7,1.2;10]",
+                -- ship 1
+                "image[2.5,1;1,1;ship_parts_plastic_icon.png]",
+                "image[2.5,2.25;1,1;ship_parts_plastic_icon.png]",
+                "list[current_name;ship1;2.5,1;1,2;0]",
+                "listring[current_name;ship1]",
+                "label[3.1,1.2;99]",
+                "label[3.1,2.4;11]",
+                -- ship 2
+                "image[6.5,1;1,1;ship_parts_plastic_icon.png]",
+                "image[6.5,2.25;1,1;ship_parts_plastic_icon.png]",
+                "list[current_name;ship2;6.5,1;1,2;0]",
+                "listring[current_name;ship2]",
+                "label[7.1,1.2;99]",
+                "label[7.1,2.4;11]",
+                -- systems
+                "image[3.9,3;1,1;ship_solar_array.png]",
+                "image[5.15,3;1,1;ship_eviromental_comp.png]",
+                "list[current_name;systems;3.9,3;2,1;0]",
+                "listring[current_name;systems]",
+                "label[4.5,3.2;10]",
+                "label[5.7,3.2;10]",
+                -- env
+                "image[3.9,4.7;1,1;ship_parts_duct_icon.png]",
+                "image[5.15,4.7;1,1;ship_parts_duct_icon.png]",
+                "list[current_name;env;3.9,4.7;2,1;0]",
+                "listring[current_name;env]",
+                "label[4.5,4.9;50]",
+                "label[5.7,4.9;50]",
+                -- eng 1
+                "image[2.5,4.7;1,1;ship_mass_aggregator.png]",
+                "list[current_name;eng1;2.5,4.7;1,1;0]",
+                "listring[current_name;eng1]",
+                "label[3,4.9;1]",
+                -- eng 2
+                "image[6.5,4.7;1,1;ship_mass_aggregator.png]",
+                "list[current_name;eng2;6.5,4.7;1,1;0]",
+                "listring[current_name;eng2]",
+                "label[7,4.9;1]",
+                -- labels
+                "label[1.2,0.8;Hull]",
+                "label[8.2,0.8;Hull]",
+                "label[2.6,0.8;Ship]",
+                "label[6.7,0.8;Ship]",
+                "label[4.2,0.8;Command]",
+                "label[2.5,4.5;Engine]",
+                "label[6.5,4.5;Engine]",
+                "label[3.9,4.5;Environmental]",
+                "label[4.3,2.8;Systems]",
+            }
+
+        end
+        
+        return table.concat(formspec) 
+    end
+
+    local on_receive_fields = function(pos, formname, fields, sender)
+        if fields.quit or fields.exit then
+            return
+        end
+        local node = minetest.get_node(pos)
+        local meta = minetest.get_meta(pos)
+        local enabled = false
+        if fields.toggle then
+            if meta:get_int("enabled") == 1 then
+                meta:set_int("enabled", 0)
+            else
+                meta:set_int("enabled", 1)
+                enabled = true
+            end
+        end
+
+        if fields.crew then
+            if sender then
+                minetest.chat_send_player(sender:get_player_name(),
+                    S("Crew Control not implemented yet.."))
+            end
+        end
+        if fields.launch then
+            local rdy = assembler_is_full(pos, recipe_def)
+            if sender and not rdy then
+                minetest.chat_send_player(sender:get_player_name(),
+                    S("Launch is not yet ready. You require additional materials.."))
+            elseif sender then
+                minetest.chat_send_player(sender:get_player_name(),
+                    S("Launch is ready."))
+                if not check_full(sender, ship_key) then
+                    if clear_assembler(pos, recipe_def) then
+                        sender:get_inventory():add_item("main", ship_key)
+                        minetest.chat_send_player(sender:get_player_name(),
+                            S("Blueprint Key Granted!"))
+                    else
+                        minetest.chat_send_player(sender:get_player_name(),
+                            S("Error on Key Create!"))
+                    end
+                else
+                    minetest.chat_send_player(sender:get_player_name(),
+                        S("there is no room in your inventory..."))
+                end
+            end
+        end
+
+        local formspec = update_formspec(pos, data)
+        meta:set_string("formspec", formspec)
+    end
+
+    minetest.register_node(data.node_name, {
+        description = S("Starship Assembler"),
+        tiles = {{
+            name = "ship_deployer.png" .. data.overlay
+            -- backface_culling = false
+        }},
+        groups = {
+            cracky = 1,
+            metal = 1,
+            level = 1
+        },
+        sounds = default.node_sound_metal_defaults(),
+        -- drawtype = "glasslike_framed",
+        -- climbable = true,
+        -- sunlight_propagates = true,
+        paramtype = "light",
+
+        on_receive_fields = on_receive_fields,
+        after_place_node = function(pos, placer, itemstack, pointed_thing)
+            local meta = minetest.get_meta(pos)
+            meta:set_string("infotext", "Starship Assembler " .. "-" .. " " .. machine_desc)
+        end,
+        after_dig_node = function(pos, oldnode, oldmetadata, digger)
+            return technic.machine_after_dig_node
+        end,
+        on_rotate = screwdriver.disallow,
+        can_dig = machine_can_dig,
+        on_construct = function(pos)
+            local node = minetest.get_node(pos)
+            local meta = minetest.get_meta(pos)
+            local inv = meta:get_inventory()
+            inv:set_size("hull1", 4)
+            inv:set_size("hull2", 4)
+            inv:set_size("ship1", 2)
+            inv:set_size("ship2", 2)
+            inv:set_size("command", 2)
+            inv:set_size("systems", 2)
+            inv:set_size("env", 2)
+            inv:set_size("eng1", 1)
+            inv:set_size("eng2", 1)
+            meta:set_int("enabled", 1)
+            meta:set_string("formspec", update_formspec(pos, data))
+        end,
+    })
+
+end
+
+register_assembler({
+    name = "Scout",
+    node_name = "ship_parts:assembler",
+    ship_key_item = "ship_parts:proto_ship_key",
+    recipe_def = recipe_def_scout,
+    recipe_type = "scout",
+    overlay = "",
+});
+
+register_assembler({
+    name = "Shuttle",
+    node_name = "ship_parts:assembler_shuttle",
+    ship_key_item = "ship_parts:shuttle_ship_key",
+    recipe_def = recipe_def_shuttle,
+    recipe_type = "shuttle",
+    overlay = "^[colorize:green:35",
+});

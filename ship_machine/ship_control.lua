@@ -24,7 +24,7 @@ local function update_formspec_nav(pos, data, message)
     }
 
     local near_shipyard = false
-    if typename == 'ship_raider' or typename == "ship_scout" then
+    if typename == 'ship_raider' or typename == "ship_shuttle" or typename == "ship_scout" then
         near_shipyard = vector.distance(pos, spos) <= 192
     end
     local near_docks = false
