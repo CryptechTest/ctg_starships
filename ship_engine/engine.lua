@@ -151,6 +151,8 @@ function ship_engine.register_engine(data)
 
             if needs_charge then
                 meta:set_int(tier .. "_EU_demand", machine_demand[1])
+            else
+                meta:set_int(tier .. "_EU_demand", 0)
             end
 
             if not powered and chrg ~= 0 then
@@ -177,17 +179,16 @@ function ship_engine.register_engine(data)
                 meta:set_string("infotext", machine_desc_tier .. S(" Exhaust Blocked"):format())
                 meta:set_int(tier .. "_EU_demand", 0)
                 meta:set_int(tier .. "_EU_supply", 0)
-                --meta:set_int("src_time", 0)
                 local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max,
                     eu_input, eu_supply, meta:get_int("src_tick"), tick_scl)
                 meta:set_string("formspec", formspec)
                 return
             end
 
-            if not has_mese and meta:get_int("src_tick") <= 0 then
+            if not has_mese and meta:get_int("src_tick") > 0 then
                 local flipflop = meta:get_int('flipflop') or 0
                 if flipflop == 0 then
-                    meta:set_int('flipflop', 1)
+                    meta:set_int('flipflop', 16)
                     --core.log('receptor_send : request_mese');
                     if string.find(machine_name, '_l') then
                         digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine_p", "request_mese")
@@ -195,7 +196,7 @@ function ship_engine.register_engine(data)
                         digilines.receptor_send(pos, technic.digilines.rules_allfaces, "ship_engine_s", "request_mese")
                     end
                 else
-                    meta:set_int('flipflop', 0)
+                    meta:set_int('flipflop', flipflop - 1)
                 end
             end
 
@@ -210,9 +211,13 @@ function ship_engine.register_engine(data)
                 meta:set_int(tier .. "_EU_supply", 0)
             end
 
-            if meta:get_int('last_input_type') == 0 and meta:get_int("src_tick") > 0 then
+            --[[if meta:get_int('last_input_type') == 0 and meta:get_int("src_tick") > 0 then
                 meta:set_int("src_tick", meta:get_int("src_tick") - 10)
-            end
+            end]]
+
+            if meta:get_int('last_input_type') == 0 then
+                meta:set_int("src_tick", meta:get_int("src_tick") + 1)
+            end            
 
             local item_percent = ((meta:get_int("src_time") / round(time_scl * 10)) * 100)
             if meta:get_int("src_tick") <= 0 then
@@ -222,13 +227,12 @@ function ship_engine.register_engine(data)
                     technic.swap_node(pos, machine_node)
                     meta:set_string("infotext", machine_desc_tier .. S(" Idle - Missing Input"))
                     meta:set_int(tier .. "_EU_supply", 0)
-                    -- meta:set_int("src_time", round(data.speed * 10))
+                    meta:set_int("src_tick", meta:get_int("src_tick") + 1)
                 elseif out_res then
-                    -- technic.swap_node(pos, machine_node)
+                    technic.swap_node(pos, machine_node .. "_active")
                     meta:set_string("infotext", machine_desc_tier .. S(" Energizing - Active Pending"))
-                    -- meta:set_int("src_time", round(data.speed * 10))
                     meta:set_int(tier .. "_EU_supply", data.supply)
-                    time_scl = time_tick * (out_res * 0.1)
+                    time_scl = time_tick * (out_res * 0.06) -- 0.1
                     meta:set_int("src_tick", meta:get_int("src_tick") + 1)
                 end
                 item_percent = ((meta:get_int("src_time") / round(time_scl * 10)) * 100)
@@ -243,7 +247,6 @@ function ship_engine.register_engine(data)
             meta:set_string("formspec", formspec)
 
             if needs_charge == false then
-                meta:set_int(tier .. "_EU_demand", 0)
                 if meta:get_int("src_time") < round(data.speed * 10.0 * 2) then
                     technic.swap_node(pos, machine_node .. "_active")
                     meta:set_string("infotext", machine_desc_tier .. S(" Charged & Active"))
@@ -295,8 +298,8 @@ function ship_engine.register_engine(data)
             if powered and chrg > 0 then
                 -- out_results(pos, machine_node, machine_desc_tier, ltier, false)
                 meta:set_int("charge", charge + chrg + math.random(0, 1))
-            elseif powered then
-                meta:set_int("charge", charge + math.random(1, 2))
+            elseif powered and needs_charge then
+                meta:set_int("charge", charge + math.random(1, 5))
             end
 
             -- if meta:get_int("charge") > meta:get_int("charge_max") then
