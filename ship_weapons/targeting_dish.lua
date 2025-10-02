@@ -152,6 +152,7 @@ function ship_weapons.register_targeting_dish(custom_data)
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             local meta = minetest.get_meta(pos)
             meta:set_string("infotext", machine_desc)
+            meta:set_string("digiline_channel", 'targeting_dish')
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
             return technic.machine_after_dig_node
@@ -163,7 +164,6 @@ function ship_weapons.register_targeting_dish(custom_data)
             -- local inv = meta:get_inventory()
             meta:set_int("enabled", 0)
             meta:set_int("range", data.range)
-            meta:set_string("digiline_channel", 'targeting_dish')
             local formspec = update_formspec(pos)
             meta:set_string("formspec", formspec)
         end,
