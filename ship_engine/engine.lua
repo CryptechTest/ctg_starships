@@ -461,6 +461,13 @@ function ship_engine.register_engine(data)
             end
             local node = minetest.get_node(pos)
             local meta = minetest.get_meta(pos)
+            local name = sender:get_player_name()
+            local owner = meta:get_string("owner")
+            local is_owner = owner == name
+            local is_protected = core.is_protected(pos, name)
+            if not is_owner and is_protected then
+                return
+            end
             local charge_max = meta:get_int("charge_max")
             local charge = meta:get_int("charge")
             local eu_input = meta:get_int(tier .. "_EU_input")

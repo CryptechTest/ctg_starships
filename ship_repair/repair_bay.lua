@@ -723,6 +723,13 @@ function ship_repair.register_repair_box(custom_data)
         if fields.quit then
             return
         end
+        local name = sender:get_player_name()
+        local owner = meta:get_string("owner")
+        local is_owner = owner == name
+        local is_protected = core.is_protected(pos, name)
+        if not is_owner and is_protected then
+            return
+        end
         local enabled = meta:get_int("enabled")
         if fields.toggle then
             if enabled >= 1 then

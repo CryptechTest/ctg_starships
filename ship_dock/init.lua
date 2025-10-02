@@ -129,7 +129,13 @@ local function register_ship_dock(def)
         end
         local node = minetest.get_node(pos)
         local meta = minetest.get_meta(pos)
-
+        local name = sender:get_player_name()
+        local owner = meta:get_string("owner")
+        local is_owner = owner == name
+        local is_protected = core.is_protected(pos, name)
+        if not is_owner and is_protected then
+            return
+        end
         local size = core.deserialize(meta:get_string("d_size"))
         local offset = core.deserialize(meta:get_string("d_offset"))
         local width = size.w
