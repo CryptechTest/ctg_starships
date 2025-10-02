@@ -359,6 +359,9 @@ function ship_weapons.register_targeting_computer(custom_data)
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             local meta = minetest.get_meta(pos)
             meta:set_string("infotext", "Weapons Control " .. "-" .. " " .. machine_desc)
+            if placer:is_player() then
+                meta:set_string("owner", placer:get_player_name())
+            end
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
             return technic.machine_after_dig_node
