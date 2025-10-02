@@ -241,9 +241,9 @@ end
 -- 2 for "This area is owned by <owner>.
 -- 3 for checking protector overlaps
 
-shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
+shipyard.protector.can_dig = function(s, dig_pos, digger, onlyowner, infolevel)
 
-    if not digger or not pos then
+    if not digger or not dig_pos then
         return false
     end
 
@@ -260,7 +260,7 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
     end
 
     -- is spawn area protected ?
-    if inside_spawn(pos, protector_spawn) then
+    if inside_spawn(dig_pos, protector_spawn) then
         show_msg(digger, S("Spawn @1 has been protected up to a @2 block radius.", minetest.pos_to_string(statspawn), protector_spawn))
         return false
     end
@@ -271,7 +271,7 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
     end
 
     -- find the protector nodes
-    local prots = minetest.find_nodes_in_area({
+    --[[local prots = minetest.find_nodes_in_area({
         x = pos.x - s.w,
         y = (pos.y - s.h) + 2,
         z = pos.z - s.l
@@ -279,9 +279,9 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
         x = pos.x + s.w,
         y = (pos.y + s.h) + 2,
         z = pos.z + s.l
-    }, {"shipyard:shield_protect"}) -- "shipyard:shield_protect",
+    }, {"shipyard:shield_protect"})]]
 
-    if prots and #prots > 0 and prots[1] ~= nil then
+    --[[if prots and #prots > 0 and prots[1] ~= nil then
         local jumpdrive_pos = vector.add(prots[1], {
             x = 0,
             y = -2,
@@ -291,116 +291,208 @@ shipyard.protector.can_dig = function(s, pos, digger, onlyowner, infolevel)
         if jumpdrive.name ~= "shipyard:jump_drive" then
             -- pos = jumpdrive_pos
         end
+    end]]
+
+    --[[if #prots == 0 then
+        return true
+    end]]
+
+    local childs = minetest.find_nodes_in_area({
+        x = dig_pos.x - s.w,
+        y = (dig_pos.y - s.h) + 2,
+        z = dig_pos.z - s.l
+    }, {
+        x = dig_pos.x + s.w,
+        y = (dig_pos.y + s.h) + 2,
+        z = dig_pos.z + s.l
+    }, {"group:protector"})
+
+    local found_shipyard = false
+    for n = 1, #childs do
+        local node = minetest.get_node(childs[n])
+        local g = minetest.get_item_group(node.name, "protector");
+        if g == 3 then
+            found_shipyard = true
+            break
+        end
     end
 
-    if #prots == 0 then
+    if not found_shipyard then
         return true
     end
 
-    local childs = minetest.find_nodes_in_area({
-        x = pos.x - s.w,
-        y = (pos.y - s.h) + 2,
-        z = pos.z - s.l
-    }, {
-        x = pos.x + s.w,
-        y = (pos.y + s.h) + 2,
-        z = pos.z + s.l
-    }, {"ship_scout:shield_protect", "ship_raider:shield_protect", "group:protector"})
-
     local isValid = false
     for n = 1, #childs do
+        local node = minetest.get_node(childs[n])
         local meta = minetest.get_meta(childs[n])
         local owner = meta:get_string("owner") or ""
+        local g = minetest.get_item_group(node.name, "protector");
+        if g == 2 then
+            local sc = {
+                w = meta:get_int("p_width") or 0,
+                l = meta:get_int("p_length") or 0,
+                h = meta:get_int("p_height") or 0
+            }
+            local childArea = minetest.find_nodes_in_area({
+                x = dig_pos.x - sc.w,
+                y = (dig_pos.y - sc.h) + 2,
+                z = dig_pos.z - sc.l
+            }, {
+                x = dig_pos.x + sc.w,
+                y = (dig_pos.y + sc.h) + 2,
+                z = dig_pos.z + sc.l
+            }, {"ship_scout:shield_protect", "ship_raider:shield_protect"})
 
-        local sc = {
-            w = meta:get_int("p_width") or 0,
-            l = meta:get_int("p_length") or 0,
-            h = meta:get_int("p_height") or 0
-        }
-        local childArea = minetest.find_nodes_in_area({
-            x = pos.x - sc.w,
-            y = (pos.y - sc.h) + 2,
-            z = pos.z - sc.l
-        }, {
-            x = pos.x + sc.w,
-            y = (pos.y + sc.h) + 2,
-            z = pos.z + sc.l
-        }, {"ship_scout:shield_protect", "ship_raider:shield_protect"})
-
-        if #childArea > 0 then
-            -- node change and digger is owner
-            if owner == digger then
-                isValid = true;
-                break
-            end
-            for c = 1, #childArea do
-                local cmeta = minetest.get_meta(childArea[c])
-                local cowner = cmeta:get_string("owner") or ""
+            if #childArea > 0 then
                 -- node change and digger is owner
-                if cowner == digger then
+                if owner == digger then
                     isValid = true;
                     break
                 end
-                -- node change and digger isn't owner
-                if infolevel == 1 and cowner ~= digger then
-                    if onlyowner or not shipyard.protector.is_member(cmeta, digger) then
-                        isValid = false;
-                        show_msg(digger, S("This shipyard bay is owned by @1", cowner) .. "!")
-                        return false
-                    elseif shipyard.protector.is_member(cmeta, digger) then
+                for c = 1, #childArea do
+                    local cmeta = minetest.get_meta(childArea[c])
+                    local cowner = cmeta:get_string("owner") or ""
+                    -- node change and digger is owner
+                    if cowner == digger then
                         isValid = true;
                         break
+                    end
+                    -- node change and digger isn't owner
+                    if infolevel == 1 and cowner ~= digger then
+                        if onlyowner or not shipyard.protector.is_member(cmeta, digger) then
+                            isValid = false;
+                            show_msg(digger, S("This shipyard bay is owned by @1", cowner) .. "!")
+                            return false
+                        elseif shipyard.protector.is_member(cmeta, digger) then
+                            isValid = true;
+                            break
+                        end
                     end
                 end
             end
         end
     end
 
-    local meta, owner, members
-
-    for n = 1, #prots do
-
-        meta = minetest.get_meta(prots[n])
-        owner = meta:get_string("owner") or ""
-        members = meta:get_string("members") or ""
-
-        -- node change and digger isn't owner
-        if infolevel == 1 and owner ~= digger and not isValid then
-
-            -- and you aren't on the member list
-            if onlyowner or not shipyard.protector.is_member(meta, digger) then
-
-                show_msg(digger, S("This shipyard area is owned by @1", owner) .. "!")
-
-                return false
+    if not isValid then
+        --- Check if positions are matching or equal
+        ---@param pos vector
+        ---@param check_pos vector
+        local function has_pos(pos, check_pos)
+            if pos ~= nil and check_pos ~= nil then
+                if pos.x == check_pos.x and pos.y == check_pos.y and pos.z == check_pos.z then
+                    return true
+                end
+            end
+            return false
+        end
+        --- Check if area contains checked position
+        ---@param center_pos vector
+        ---@param size vector
+        ---@param check_pos vector
+        local function check_area(center_pos, size, check_pos)
+            local range = { x = size.w, y = size.h, z = size.l }
+            local pos1 = vector.subtract(center_pos, range)
+            local pos2 = vector.add(center_pos, range)
+            local manip = core.get_voxel_manip()
+            local e1, e2 = manip:read_from_map(pos1, pos2)
+            local area = VoxelArea:new({ MinEdge = e1, MaxEdge = e2 })
+            for z = pos1.z, pos2.z do
+                for y = pos1.y, pos2.y do
+                    for x = pos1.x, pos2.x do
+                        if has_pos(check_pos, {x=x, y=y, z=z}) then
+                            return true
+                        end
+                    end
+                end
+            end
+            return false
+        end
+        -- find shipyard bays
+        local bays = core.find_nodes_in_area({
+            x = dig_pos.x - s.w,
+            y = (dig_pos.y - s.h) + 2,
+            z = dig_pos.z - s.l
+        }, {
+            x = dig_pos.x + s.w,
+            y = (dig_pos.y + s.h) + 2,
+            z = dig_pos.z + s.l
+        }, {"shipyard:assembler_bay"})
+        -- shipyard bay size
+        local bay_size = {
+            w = 12,
+            h = 12,
+            l = 15
+        }
+        local bFound = false
+        -- check if found bays
+        if #bays > 0 then
+            for c = 1, #bays do
+                core.log("found bay!")
+                local bay = bays[c]
+                local offset = {
+                    x = 0,
+                    y = 2,
+                    z = 1 + 14 + 2
+                }
+                -- get bay center pos
+                local bay_center = vector.add(bay, offset);
+                local bnode = core.get_node(bay_center)
+                local pnode = core.get_node(vector.add(bay_center, {x=0,y=2,z=0}))
+                local g = core.get_item_group(pnode.name, "protector");
+                if g == 2 then
+                    core.log("found bay occupant!")
+                    -- check bay contents for dig pos
+                    if check_area(bay_center, bay_size, dig_pos) then
+                        core.log("in bay!!!")
+                        bFound = true
+                    end
+                end
             end
         end
+        if bFound then
+            show_msg(digger, S("This shipyard bay is occupied and protected") .. "!")
+            return false
+        end
+    end
 
-        -- when using protector as tool, show protector information
-        if infolevel == 2 then
+    local meta, owner, members
 
-            minetest.chat_send_player(digger, S("This shipyard area is owned by @1", owner) .. ".")
+    for n = 1, #childs do
 
-            minetest.chat_send_player(digger, S("Protection located at: @1", minetest.pos_to_string(prots[n])))
+        local node = minetest.get_node(childs[n])
+        local g = minetest.get_item_group(node.name, "protector");
+        if g == 3 then
+            meta = minetest.get_meta(childs[n])
+            owner = meta:get_string("owner") or ""
+            members = meta:get_string("members") or ""
 
-            if members ~= "" then
-
-                minetest.chat_send_player(digger, S("Members: @1.", members))
+            -- node change and digger isn't owner
+            if infolevel == 1 and owner ~= digger and not isValid then
+                -- and you aren't on the member list
+                if onlyowner or not shipyard.protector.is_member(meta, digger) then
+                    show_msg(digger, S("This shipyard area is owned by @1", owner) .. "!")
+                    return false
+                end
             end
 
-            return false
+            -- when using protector as tool, show protector information
+            if infolevel == 2 then
+                minetest.chat_send_player(digger, S("This shipyard area is owned by @1", owner) .. ".")
+                minetest.chat_send_player(digger, S("Protection located at: @1", minetest.pos_to_string(childs[n])))
+                if members ~= "" then
+                    minetest.chat_send_player(digger, S("Members: @1.", members))
+                end
+                return false
+            end
         end
 
     end
 
     -- show when you can build on unprotected area
     if infolevel == 2 then
-
-        if #prots < 1 then
-
+        if #childs < 1 then
             minetest.chat_send_player(digger, S("This shipyard area is not protected."))
         end
-
         minetest.chat_send_player(digger, S("You can build here."))
     end
 
