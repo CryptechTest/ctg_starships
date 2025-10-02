@@ -153,6 +153,9 @@ function ship_weapons.register_targeting_dish(custom_data)
             local meta = minetest.get_meta(pos)
             meta:set_string("infotext", machine_desc)
             meta:set_string("digiline_channel", 'targeting_dish')
+            if placer:is_player() then
+                meta:set_string("owner", placer:get_player_name())
+            end
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
             return technic.machine_after_dig_node
@@ -184,6 +187,12 @@ function ship_weapons.register_targeting_dish(custom_data)
             }
         },
 
+        on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
+            local meta = minetest.get_meta(pos)
+            local formspec = update_formspec(pos)
+            meta:set_string("formspec", formspec)
+        end,
+
         on_receive_fields = function(pos, formname, fields, sender)
             local meta = minetest.get_meta(pos)
             if fields.quit then
@@ -197,7 +206,6 @@ function ship_weapons.register_targeting_dish(custom_data)
             if fields.digiline_save then
                 if fields.digiline then
                     meta:set_string("digiline_channel", fields.digiline)
-                    meta:set_int("editing", 0)
                 end
             end
             local formspec = update_formspec(pos)
