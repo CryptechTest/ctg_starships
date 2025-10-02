@@ -323,7 +323,7 @@ local function move_bed(pos, pos_new, n)
                         meta:set_string("pos", minetest.serialize(pos_new))
                         inv:set_stack("beds", i, bed)
 
-                        -- minetest.log("moved bed!")
+                        core.chat_send_player(player_name, "[Debug] Bed Moved on Jump!")
                         break
                     end
                 end
@@ -424,10 +424,29 @@ local function do_effect(pos1, pos2)
     end
 end
 
+local function post_emerge_complete(meta)
+    if not meta or not meta.origin or not meta.size or not meta.dest then
+        return
+    end
+    local pos = meta.origin
+    local dest = meta.dest
+    local size = meta.size
+    local offset = vector.subtract(dest, pos)
+    local pos1 = vector.subtract(pos, vector.new(size.width, size.height, size.length))
+    local pos2 = vector.add(pos, vector.new(size.width, size.height, size.length))
+    -- move beds and update tubes
+    move_beds(pos1, pos2, offset)
+    update_tubes(pos1, pos2, offset)
+    -- move offline player locations
+    move_offline_players(pos, offset)
+    --core.log("post emerge complete")
+end
+
 local function emerge_callback_on_complete(data)
     if data == nil or data.meta == nil then
         return
     end
+    post_emerge_complete(data.meta)
     minetest.after(0, function()
         schem_lib.func.jump_ship_move_contents(data.meta)
     end)
@@ -482,13 +501,6 @@ local function transport_jumpship(pos, dest, size, owner, offset)
         schem_lib.func.jump_ship_emit_player(schem_data.meta, false)
         -- load the schematic from cache..
         local count, ver, lmeta = schemlib.process_emitted(nil, nil, schem_data, emerge_callback_on_complete)
-        minetest.after(1, function()
-            -- move beds and update tubes
-            move_beds(pos1, pos2, offset)
-            update_tubes(pos1, pos2, offset)
-            -- move offline player locations
-            move_offline_players(pos, offset)
-        end)
         -- do jump tele effects
         do_effect(pos1, pos2)
     end
