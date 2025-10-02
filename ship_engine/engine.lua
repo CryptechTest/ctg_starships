@@ -203,7 +203,7 @@ function ship_engine.register_engine(data)
             if meta:get_int('last_input_type') > 0 then
                 meta:set_int(tier .. "_EU_supply", data.supply)
                 if needs_charge then
-                    meta:set_int("src_tick", meta:get_int("src_tick") + 2)
+                    meta:set_int("src_tick", meta:get_int("src_tick") + 3)
                 else
                     meta:set_int("src_tick", meta:get_int("src_tick") + 1)
                 end
@@ -211,13 +211,14 @@ function ship_engine.register_engine(data)
                 meta:set_int(tier .. "_EU_supply", 0)
             end
 
-            --[[if meta:get_int('last_input_type') == 0 and meta:get_int("src_tick") > 0 then
-                meta:set_int("src_tick", meta:get_int("src_tick") - 10)
-            end]]
-
-            if meta:get_int('last_input_type') == 0 then
-                meta:set_int("src_tick", meta:get_int("src_tick") + 1)
-            end            
+            if meta:get_int('last_input_type') == 0 and meta:get_int("src_tick") > 0 then
+                if has_mese then
+                    meta:set_int("src_tick", meta:get_int("src_tick") + 20)
+                else
+                    meta:set_int("src_time", meta:get_int("src_time") + 1)
+                    meta:set_int("src_tick", meta:get_int("src_tick") + 5)
+                end
+            end
 
             local item_percent = ((meta:get_int("src_time") / round(time_scl * 10)) * 100)
             if meta:get_int("src_tick") <= 0 then
@@ -232,7 +233,7 @@ function ship_engine.register_engine(data)
                     technic.swap_node(pos, machine_node .. "_active")
                     meta:set_string("infotext", machine_desc_tier .. S(" Energizing - Active Pending"))
                     meta:set_int(tier .. "_EU_supply", data.supply)
-                    time_scl = time_tick * (out_res * 0.06) -- 0.1
+                    time_scl = time_tick * (out_res * 0.1)
                     meta:set_int("src_tick", meta:get_int("src_tick") + 1)
                 end
                 item_percent = ((meta:get_int("src_time") / round(time_scl * 10)) * 100)
@@ -250,19 +251,13 @@ function ship_engine.register_engine(data)
                 if meta:get_int("src_time") < round(data.speed * 10.0 * 2) then
                     technic.swap_node(pos, machine_node .. "_active")
                     meta:set_string("infotext", machine_desc_tier .. S(" Charged & Active"))
-                    -- meta:set_int("src_time", round(data.speed * 10))
-                    -- return
                 elseif meta:get_int("src_time") >= round(time_scl * 10) then
-                    -- meta:set_int("last_input_type", 0)
                     meta:set_int("src_time", 0)
                 end
                 if meta:get_int("src_tick") >= tick_scl then
                     meta:set_int("src_tick", 0)
                     meta:set_int("last_input_type", 0)
                 end
-                -- local formspec = ship_engine.update_formspec(data, chrg > 0, enabled, has_mese, item_percent, charge,
-                --    charge_max, eu_input, eu_supply, meta:get_int("src_tick"), tick_scl)
-                -- meta:set_string("formspec", formspec)
                 return
             end
 
@@ -279,32 +274,17 @@ function ship_engine.register_engine(data)
                 technic.swap_node(pos, machine_node .. "_active")
                 if meta:get_int("src_tick") >= tick_scl then
                     meta:set_int("src_tick", 0)
+                    meta:set_int("last_input_type", 0)
                 end
                 return
             end
 
-            --[[
-            local command = ""
-            if machine_name == "lv_engine_r" then
-                command = "pos_eng1"
-            elseif machine_name == "lv_engine_l" then
-                command = "pos_eng2"
-            end
-            digilines.receptor_send(pos, digilines.rules.default, "ship_scout", {
-                command = command,
-                pos_nav = {pos.x, pos.y, pos.z}
-            })--]]
-
-            if powered and chrg > 0 then
+            if powered and meta:get_int('last_input_type') > 0 then
                 -- out_results(pos, machine_node, machine_desc_tier, ltier, false)
-                meta:set_int("charge", charge + chrg + math.random(0, 1))
+                meta:set_int("charge", charge + chrg + math.random(-1, 1))
             elseif powered and needs_charge then
-                meta:set_int("charge", charge + math.random(1, 5))
+                meta:set_int("charge", charge + math.random(1, 3))
             end
-
-            -- if meta:get_int("charge") > meta:get_int("charge_max") then
-            --    meta:set_int("charge", meta:get_int("charge_max") )
-            -- end
 
             -- reset timer tick
             meta:set_int("src_time", 0)
