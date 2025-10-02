@@ -1,7 +1,7 @@
 ship_weapons.static_turret_digiline_effector = function(pos, node, channel, msg)
     local meta = minetest.get_meta(pos)
-    local channel = meta:get_string("digiline_channel")
-    local set_channel = channel or "static_turret"
+    local digiline_channel = meta:get_string("digiline_channel")
+    local set_channel = digiline_channel or "static_turret"
     local msgt = type(msg)
     if msgt ~= "table" then
         return
@@ -86,8 +86,8 @@ end
 
 ship_weapons.targeting_computer_adv_digiline_effector = function(pos, node, channel, msg)
     local meta = minetest.get_meta(pos)
-    local channel = meta:get_string("digiline_channel")
-    local set_channel = channel or "targeting_computer_adv"
+    local digiline_channel = meta:get_string("digiline_channel")
+    local set_channel = digiline_channel or "targeting_computer_adv"
     local msgt = type(msg)
     if msgt ~= "table" then
         return
@@ -128,8 +128,8 @@ end
 
 ship_weapons.targeting_dish_digiline_effector = function(pos, node, channel, msg)
     local meta = minetest.get_meta(pos)
-    local channel = meta:get_string("digiline_channel")
-    local set_channel = channel or "targeting_dish"
+    local digiline_channel = meta:get_string("digiline_channel")
+    local set_channel = digiline_channel or "targeting_dish"
     local msgt = type(msg)
     if msgt ~= "table" then
         return
