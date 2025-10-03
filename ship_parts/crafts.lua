@@ -73,6 +73,7 @@ if true then
     local cam = "ship_parts:engine_part5"
     local flx = "ship_parts:flux_tube"
     local auc = "ship_parts:reactor_cell"
+    local jti = "ctg_jetpack:jetpack_iron"
     local jtp = "ctg_jetpack:jetpack_titanium"
     local hy = "ctg_jetpack:jetpack_fuel_hydrogen"
 
@@ -88,6 +89,11 @@ if true then
     minetest.register_craft({
         output = "ship_parts:assembler",
         recipe = {{al, hy, al}, {ni, jtp, ni}, {al, hy, al}}
+    })
+
+    minetest.register_craft({
+        output = "ship_parts:assembler_shuttle",
+        recipe = {{al, me, al}, {ni, jti, ni}, {al, me, al}}
     })
 
     minetest.register_craft({

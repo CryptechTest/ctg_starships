@@ -439,6 +439,8 @@ local function post_emerge_complete(meta)
     update_tubes(pos1, pos2, offset)
     -- move offline player locations
     move_offline_players(pos, offset)
+    -- update screens
+    schem_lib.func.update_screens(pos1, pos2)
     --core.log("post emerge complete")
 end
 
