@@ -440,7 +440,9 @@ local function post_emerge_complete(meta)
     -- move offline player locations
     move_offline_players(pos, offset)
     -- update screens
-    schem_lib.func.update_screens(pos1, pos2)
+    local dest_pos1 = vector.subtract(dest, vector.new(size.width, size.height, size.length))
+    local dest_pos2 = vector.add(dest, vector.new(size.width, size.height, size.length))
+    schem_lib.func.update_screens(dest_pos1, dest_pos2)
     --core.log("post emerge complete")
 end
 
