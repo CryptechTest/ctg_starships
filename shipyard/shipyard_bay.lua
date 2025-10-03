@@ -147,6 +147,7 @@ local function register_assembler_bay(data)
                     prot_meta:set_int("p_width", 12);
                     prot_meta:set_int("p_length", 7);
                     prot_meta:set_int("p_height", 5);
+                    prot_meta:set_int("combat_ready", 2)
                     ship_machine.update_ship_owner_all(core_pos, {l = 7, w = 12, h = 5}, op)
                     minetest.chat_send_player(sender:get_player_name(),
                         S("Jumpship Assembly Ready!"))
@@ -200,6 +201,7 @@ local function register_assembler_bay(data)
                     prot_meta:set_int("p_width", 12);
                     prot_meta:set_int("p_length", 15);
                     prot_meta:set_int("p_height", 12);
+                    prot_meta:set_int("combat_ready", 2)                    
                     ship_machine.update_ship_owner_all(core_pos, {l = 15, w = 12, h = 12}, op)
                     minetest.chat_send_player(sender:get_player_name(),
                         S("Jumpship Assembly Ready!"))
