@@ -446,7 +446,9 @@ local function emerge_callback_on_complete(data)
     if data == nil or data.meta == nil then
         return
     end
-    post_emerge_complete(data.meta)
+    minetest.after(0, function()
+        post_emerge_complete(data.meta) 
+    end)
     minetest.after(0, function()
         schem_lib.func.jump_ship_move_contents(data.meta)
     end)
@@ -481,7 +483,7 @@ local function transport_jumpship(pos, dest, size, owner, offset)
     local data = {
         filename = ship_name,
         owner = owner,
-        ttl = 3,
+        ttl = 4,
         min = pos1,
         max = pos2,
         offset = vector.new(size.w, size.h, size.l),
