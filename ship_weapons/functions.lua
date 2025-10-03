@@ -500,7 +500,7 @@ function ship_weapons.update_formspec(data, meta)
                 --"background[0.65,0.75;4.35,1.125;console_bg.png]"..
                 "field[0.95,1.25;3.3,1;digiline_local;Digiline Channel Local;"..digi_channel.."]"..
                 dish_field..
-                "field[0.95,3.75;3.3,1;digiline_missile;Digiline Channel Emitter;"..digi_channel_emit.."]"..
+                "field[0.95,3.75;3.3,1;digiline_emit;Digiline Channel Emitter;"..digi_channel_emit.."]"..
                 "button[4.25,4.95;1.75,1;digiline_save;Save]"
 
             return formspec
