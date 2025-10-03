@@ -9,6 +9,29 @@ local function round(v)
     return math.floor(v + 0.5)
 end
 
+local function push_item(pos)
+	local tube_dir = M(pos):get_int("tube_dir")
+	local dest_pos, dest_dir = Tube:get_connected_node_pos(pos, tube_dir)
+	local dest_node = minetest.get_node(dest_pos)
+	local on_push_item = minetest.registered_nodes[dest_node.name].on_push_item
+	--print("on_timer: dest_pos="..S(dest_pos).."  dest_dir="..dest_dir)
+	local inv = minetest.get_inventory({type="node", pos=dest_pos})
+	local stack = ItemStack("default:dirt")
+
+	if on_push_item then
+		return on_push_item(dest_pos, dest_dir, stack)
+	elseif inv then
+		local leftover = inv:add_item("main", stack)
+		if leftover:get_count() == 0 then
+			return true
+		end
+	elseif dest_node.name == "air" then
+		minetest.add_item(dest_pos, stack)
+		return true
+	end
+	return false
+end
+
 local function out_result(pos, ninput, machine_node, machine_desc_tier, tier)
     local output = {}
     local meta = minetest.get_meta(pos)
@@ -305,6 +328,47 @@ function ship_engine.register_engine(data)
         end
     end
 
+    local on_receive_fields = function(pos, formname, fields, sender)
+        local meta = minetest.get_meta(pos)
+        if fields.quit then
+            meta:set_int("editing", 0)
+            return
+        end
+        local name = sender:get_player_name()
+        local owner = meta:get_string("owner")
+        local is_owner = owner == name
+        local is_protected = core.is_protected(pos, name)
+        if not is_owner and is_protected then
+            return
+        end
+        local node = minetest.get_node(pos)
+        local charge_max = meta:get_int("charge_max")
+        local charge = meta:get_int("charge")
+        local eu_input = meta:get_int(tier .. "_EU_input")
+        local eu_supply = meta:get_int(tier .. "_EU_supply")
+        local enabled = false
+        if fields.toggle then
+            if meta:get_int("enabled") == 1 then
+                meta:set_int("enabled", 0)
+            else
+                meta:set_int("enabled", 1)
+                enabled = true
+            end
+        end
+        if fields.editing then
+            meta:set_int("editing", 1)
+        end
+        if fields.digiline_save then
+            if fields.digiline then
+                meta:set_string("digiline_channel", fields.digiline)
+                meta:set_int("editing", 0)
+            end
+        end
+        local formspec = ship_engine.update_formspec(data, false, enabled, false, 0, charge, charge_max, eu_input,
+            eu_supply, meta:get_int("src_tick"), tick_scl, meta:get_string("digiline_channel"), meta:get_int("editing") > 0)
+        meta:set_string("formspec", formspec)
+    end
+
     local node_name = data.modname .. ":" .. ltier .. "_" .. machine_name
     minetest.register_node(node_name .. "", {
         description = machine_desc,
@@ -330,8 +394,7 @@ function ship_engine.register_engine(data)
             if dir == tubelib2.Turn180Deg[tube_dir] then
                 local s = minetest.get_meta(pos):get_string("peer_pos")
                 if s and s ~= "" then
-                    push_item(minetest.string_to_pos(s))
-                    return true
+                    return push_item(minetest.string_to_pos(s))
                 end
             end
         end,
@@ -367,46 +430,7 @@ function ship_engine.register_engine(data)
         allow_metadata_inventory_move = technic.machine_inventory_move,
         technic_run = run,
 
-        on_receive_fields = function(pos, formname, fields, sender)
-            local meta = minetest.get_meta(pos)
-            if fields.quit then
-                meta:set_int("editing", 0)
-                return
-            end
-            local name = sender:get_player_name()
-            local owner = meta:get_string("owner")
-            local is_owner = owner == name
-            local is_protected = core.is_protected(pos, name)
-            if not is_owner and is_protected then
-                return
-            end
-            local node = minetest.get_node(pos)
-            local charge_max = meta:get_int("charge_max")
-            local charge = meta:get_int("charge")
-            local eu_input = meta:get_int(tier .. "_EU_input")
-            local eu_supply = meta:get_int(tier .. "_EU_supply")
-            local enabled = false
-            if fields.toggle then
-                if meta:get_int("enabled") == 1 then
-                    meta:set_int("enabled", 0)
-                else
-                    meta:set_int("enabled", 1)
-                    enabled = true
-                end
-            end
-            if fields.editing then
-                meta:set_int("editing", 1)
-            end
-            if fields.digiline_save then
-                if fields.digiline then
-                    meta:set_string("digiline_channel", fields.digiline)
-                    meta:set_int("editing", 0)
-                end
-            end
-            local formspec = ship_engine.update_formspec(data, false, enabled, false, 0, charge, charge_max, eu_input,
-                eu_supply, meta:get_int("src_tick"), tick_scl, meta:get_string("digiline_channel"), meta:get_int("editing") > 0)
-            meta:set_string("formspec", formspec)
-        end,
+        on_receive_fields = on_receive_fields,
 
         digiline = {
             receptor = {
@@ -442,8 +466,7 @@ function ship_engine.register_engine(data)
             if dir == tubelib2.Turn180Deg[tube_dir] then
                 local s = minetest.get_meta(pos):get_string("peer_pos")
                 if s and s ~= "" then
-                    push_item(minetest.string_to_pos(s))
-                    return true
+                    return push_item(minetest.string_to_pos(s))
                 end
             end
         end,
@@ -455,36 +478,7 @@ function ship_engine.register_engine(data)
         allow_metadata_inventory_move = technic.machine_inventory_move,
         technic_run = run,
 
-        on_receive_fields = function(pos, formname, fields, sender)
-            if fields.quit then
-                return
-            end
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
-            local name = sender:get_player_name()
-            local owner = meta:get_string("owner")
-            local is_owner = owner == name
-            local is_protected = core.is_protected(pos, name)
-            if not is_owner and is_protected then
-                return
-            end
-            local charge_max = meta:get_int("charge_max")
-            local charge = meta:get_int("charge")
-            local eu_input = meta:get_int(tier .. "_EU_input")
-            local eu_supply = meta:get_int(tier .. "_EU_supply")
-            local enabled = false
-            if fields.toggle then
-                if meta:get_int("enabled") == 1 then
-                    meta:set_int("enabled", 0)
-                else
-                    meta:set_int("enabled", 1)
-                    enabled = true
-                end
-            end
-            local formspec = ship_engine.update_formspec(data, false, enabled, false, 0, charge, charge_max, eu_input,
-                eu_supply, meta:get_int("src_tick"), tick_scl, meta:get_string("digiline_channel"))
-            meta:set_string("formspec", formspec)
-        end,
+        on_receive_fields = on_receive_fields,
 
         digiline = {
             receptor = {
@@ -965,12 +959,12 @@ minetest.register_abm({
             z = zdir
         })
 
-        
         local xnode = minetest.get_node(npos)
         local xclear = meta:get_int("exhaust_clear")
-        if xnode.name == "vacuum:vacuum" or xnode.name == "xpanes:pane_red_flat" or xnode.sunlight_propagates then
+        if xnode.name == "vacuum:vacuum" then
             meta:set_int("exhaust_clear", 1)
-        else
+        elseif xclear == 1 then
+            core.set_node(npos, {name = "vacuum:vacuum"})
             meta:set_int("exhaust_clear", 0)
         end
 
