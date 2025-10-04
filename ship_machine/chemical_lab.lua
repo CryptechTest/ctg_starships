@@ -939,7 +939,10 @@ function ship_machine.register_chem_lab(custom_data)
             end
         end
         if fields.recipe then
-            meta:set_int("recipe", fields.recipe)
+            local recipe = tonumber(fields.recipe)
+            if recipe then
+                meta:set_int("recipe", recipe)
+            end
         end
         local formspec = update_formspec(meta, data)
         meta:set_string("formspec", formspec)
