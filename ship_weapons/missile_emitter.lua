@@ -438,7 +438,9 @@ function ship_weapons.register_missile_tower(data)
         technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_idle")
         meta:set_int("broken", 0);
         local yawRad, rotation = get_yaw(pos)
-        local objs = core.get_objects_inside_radius(pos, 0.45)
+        local dir = get_dir(pos)
+        local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
+        local objs = core.get_objects_inside_radius(e_pos, 0.15)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -527,7 +529,9 @@ function ship_weapons.register_missile_tower(data)
     end
 
     local function remove_attached(pos)
-        local objs = minetest.get_objects_inside_radius(pos, 0.25)
+        local dir = get_dir(pos)
+        local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
+        local objs = minetest.get_objects_inside_radius(e_pos, 0.15)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -547,7 +551,7 @@ function ship_weapons.register_missile_tower(data)
         local dir = get_dir(pos)
         local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
         local found_display = false
-        local objs = minetest.get_objects_inside_radius(pos, 0.5)
+        local objs = minetest.get_objects_inside_radius(e_pos, 0.15)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -1086,7 +1090,7 @@ function ship_weapons.register_missile_tower(data)
                 meta:set_int("broken", 0);
                 local dir = get_dir(pos)
                 local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
-                local obj = minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
+                local obj = minetest.add_entity(e_pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
                 local rot = {x = 0, y = yawRad, z = 0}
                 obj:set_rotation(rot)
                 meta:set_int("hp", data.hp)
