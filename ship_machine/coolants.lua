@@ -451,20 +451,3 @@ if minetest.get_modpath("bottles") then
     })
 
 end
-
---local coolant_image = "ctg_machines_coolant_source_animated.png"
---ship_machine.coolant_bottle_image = "[combine:16x16:0,0=" .. coolant_image .. "^vessels_glass_bottle_mask.png^[makealpha:0,254,0"
-
-if minetest.get_modpath("unified_inventory") then
-    unified_inventory.register_craft_type("chemicals", {
-        description = "Chemical Processing",
-        icon = "ctg_hv_chem_lab_front_active.png",
-        width = 2,
-        height = 2
-    })
-    unified_inventory.register_craft({
-        type = "chemicals",
-        output = "ship_machine:bottle_of_coolant",
-        items = {"livingcaves:bucket_cavewater", "technic:sulfur_dust", "group:salt", "group:glow_shroom"}
-    })
-end

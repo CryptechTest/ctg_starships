@@ -51,16 +51,27 @@ local function update_formspec(meta, data)
         local progress_time = "image[3.25,1.0;1.5,0.5;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent2) ..
         ":gui_furnace_arrow_fg.png^[transformR270]]"
 
+        local recipe_index = meta:get_int("recipe")
         local bg_images = {
             "bucket_cave_cavewater.png^[colorize:#75757575", 
             "technic_sulfur_dust.png^[colorize:#75757575", 
             "saltd_salt_crystals.png^[colorize:#75757575", 
             "livingcaves_mushroom_top.png^[colorize:#75757575"
         }
+        if recipe_index == 2 then
+            bg_images = {
+                "bucket_water.png^[colorize:#75757575", 
+                "default_leaves.png^[colorize:#75757575", 
+                "x_farming_rice_seed_inv.png^[colorize:#75757575", 
+                "x_farming_rice_seed_inv.png^[colorize:#75757575"
+            }
+        end
+
         local images = "image[1,1;1,1;" .. bg_images[1] .. "]" .. "image[2,1;1,1;" .. bg_images[2] .. "]" ..
                        "image[1,2;1,1;" .. bg_images[3] .. "]" .. "image[2,2;1,1;" .. bg_images[4] .. "]"
 
-        local recipe_dropdown = "dropdown[1,3.6;2.5;recipe;Coolant;1;]"
+        local recipe_label = "label[1,3.175;" .. S("Selected Recipe") .. "]"
+        local recipe_dropdown = "dropdown[1,3.6;2.5;recipe;Coolant,Seed Oil;"..recipe_index..";true]"
 
         formspec = "size[8,9;]" .. images..
                     "list[current_name;src1;1,1;1,1;]" .. "list[current_name;src2;2,1;1,1;]" ..
@@ -70,7 +81,7 @@ local function update_formspec(meta, data)
                     progress_proc .. progress_time .. "listring[current_name;dst]" ..
                     "listring[current_player;main]" .. "listring[current_name;src1]" .. "listring[current_name;src2]" ..
                     "listring[current_name;src3]" .. "listring[current_name;src4]" .. "listring[current_player;main]" .. 
-                    recipe_dropdown .. "button[4.5,3.5;2.5,1;toggle;" .. btnName .. "]"
+                    recipe_label .. recipe_dropdown .. "button[4.5,3.5;2.5,1;toggle;" .. btnName .. "]"
     end
 
     if data.upgrade then
@@ -233,6 +244,41 @@ local function get_bio_water(items, take)
     end
 end
 
+local function get_river_water(items, take)
+    if not items then
+        return nil
+    end
+    local new_input = nil
+    local c = 0;
+    for i, stack in ipairs(items) do
+        local group = minetest.get_item_group(stack:get_name(), "water_bucket")
+        if group > 0 and stack:get_count() > 0 then
+            new_input = ItemStack(stack)
+            if (take) then
+                new_input:take_item(1)
+            end
+            c = c + 1
+            break
+        end
+    end
+    if (c > 0) then
+        return {
+            new_input = new_input
+        }
+    else
+        return nil
+    end
+end
+
+local function get_water(meta, items, take)
+    local recipe_index = meta:get_int("recipe")
+    if recipe_index == 1 then
+        return get_bio_water(items, take)
+    elseif recipe_index == 2 then
+        return get_river_water(items, take)
+    end
+end
+
 local function get_shrooms(items, take)
     if not items then
         return nil
@@ -285,20 +331,76 @@ local function get_salt(items, take)
     end
 end
 
-local function has_items(pos)
-    if not pos then
+local function get_leaves(items, take)
+    if not items then
         return nil
     end
-    local meta = minetest.get_meta(pos)
+    local new_input = nil
+    local c = 0;
+    for i, stack in ipairs(items) do
+        local group = minetest.get_item_group(stack:get_name(), "leaves")
+        if group > 0 then
+            new_input = ItemStack(stack)
+            if (take) then
+                new_input:take_item(1)
+            end
+            c = c + 1
+            break
+        end
+    end
+    if (c > 0) then
+        return {
+            new_input = new_input
+        }
+    else
+        return nil
+    end
+end
+
+local function get_seeds(items, take)
+    if not items then
+        return nil
+    end
+    local new_input = nil
+    local c = 0;
+    for i, stack in ipairs(items) do
+        local is_seed = true
+        local stack_name = stack:get_name()
+        if stack_name == "x_farming:seed_icefishing" then
+            is_seed = false
+        end
+        if stack_name == "x_farming:seed_salt" then
+            is_seed = false
+        end
+        if is_seed then
+            local group = minetest.get_item_group(stack_name, "seed")
+            if group > 0 then
+                new_input = ItemStack(stack)
+                if (take) then
+                    new_input:take_item(1)
+                end
+                c = c + 1
+                break
+            end
+        end
+    end
+    if (c > 0) then
+        return {
+            new_input = new_input
+        }
+    else
+        return nil
+    end
+end
+
+local function has_items_coolant(meta)
     local inv = meta:get_inventory()
     local src2 = inv:get_list("src2")
     local src3 = inv:get_list("src3")
     local src4 = inv:get_list("src4")
-
     local has_sulfur = false
     local has_salt = false
     local has_shroom = false
-
     if src2[1]:get_name() == 'technic:sulfur_dust' and src2[1]:get_count() > 0 then
         has_sulfur = true
     end
@@ -313,23 +415,16 @@ local function has_items(pos)
     return has_sulfur and has_shroom and has_salt
 end
 
-local function has_water(pos)
-    if not pos then
-        return nil
-    end
-    local meta = minetest.get_meta(pos)
+local function has_water_coolant(meta)
     local inv = meta:get_inventory()
     local src1 = inv:get_list("src1")
-
-    local has_water = false
-
     if src1[1]:get_name() == 'livingcaves:bucket_cavewater' and src1[1]:get_count() > 0 then
-        has_water = true
+        return true
     end
-    return has_water
+    return false
 end
 
-local function add_output(pos, do_run, do_use)
+local function add_output_coolant(meta, do_run, do_use)
     local output = {}
     if do_use then
         output = {"ship_machine:bottle_of_coolant"}
@@ -337,7 +432,6 @@ local function add_output(pos, do_run, do_use)
     if do_run then
         table.insert(output, "livingcaves:bucket_empty")
     end
-    local meta = minetest.get_meta(pos)
     local inv = meta:get_inventory()
     if type(output) ~= "table" then
         output = {output}
@@ -361,6 +455,133 @@ local function add_output(pos, do_run, do_use)
     end
     inv:set_list("dst", inv:get_list("dst_tmp"))
     return true
+end
+
+local function has_items_oil(meta)
+    local inv = meta:get_inventory()
+    local src2 = inv:get_list("src2")
+    local src3 = inv:get_list("src3")
+    local src4 = inv:get_list("src4")
+    local has_leaves = false
+    local has_seed_1 = false
+    local has_seed_2 = false
+    local group = minetest.get_item_group(src2[1]:get_name(), "leaves")
+    if group > 0 then
+        has_leaves = true
+    end
+    local group = minetest.get_item_group(src3[1]:get_name(), "seed")
+    if group > 0 then
+        has_seed_1 = true
+    end
+    local group = minetest.get_item_group(src4[1]:get_name(), "seed")
+    if group > 0 then
+        has_seed_2 = true
+    end
+    return has_leaves and has_seed_1 and has_seed_2
+end
+
+local function has_water_oil(meta)
+    local inv = meta:get_inventory()
+    local src1 = inv:get_list("src1")
+    local group = minetest.get_item_group(src1[1]:get_name(), "water_bucket")
+    if group > 0 and src1[1]:get_count() > 0 then
+        return true
+    end
+    return false
+end
+
+local function add_output_oil(meta, do_run, do_use, tier)
+    local output = {}
+    if do_use then
+        local count = 1
+        if tier == 'mv' then
+            local r = 0
+            if math.random(0,5) == 0 then
+                r = 1
+            end
+            count = 1 + r
+        elseif tier == 'hv' then
+            count = math.random(1,2)
+        end
+        output = {{ name = "basic_materials:oil_extract", count = count}}
+    end
+    if do_run then
+        table.insert(output, {name = "bucket:bucket_empty", count = 1})
+    end
+    local inv = meta:get_inventory()
+    if type(output) ~= "table" then
+        output = {output}
+    end
+    local output_stacks = {}
+    for _, o in ipairs(output) do
+        table.insert(output_stacks, ItemStack(o))
+    end
+    local room_for_output = true
+    inv:set_size("dst_tmp", inv:get_size("dst"))
+    inv:set_list("dst_tmp", inv:get_list("dst"))
+    for _, o in ipairs(output_stacks) do
+        if not inv:room_for_item("dst_tmp", o) then
+            room_for_output = false
+            break
+        end
+        inv:add_item("dst_tmp", o)
+    end
+    if not room_for_output then
+        return false
+    end
+    inv:set_list("dst", inv:get_list("dst_tmp"))
+    return true
+end
+
+local function has_items(meta)
+    if not meta then
+        return nil
+    end
+    local recipe_index = meta:get_int("recipe")
+    if recipe_index == 1 then
+        return has_items_coolant(meta)
+    elseif recipe_index == 2 then
+        return has_items_oil(meta)
+    end
+    return false
+end
+
+local function has_water(meta)
+    if not meta then
+        return nil
+    end
+    local recipe_index = meta:get_int("recipe")
+    if recipe_index == 1 then
+        return has_water_coolant(meta)
+    elseif recipe_index == 2 then
+        return has_water_oil(meta)
+    end
+    return false
+end
+
+local function add_output(meta, do_run, do_use, tier)
+    if not meta then
+        return nil
+    end
+    local recipe_index = meta:get_int("recipe")
+    if recipe_index == 1 then
+        return add_output_coolant(meta, do_run, do_use)
+    elseif recipe_index == 2 then
+        return add_output_oil(meta, do_run, do_use, tier)
+    end
+    return false
+end
+
+local function is_seed(stack_name)
+    local g_seeds = minetest.get_item_group(stack_name, "seed")
+    if g_seeds > 0 then
+        if stack_name == "x_farming:seed_icefishing" then
+            g_seeds = 0
+        elseif stack_name == "x_farming:seed_salt" then
+            g_seeds = 0
+        end
+    end
+    return g_seeds
 end
 
 ----------------------------------------------------
@@ -415,42 +636,82 @@ function ship_machine.register_chem_lab(custom_data)
             local meta = minetest.get_meta(pos)
             local inv = meta:get_inventory()
             local added = nil
-            local g_water = stack:get_name() == "livingcaves:bucket_cavewater"
-            if g_water then
-                added = inv:add_item("src1", stack)
-            end
-            local g_sulfur = stack:get_name() == "technic:sulfur_dust"
-            if g_sulfur then
-                added = inv:add_item("src2", stack)
-            end
-            local g_salt = minetest.get_item_group(stack:get_name(), "salt")
-            if g_salt > 0 then
-                added = inv:add_item("src3", stack)
-            end
-            local g_shroom = minetest.get_item_group(stack:get_name(), "glow_shroom")
-            if g_shroom > 0 then
-                added = inv:add_item("src4", stack)
+            local recipe_index = meta:get_int("recipe")
+            if recipe_index == 1 then
+                local g_water = stack:get_name() == "livingcaves:bucket_cavewater"
+                if g_water then
+                    added = inv:add_item("src1", stack)
+                end
+                local g_sulfur = stack:get_name() == "technic:sulfur_dust"
+                if g_sulfur then
+                    added = inv:add_item("src2", stack)
+                end
+                local g_salt = minetest.get_item_group(stack:get_name(), "salt")
+                if g_salt > 0 then
+                    added = inv:add_item("src3", stack)
+                end
+                local g_shroom = minetest.get_item_group(stack:get_name(), "glow_shroom")
+                if g_shroom > 0 then
+                    added = inv:add_item("src4", stack)
+                end
+            elseif recipe_index == 2 then
+                local g_water = core.get_item_group(stack:get_name(), "water_bucket") or 0
+                if g_water > 0 then
+                    added = inv:add_item("src1", stack)
+                end
+                local g_leaves = minetest.get_item_group(stack:get_name(), "leaves")
+                if g_leaves then
+                    added = inv:add_item("src2", stack)
+                end
+                local g_seeds_1 = is_seed(stack:get_name())
+                if g_seeds_1 > 0 then
+                    added = inv:add_item("src3", stack)
+                end
+                local g_seeds_2 = is_seed(stack:get_name())
+                if g_seeds_2 > 0 then
+                    added = inv:add_item("src4", stack)
+                end
             end
             return added
         end,
         can_insert = function(pos, node, stack, direction)
             local meta = minetest.get_meta(pos)
             local inv = meta:get_inventory()
-            local g_water = stack:get_name() == "livingcaves:bucket_cavewater"
-            if g_water then
-                return inv:room_for_item("src1", stack)
-            end
-            local g_sulfur = stack:get_name() == "technic:sulfur_dust"
-            if g_sulfur then
-                return inv:room_for_item("src2", stack)
-            end
-            local g_salt = minetest.get_item_group(stack:get_name(), "salt")
-            if g_salt > 0 then
-                return inv:room_for_item("src3", stack)
-            end
-            local g_shroom = minetest.get_item_group(stack:get_name(), "glow_shroom")
-            if g_shroom > 0 then
-                return inv:room_for_item("src4", stack)
+            local recipe_index = meta:get_int("recipe")
+            if recipe_index == 1 then
+                local g_water = stack:get_name() == "livingcaves:bucket_cavewater"
+                if g_water then
+                    return inv:room_for_item("src1", stack)
+                end
+                local g_sulfur = stack:get_name() == "technic:sulfur_dust"
+                if g_sulfur then
+                    return inv:room_for_item("src2", stack)
+                end
+                local g_salt = minetest.get_item_group(stack:get_name(), "salt")
+                if g_salt > 0 then
+                    return inv:room_for_item("src3", stack)
+                end
+                local g_shroom = minetest.get_item_group(stack:get_name(), "glow_shroom")
+                if g_shroom > 0 then
+                    return inv:room_for_item("src4", stack)
+                end
+            elseif recipe_index == 2 then
+                local g_water = core.get_item_group(stack:get_name(), "water_bucket") or 0
+                if g_water > 0 then
+                    return inv:room_for_item("src1", stack)
+                end
+                local g_leaves = minetest.get_item_group(stack:get_name(), "leaves")
+                if g_leaves then
+                    return inv:room_for_item("src2", stack)
+                end
+                local g_seeds_1 = is_seed(stack:get_name())
+                if g_seeds_1 > 0 then
+                    return inv:room_for_item("src3", stack)
+                end
+                local g_seeds_2 = is_seed(stack:get_name())
+                if g_seeds_2 > 0 then
+                    return inv:room_for_item("src4", stack)
+                end
             end
             return false
         end,
@@ -468,6 +729,61 @@ function ship_machine.register_chem_lab(custom_data)
     end
     if data.insert_object then
         tube.insert_object = data.insert_object
+    end
+
+    local allow_metadata_inventory_put = function(pos, listname, index, stack, player)
+        local meta = core.get_meta(pos)
+		if core.is_protected(pos, player:get_player_name()) then
+			return 0
+		end
+        local recipe_index = meta:get_int("recipe")
+		local stackname = stack:get_name()
+        if recipe_index == 1 then
+            if listname == "src1" then
+                local is_water = stackname == "livingcaves:bucket_cavewater"
+                if is_water then
+                    return stack:get_count()
+                end
+            elseif listname == "src2" then
+                local is_sulfur = stackname == "technic:sulfur_dust"
+                if is_sulfur then
+                    return stack:get_count()
+                end
+            elseif listname == "src3" then
+                local is_salt = core.get_item_group(stackname, "salt") or 0
+                if is_salt > 0 then
+                    return stack:get_count()
+                end
+            elseif listname == "src4" then
+                local is_shroom = core.get_item_group(stackname, "glow_shroom") or 0
+                if is_shroom > 0 then
+                    return stack:get_count()
+                end
+            end
+        elseif recipe_index == 2 then
+            if listname == "src1" then
+                local is_water = core.get_item_group(stackname, "water_bucket") or 0
+                if is_water > 0 then
+                    return stack:get_count()
+                end
+            elseif listname == "src2" then
+                local is_leaves = core.get_item_group(stackname, "leaves") or 0
+                if is_leaves > 0 then
+                    return stack:get_count()
+                end
+            elseif listname == "src3" then
+                local is_seeds = is_seed(stackname)
+                if is_seeds > 0 then
+                    return stack:get_count()
+                end
+            elseif listname == "src4" then
+                local is_seeds =  is_seed(stackname)
+                if is_seeds > 0 then
+                    return stack:get_count()
+                end
+            end
+        end
+        return 0
     end
 
     -------------------------------------------------------
@@ -515,12 +831,12 @@ function ship_machine.register_chem_lab(custom_data)
 
             meta:set_string("infotext", machine_desc_tier .. S(" - Online"))
 
-            if meta:get_int("output_count") == 0 and not has_water(pos) then
+            if meta:get_int("output_count") == 0 and not has_water(meta) then
                 technic.swap_node(pos, machine_node)
                 meta:set_int("input_valid", 0)
                 meta:set_int("src_time", 0)
             end
-            if meta:get_int("input_valid") <= 1 and not has_items(pos) then
+            if meta:get_int("input_valid") <= 1 and not has_items(meta) then
                 meta:set_int("src_time", 0)
                 technic.swap_node(pos, machine_node)
                 break;
@@ -535,12 +851,14 @@ function ship_machine.register_chem_lab(custom_data)
                 if meta:get_int("input_valid") >= 1 then
                     technic.swap_node(pos, machine_node .. "_active")
                 end
-                break
+                if meta:get_int("output_count") > 0 then
+                    break
+                end
             end
 
             local used_bucket = false
-            if meta:get_int("input_valid") == 0 and has_water(pos) then
-                local input1 = get_bio_water(inv:get_list("src1"), true)
+            if meta:get_int("input_valid") == 0 and has_water(meta) then
+                local input1 = get_water(meta, inv:get_list("src1"), true)
                 if input1 ~= nil then
                     inv:set_list("src1", {input1.new_input})
                     used_bucket = true
@@ -550,18 +868,34 @@ function ship_machine.register_chem_lab(custom_data)
                     meta:set_int("output_count", 0)
                 end
             end
-            if meta:get_int("input_valid") >= 1 and has_items(pos) then
-                local input2 = get_sulfur(inv:get_list("src2"), true)
-                local input3 = get_salt(inv:get_list("src3"), true)
-                local input4 = get_shrooms(inv:get_list("src4"), true)
-                if input2 and input2.new_input then
-                    inv:set_list("src2", {input2.new_input})
-                end
-                if input3 and input3.new_input then
-                    inv:set_list("src3", {input3.new_input})
-                end
-                if input4 and input4.new_input then
-                    inv:set_list("src4", {input4.new_input})
+            if meta:get_int("input_valid") >= 1 and has_items(meta) then
+                local recipe_index = meta:get_int("recipe")
+                if recipe_index == 1 then
+                    local input2 = get_sulfur(inv:get_list("src2"), true)
+                    local input3 = get_salt(inv:get_list("src3"), true)
+                    local input4 = get_shrooms(inv:get_list("src4"), true)
+                    if input2 and input2.new_input then
+                        inv:set_list("src2", {input2.new_input})
+                    end
+                    if input3 and input3.new_input then
+                        inv:set_list("src3", {input3.new_input})
+                    end
+                    if input4 and input4.new_input then
+                        inv:set_list("src4", {input4.new_input})
+                    end
+                elseif recipe_index == 2 then
+                    local input2 = get_leaves(inv:get_list("src2"), true)
+                    local input3 = get_seeds(inv:get_list("src3"), true)
+                    local input4 = get_seeds(inv:get_list("src4"), true)
+                    if input2 and input2.new_input then
+                        inv:set_list("src2", {input2.new_input})
+                    end
+                    if input3 and input3.new_input then
+                        inv:set_list("src3", {input3.new_input})
+                    end
+                    if input4 and input4.new_input then
+                        inv:set_list("src4", {input4.new_input})
+                    end
                 end
                 meta:set_int("input_valid", 2)
                 technic.swap_node(pos, machine_node .. "_active")
@@ -581,7 +915,7 @@ function ship_machine.register_chem_lab(custom_data)
                     meta:set_int("input_valid", 0)
                     meta:set_int("output_count", 0)
                 end
-                add_output(pos, used_bucket, true)
+                add_output(meta, used_bucket, true, ltier)
                 meta:set_string("infotext", machine_desc_tier .. S(" - Processing"))
                 do_particle_effect(pos, 16)
             end            
@@ -603,6 +937,9 @@ function ship_machine.register_chem_lab(custom_data)
             else
                 meta:set_int("enabled", 1)
             end
+        end
+        if fields.recipe then
+            meta:set_int("recipe", fields.recipe)
         end
         local formspec = update_formspec(meta, data)
         meta:set_string("formspec", formspec)
@@ -660,7 +997,7 @@ function ship_machine.register_chem_lab(custom_data)
             return technic.machine_after_dig_node
         end,
         can_dig = technic.machine_can_dig,
-        allow_metadata_inventory_put = technic.machine_inventory_put,
+        allow_metadata_inventory_put = allow_metadata_inventory_put,
         allow_metadata_inventory_take = technic.machine_inventory_take,
         allow_metadata_inventory_move = technic.machine_inventory_move,
         on_construct = function(pos)
@@ -674,11 +1011,12 @@ function ship_machine.register_chem_lab(custom_data)
             inv:set_size("src3", 1)
             inv:set_size("src4", 1)
             inv:set_size("dst", 4)
-            local formspec = update_formspec(meta, data)
-            meta:set_string("formspec", formspec)
             meta:set_int("input_valid", 0)
             meta:set_int("output_count", 0)
             meta:set_int("output_max", data.produced or 1)
+            meta:set_int("recipe", 1)
+            local formspec = update_formspec(meta, data)
+            meta:set_string("formspec", formspec)
         end,
 
         on_punch = function(pos, node, puncher)
@@ -746,7 +1084,7 @@ function ship_machine.register_chem_lab(custom_data)
             return technic.machine_after_dig_node
         end,
         can_dig = technic.machine_can_dig,
-        allow_metadata_inventory_put = technic.machine_inventory_put,
+        allow_metadata_inventory_put = allow_metadata_inventory_put,
         allow_metadata_inventory_take = technic.machine_inventory_take,
         allow_metadata_inventory_move = technic.machine_inventory_move,
         on_construct = function(pos)
@@ -782,13 +1120,13 @@ ship_machine.register_chem_lab({
 });
 ship_machine.register_chem_lab({
     tier = "MV",
-    demand = {700, 670, 640},
+    demand = {800, 760, 700},
     produced = 30,
     speed = 3.35,
 });
 ship_machine.register_chem_lab({
     tier = "HV",
-    demand = {1200, 1080, 950},
+    demand = {1500, 1300, 1050},
     produced = 50,
     speed = 5,
 });
