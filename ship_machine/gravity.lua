@@ -71,8 +71,9 @@ ship_machine.apply_gravity = function(_pos, grav)
 
                         local cur_grav = otherworlds.gravity.get(player)
                         local dist = get_distance(_pos, pos)
-                        local scalor = 0.001 -- scaler for modifier
-                        local dist_mod = (dist ^ 2) * scalor * 0.2 -- modifier based on distance
+                        local scalor = 0.00128 -- scaler for modifier
+                        local mod = 0.218 -- modifier scaling
+                        local dist_mod = (dist ^ 2) * scalor * mod -- modifier based on distance
                         local max_grav = math.min(g_grav - dist_mod, 1)
                         local new_grav = math.max(max_grav, cur_grav) -- subtract modifier from gravity
 
