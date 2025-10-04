@@ -13,10 +13,15 @@ end
 local function update_formspec(pos)
     local meta = core.get_meta(pos)
     local digi_channel = meta:get_string("digiline_channel")
-    local formspec = "size[6,2.75;]" ..
-        "background[0.65,0.75;4.65,1.125;console_bg.png]"..
-        "field[0.95,1.25;3.4,1;digiline;Digiline Channel;"..digi_channel.."]"..
-        "button[3.95,0.95;1.25,1;digiline_save;Save]"
+    digi_channel = #digi_channel > 0 and digi_channel or "targeting_dish"
+    local digi_channel_comp = meta:get_string("digiline_channel_computer")
+    digi_channel_comp = #digi_channel_comp > 0 and digi_channel_comp or "targeting_computer"
+    local formspec = "size[6,3.5;]" ..
+        "label[-0.2,-0.3;" .. "Targeting Dish - Control Setup" .. "]" ..
+        "background[0.65,0.7;3.55,2.325;console_bg.png]"..
+        "field[0.95,1.25;3.4,1;digiline;Local Digiline Channel;"..digi_channel.."]"..
+        "field[0.95,2.35;3.4,1;digiline_comp;Computer Digiline Channel;"..digi_channel_comp.."]"..
+        "button[4.95,2.95;1.25,1;digiline_save;Save]"
 
     return formspec
 end
@@ -153,6 +158,7 @@ function ship_weapons.register_targeting_dish(custom_data)
             local meta = minetest.get_meta(pos)
             meta:set_string("infotext", machine_desc)
             meta:set_string("digiline_channel", 'targeting_dish')
+            meta:set_string("digiline_channel_computer", 'targeting_computer')
             if placer:is_player() then
                 meta:set_string("owner", placer:get_player_name())
             end
@@ -206,6 +212,9 @@ function ship_weapons.register_targeting_dish(custom_data)
             if fields.digiline_save then
                 if fields.digiline then
                     meta:set_string("digiline_channel", fields.digiline)
+                end
+                if fields.digiline_comp then
+                    meta:set_string("digiline_channel_computer", fields.digiline_comp)
                 end
             end
             local formspec = update_formspec(pos)
