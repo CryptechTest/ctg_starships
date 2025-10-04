@@ -1388,7 +1388,7 @@ function ship_weapons.register_heavy_plasma_cannon(data)
                         minetest.sound_play("ctg_zap", {
                             pos = target,
                             gain = 0.5,
-                            pitch = randFloat(0.2, 0.25)
+                            pitch = randFloat(2.2, 2.25)
                         })
                     end
 

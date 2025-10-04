@@ -411,8 +411,9 @@ function ship_weapons.strike_effect(pos1, pos2, tier, doSound)
         minetest.after(0, function()
             minetest.sound_play("ctg_zap", {
                 pos = pos1,
-                gain = 1.3,
-                pitch = randFloat(1.3, 1.5)
+                gain = 0.27,
+                pitch = randFloat(1.33, 1.85),
+                max_hear_distance = 16
             })
         end)
     end
@@ -440,14 +441,16 @@ function ship_weapons.strike_effect(pos1, pos2, tier, doSound)
         if doSound then
             minetest.sound_play("ctg_zap", {
                 pos = target,
-                gain = 0.4,
-                pitch = randFloat(1.4, 1.6)
+                gain = 0.121,
+                pitch = randFloat(1.4, 1.6),
+                max_hear_distance = 25
             })
         end
         minetest.sound_play("ctg_hit3", {
             pos = target,
-            gain = 0.3,
-            pitch = randFloat(1.15, 1.3)
+            gain = 0.23,
+            pitch = randFloat(1.15, 1.3),
+            max_hear_distance = 21
         })
     end)
 
@@ -1203,7 +1206,7 @@ function ship_weapons.register_beam_tower(data)
                         minetest.get_node_timer(target):start(math.random(data.repair_length, data.repair_length + 30))
                         minetest.sound_play("ctg_zap", {
                             pos = target,
-                            gain = 0.8,
+                            gain = 0.48,
                             pitch = randFloat(2.2, 2.25)
                         })
                     end
