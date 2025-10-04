@@ -1,5 +1,15 @@
 local S = minetest.get_translator(minetest.get_current_modname())
 
+local box_slope_col = {
+	type = "fixed",
+	fixed = {
+		{-0.5,  -0.5,  -0.5, 0.5, -0.25, 0.5},
+		{-0.5, -0.25, -0.25, 0.5,     0, 0.5},
+		{-0.5,     0,     0, 0.5,  0.25, 0.5},
+		{-0.5,  0.25,  0.25, 0.5,   0.5, 0.5}
+	}
+}
+
 minetest.register_node("ship_parts:metal_support", {
     description = S("Stainless Steel Support"),
     tiles = {{
@@ -16,7 +26,38 @@ minetest.register_node("ship_parts:metal_support", {
     drawtype = "glasslike_framed",
     -- climbable = true,
     sunlight_propagates = true,
-    backface_culling = false,
+	is_ground_content = false,
+    paramtype = "light"
+})
+
+local metal_tile = {
+	name = "aluminum_support.png",
+	backface_culling = true
+}
+
+minetest.register_node("ship_parts:metal_support_slant", {
+    description = S("Stainless Steel Support Slanted"),
+    tiles = {{
+        name = "steel_support.png",
+        backface_culling = false
+    }, metal_tile, metal_tile, metal_tile, metal_tile, metal_tile},
+	paramtype2 = "facedir",
+	use_texture_alpha = "clip",
+    groups = {
+        cracky = 1,
+        metal = 1,
+        level = 1,
+        leaky = 1
+    },
+	drawtype = "mesh",
+	--drawtype = "glasslike_framed",
+	mesh = "moreblocks_slope.obj",
+	selection_box = box_slope_col,
+	collision_box = box_slope_col,
+    sounds = default.node_sound_metal_defaults(),
+    -- climbable = true,
+    sunlight_propagates = true,
+	is_ground_content = false,
     paramtype = "light"
 })
 
@@ -36,6 +77,38 @@ minetest.register_node("ship_parts:aluminum_support", {
     drawtype = "glasslike_framed",
     -- climbable = true,
     sunlight_propagates = true,
+	is_ground_content = false,
+    paramtype = "light"
+})
+
+local alum_tile = {
+	name = "aluminum_support.png",
+	backface_culling = true
+}
+
+minetest.register_node("ship_parts:aluminum_support_slant", {
+    description = S("Aluminum Support Slanted"),
+    tiles = {{
+        name = "aluminum_support.png",
+        backface_culling = false
+    }, alum_tile, alum_tile, alum_tile, alum_tile, alum_tile},
+	paramtype2 = "facedir",
+	use_texture_alpha = "clip",
+    groups = {
+        cracky = 1,
+        metal = 1,
+        level = 1,
+        leaky = 1
+    },
+	drawtype = "mesh",
+	--drawtype = "glasslike_framed",
+	mesh = "moreblocks_slope.obj",
+	selection_box = box_slope_col,
+	collision_box = box_slope_col,
+    sounds = default.node_sound_metal_defaults(),
+    -- climbable = true,
+    sunlight_propagates = true,
+	is_ground_content = false,
     paramtype = "light"
 })
 
