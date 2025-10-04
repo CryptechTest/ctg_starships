@@ -448,7 +448,7 @@ function ship_weapons.register_missile_tower(data)
                     })
                     local rot = {x = 0, y = yawRad, z = 0}
                     obj:set_rotation(rot)
-                    core.log(dump(rot))
+                    --core.log(dump(rot))
                     break
                 end
             end
@@ -1081,11 +1081,14 @@ function ship_weapons.register_missile_tower(data)
             local meta = minetest.get_meta(pos)
             local time = meta:get_int("time") + elapsed
             if time >= 1 then
+                local yawRad, rotation = get_yaw(pos)
                 technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name)
                 meta:set_int("broken", 0);
                 local dir = get_dir(pos)
                 local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
-                minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
+                local obj = minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
+                local rot = {x = 0, y = yawRad, z = 0}
+                obj:set_rotation(rot)
                 meta:set_int("hp", data.hp)
                 meta:set_int("charge", 0)
             else
