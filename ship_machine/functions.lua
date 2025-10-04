@@ -7,13 +7,21 @@ local function round(number, steps)
     return math.floor(number * steps + 0.5) / steps
 end
 
-function ship_machine.update_formspec(data, running, enabled, has_mese, percent, charge, charge_max)
+function ship_machine.update_formspec(data, meta, running, percent)
+    local enabled = meta:get_int("enabled")
+    local has_mese = meta:get_int("has_mese")
+    local charge = meta:get_int("charge")
+    local charge_max = meta:get_int("charge_max")
+
     local tier = data.tier
     local ltier = string.lower(tier)
     local machine_name = data.machine_name
     local machine_desc = tier .. " " .. data.machine_desc
     local typename = data.typename
     local formspec = nil
+
+    local eu_input = meta:get_int(tier .. "_EU_input")
+    local eu_demand = meta:get_int(tier .. "_EU_demand")
 
     if (machine_name == "lv_gravity_drive") then
         machine_desc = "Starship " .. data.machine_desc
@@ -51,17 +59,22 @@ function ship_machine.update_formspec(data, running, enabled, has_mese, percent,
         end
         local act_msg = ""
         if running and charge_percent >= 100 then
-            act_msg = "image[3,4;4.75,1;gravity_active.png]"
+            act_msg = "image[3,3.45;4.75,0.9;gravity_active.png]"
         elseif running then
-            act_msg = "image[3,4;4.75,1;gravity_offline.png]"
+            act_msg = "image[3,3.45;4.75,0.9;gravity_offline.png]"
         end
+        local power_field = "label[0.5,0.8;" .. minetest.colorize('#21daff', "Energy Stats") .. "]"
+        local input_field = "label[0.5,1.2;Input Eu]label[0.5,1.55;" .. minetest.colorize('#03fc56', "+" .. eu_input) .. "]"
+        local demand_field = "label[0.5,1.9;Demand Eu]label[0.5,2.25;" .. minetest.colorize('#fca903', "-" .. eu_demand) .. "]"
+
         formspec = "formspec_version[3]" .. "size[8,9;]" .. "real_coordinates[false]" ..
                        "list[current_player;main;0,5;8,4;]" .. "listring[current_player;main]" .. "label[0,0;" ..
                        machine_desc:format(tier) .. "]" .. image .. meseimg ..
                        "image[4,1;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
                        ":gui_furnace_arrow_fg.png^[transformR270]" .. "image[3,1;1,1;" .. mese_image_mask .. "]" ..
-                       "button[3,3;4,1;toggle;" .. btnName .. "]" .. "label[3,2;Charge " .. tostring(charge) .. " of " ..
-                       tostring(charge_max) .. "]" .. "label[6,2;" .. tostring(charge_percent) .. "%" .. "]" .. act_msg
+                       "button[3,2.6;4,1;toggle;" .. btnName .. "]" .. "label[3,2;Charge " .. tostring(charge) .. " of " ..
+                       tostring(charge_max) .. "]" .. "label[6,2;" .. tostring(charge_percent) .. "%" .. "]" .. act_msg ..
+                       power_field .. demand_field .. input_field
     end
     if data.upgrade then
         formspec = formspec .. "list[current_name;upgrade1;0.5,3;1,1;]" .. "list[current_name;upgrade2;1.5,3;1,1;]" ..

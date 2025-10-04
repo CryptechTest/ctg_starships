@@ -61,6 +61,7 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
                                 "]"
         local output_field =
             "label[0.5,2.9;Generating]label[0.5,3.2;" .. minetest.colorize('#03fc56', "+" .. eu_supply) .. "]"
+
         formspec = "size[8,9;]" .. "list[current_name;src;2,1;1,1;]" .. "list[current_name;dst;5,1;1,1;]" ..
                        "list[current_player;main;0,5;8,4;]" .. "label[0,0;" .. machine_desc:format(tier) .. "]" .. image ..
                        meseimg .. "image[3,0.65;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(tick_percent) ..
