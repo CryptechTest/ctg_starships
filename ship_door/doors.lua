@@ -22,16 +22,18 @@ local function get_formspec(pos)
     local close_delay = meta:get_int("close_delay")
     local close_mese = meta:get_int("close_mese") > 0
     local mese_closes = meta:get_int("mese_closes") > 0
+    local auto_clos_dis = meta:get_int("auto_clos_dis") > 0
     return "size[6,3.0]"..
         --"allow_close[false]"..
         "image[-0.155,-0.1;0.5,0.5;basic_materials_padlock.png;]"..
         "label[0.325,-0.1;Secure Door Controls]"..
-        "checkbox[0,0.75;locked;Locked to Public;"..tostring(locked).."]"..
-        "checkbox[2.95,0.75;locked_mese;Block Mese Control;"..tostring(locked_mese).."]"..
+        "checkbox[0.2,0.75;locked;Locked to Public;"..tostring(locked).."]"..
         "field[0.55,2.29;2.1,1;close_delay;Auto Close Delay;"..tostring(close_delay).."]"..
         "field_close_on_enter[close_delay;false]"..
-        "checkbox[2.95,1.5;close_mese;Mese Auto Closes;"..tostring(close_mese).."]"..
-        "checkbox[2.95,2.25;mese_closes;Do Mese Close;"..tostring(mese_closes).."]"..
+        "checkbox[2.95,0.75;locked_mese;Block Mese Control;"..tostring(locked_mese).."]"..
+        "checkbox[2.95,1.25;close_mese;Mese Auto Closes;"..tostring(close_mese).."]"..
+        "checkbox[2.95,1.75;mese_closes;Do Mese Close;"..tostring(mese_closes).."]"..
+        "checkbox[2.95,2.25;auto_clos_dis;Disable Auto Close;"..tostring(auto_clos_dis).."]"..
         "button_exit[5.05,-0.2;1.15,0.8;quit;Close]"
 end
 
@@ -126,6 +128,15 @@ core.register_on_player_receive_fields(function(player, formname, fields)
             meta:set_int("mese_closes", 1)
         else
             meta:set_int("mese_closes", 0)
+        end
+    end
+
+    if fields.auto_clos_dis or fields.auto_clos_dis ~= nil then
+        if fields.auto_clos_dis == 'true' then
+            meta:set_int("auto_clos_dis", 1)
+        else
+            meta:set_int("auto_clos_dis", 0)
+            ship_door.close_door(pos)
         end
     end
 
@@ -234,6 +245,7 @@ for _, current_door in ipairs(doors) do
         meta:set_int("close_delay", 3)
         meta:set_int("close_mese", 0)
         meta:set_int("mese_closes", 1)
+        meta:set_int("auto_clos_dis", 0)
 
         itemstack:take_item(1)
         return itemstack;
@@ -310,7 +322,7 @@ for _, current_door in ipairs(doors) do
         return res
     end
 
-    local function close_door(pos, node)
+    local function close_door(pos, node, clicker)
         local node = core.get_node(pos)
         if node.name == closed then
             return false
@@ -351,11 +363,17 @@ for _, current_door in ipairs(doors) do
                 return false
             end
         end
-        local close_delay = meta:get_int("close_delay")
-        local timer = core.get_node_timer(pos)
-        local res = open_door(pos, node)
-        timer:start(close_delay or 3)
-        return res
+        local auto_clos_dis = meta:get_int("auto_clos_dis")
+        if auto_clos_dis > 0 then
+            local res = open_door(pos, node)
+            return res
+        else
+            local close_delay = meta:get_int("close_delay")
+            local timer = core.get_node_timer(pos)
+            local res = open_door(pos, node)
+            timer:start(close_delay or 3)
+            return res
+        end
     end
 
     local function afterplace(pos, placer, itemstack, pointed_thing)
@@ -484,7 +502,7 @@ for _, current_door in ipairs(doors) do
         drawtype = "nodebox",
         paramtype = "light",
         paramtype2 = "facedir",
-        groups = {cracky = 1, dig_generic = 3, door = 1},
+        groups = {cracky = 1, dig_generic = 3, door = 1, ctg_door = 1},
         is_ground_content = false,
         node_box = {
             type = "fixed",
@@ -516,7 +534,7 @@ for _, current_door in ipairs(doors) do
         paramtype = "light",
         paramtype2 = "facedir",
         drop = closed,
-        groups = {cracky = 1, dig_generic = 3, door = 2},
+        groups = {cracky = 1, dig_generic = 3, door = 2, ctg_door = 2},
         is_ground_content = false,
         node_box = {
             type = "fixed",
@@ -533,8 +551,35 @@ for _, current_door in ipairs(doors) do
         after_place_node = afterplace,
         after_destruct = afterdestruct,
         on_timer = ontimer,
+        on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
+            if clicker and clicker:is_player() and itemstack:get_name() == "basic_materials:padlock" then
+                if not is_protected(pos, clicker) then
+                    show_door_form(pos, clicker)
+                    return itemstack
+                else
+                    local player_name = clicker:get_player_name()
+                    core.chat_send_player(player_name, "Access Denied! Owner Required.")
+                    return itemstack
+                end
+            end
+            local meta = core.get_meta(pos)
+            if clicker and clicker:is_player() then
+                local locked = meta:get_int("locked") > 0
+                if locked and is_protected(pos, clicker) then
+                    core.chat_send_player(clicker:get_player_name(), "Access Denied!")
+                    clicker:set_hp(clicker:get_hp() - 1)
+                    return itemstack
+                end
+            end
+            local auto_clos_dis = meta:get_int("auto_clos_dis")
+            if auto_clos_dis > 0 then
+                close_door(pos, node, clicker)
+            end
+            return itemstack
+        end,
         can_dig = can_dig,
         sounds = scifi_nodes.node_sound_metal_defaults(),
+        _close = close_door,
         mesecons = mesecons_doors_def,
         on_rotate = screwdriver.disallow,
     })
@@ -551,7 +596,7 @@ for _, current_door in ipairs(doors) do
         drawtype = "nodebox",
         paramtype = "light",
         paramtype2 = "facedir",
-        groups = {cracky = 1, dig_generic = 3, door = 2},
+        groups = {cracky = 1, dig_generic = 3, door = 2, ctg_door = 2},
         is_ground_content = false,
         node_box = {
             type = "fixed",
@@ -590,7 +635,41 @@ function ship_door.open_door(pos)
         return false
     end
 
+    if def.groups.ctg_door ~= 1 then
+        -- not a closed door
+        return false
+    end
+
     -- call open function
     def._open(pos, node)
+    return true
+end
+
+-- closes the ship door at the given position
+function ship_door.close_door(pos)
+    local node = core.get_node_or_nil(pos)
+    if not node then
+        -- area not loaded
+        return false
+    end
+
+    local def = core.registered_nodes[node.name]
+    if type(def._close) ~= "function" then
+        -- close function not found
+        return false
+    end
+
+    if not def.groups or not def.groups.ctg_door then
+        -- not a scifi_nodes door
+        return false
+    end
+
+    if def.groups.ctg_door ~= 2 then
+        -- not an open door
+        return false
+    end
+
+    -- call close function
+    def._close(pos, node)
     return true
 end
