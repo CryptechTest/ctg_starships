@@ -279,19 +279,32 @@ local function move_bed(pos, pos_new, n)
 
     local node = minetest.get_node(pos)
     local other
+    local player_name = nil
 
     if n == 2 then
+        -- if top, get bottom
+        other = pos
         local dir = minetest.facedir_to_dir(node.param2)
-        other = vector.subtract(pos, dir)
+        pos = vector.subtract(pos, dir) -- pos = other
+        pos_new = vector.subtract(pos_new, dir)
+        -- try and fetch player from beds db...
+        player_name = beds.player_bed[minetest.serialize(pos)]
     elseif n == 1 then
+        -- try and fetch player from beds db...
+        player_name = beds.player_bed[minetest.serialize(pos)]
+        -- if bottom, get top
         local dir = minetest.facedir_to_dir(node.param2)
         other = vector.add(pos, dir)
+    else
+        core.log("[ship_machine] failed to lookup bed!")
     end
 
-    -- try and fetch player from beds db...
-    local player_name = beds.player_bed[minetest.serialize(pos)]
+    if not player_name then
+        player_name = beds.player_bed[minetest.serialize(other)]
+    end
 
     if player_name == nil then
+        --core.log("[ship_machine] failed to lookup player_name, using owner!")
         local node_meta = minetest.get_meta(pos)
         if node_meta:get_string("owner") then
             -- fetch player from node meta
@@ -300,66 +313,67 @@ local function move_bed(pos, pos_new, n)
     end
 
     if player_name then
-        local old_spawn = beds.spawn[player_name]
 
         beds.remove_spawns_at(pos)
         beds.remove_spawns_at(other)
         beds.remove_player_beds_at(pos)
 
-        if n == 2 then
-            pos = other
-        end
-
         local player = minetest.get_player_by_name(player_name)
         if player ~= nil then
-            for i = 1, 24 do
-                local inv = player:get_inventory()
+            local old_spawn = beds.spawn[player_name]
+            if old_spawn ~= nil then
+                if old_spawn.x == pos.x and old_spawn.y == pos.y + 1 and old_spawn.z == pos.z then
+                    beds.spawn[player_name] = {
+                        x = pos_new.x,
+                        y = pos_new.y + 1,
+                        z = pos_new.z
+                    }
+                end
+            end
+            local inv = player:get_inventory()
+            local slot = 0
+            for i = 1, 24 do                
                 local bed = inv:get_stack("beds", i)
                 if not bed:is_empty() then
                     local meta = bed:get_meta()
                     local ppos = meta:get_string("pos")
-                    if minetest.serialize(pos) == ppos then
-
-                        beds.player_bed[minetest.serialize(pos_new)] = player_name
-                        beds.bed_cooldown[minetest.serialize(pos_new)] = false
-
-                        if old_spawn ~= nil then
-                            if old_spawn.x == pos.x and old_spawn.y == pos.y and old_spawn.z == pos.z then
-                                beds.spawn[player_name] = {
-                                    x = pos_new.x,
-                                    y = pos_new.y + 1,
-                                    z = pos_new.z
-                                }
-                            end
-                        end
+                    local spos = core.deserialize(ppos)
+                    if pos.x == spos.x and pos.y == spos.y and pos.z == spos.z then
 
                         meta:set_string("pos", minetest.serialize(pos_new))
                         inv:set_stack("beds", i, bed)
 
-                        core.chat_send_player(player_name, "[Debug] Bed Moved on Jump!")
-                        break
+                        beds.player_bed[minetest.serialize(pos_new)] = player_name
+                        beds.bed_cooldown[minetest.serialize(pos_new)] = false
+
+                        --core.chat_send_player(player_name, "[Debug] Bed Moved on Jump!")
+                        break;
                     end
                 end
             end
-            beds.save_player_beds()
-            beds.save_spawns()
-            unified_inventory.set_inventory_formspec(player, unified_inventory.current_page[player_name])
+            core.after(0, function()
+                unified_inventory.set_inventory_formspec(player, unified_inventory.current_page[player_name])
+            end)            
         end
     end
 
 end
 
 local function move_beds(pos1, pos2, offset)
-    local beds = minetest.find_nodes_in_area(pos1, pos2, "group:bed")
-    for _, bedpos in pairs(beds) do
+    local bed_nodes = minetest.find_nodes_in_area(pos1, pos2, "group:bed")
+    for _, bedpos in pairs(bed_nodes) do
         local bed = minetest.get_node(bedpos)
         if bed ~= nil then
             local g = minetest.get_item_group(bed.name, "bed");
-            if minetest.get_item_group(bed.name, "bed") >= 1 then
+            if g >= 1 then
                 local bed_dest = vector.add(bedpos, offset)
                 move_bed(bedpos, bed_dest, g)
             end
         end
+    end
+    if #bed_nodes > 0 then
+        beds.save_player_beds()
+        beds.save_spawns()
     end
 end
 
