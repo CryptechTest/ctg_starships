@@ -8,7 +8,7 @@ local function round(number, steps)
 end
 
 function ship_machine.update_formspec(data, meta, running, percent)
-    local enabled = meta:get_int("enabled")
+    local enabled = meta:get_int("enabled") > 0
     local has_mese = meta:get_int("has_mese")
     local charge = meta:get_int("charge")
     local charge_max = meta:get_int("charge_max")
@@ -44,10 +44,13 @@ function ship_machine.update_formspec(data, meta, running, percent)
             charge_max = 0
         end
         local btnName = "State: "
+        local btnColor = ""
         if enabled then
             btnName = btnName .. "<Enabled>"
+            btnColor = "style[toggle;bgcolor=#34eb7420]"
         else
             btnName = btnName .. "<Disabled>"
+            btnColor = "style[toggle;bgcolor=#eb403410]"
         end
         local image = "image[5,1;1,1;" .. "lv_gravity_drive.png" .. "]"
         if running then
@@ -67,14 +70,15 @@ function ship_machine.update_formspec(data, meta, running, percent)
         local input_field = "label[0.5,1.2;Input Eu]label[0.5,1.55;" .. minetest.colorize('#03fc56', "+" .. eu_input) .. "]"
         local demand_field = "label[0.5,1.9;Demand Eu]label[0.5,2.25;" .. minetest.colorize('#fca903', "-" .. eu_demand) .. "]"
 
-        formspec = "formspec_version[3]" .. "size[8,9;]" .. "real_coordinates[false]" ..
+        formspec = "formspec_version[8]" .. "size[8,9;]" .. "real_coordinates[false]" ..
                        "list[current_player;main;0,5;8,4;]" .. "listring[current_player;main]" .. "label[0,0;" ..
                        machine_desc:format(tier) .. "]" .. image .. meseimg ..
                        "image[4,1;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
                        ":gui_furnace_arrow_fg.png^[transformR270]" .. "image[3,1;1,1;" .. mese_image_mask .. "]" ..
-                       "button[3,2.6;4,1;toggle;" .. btnName .. "]" .. "label[3,2;Charge " .. tostring(charge) .. " of " ..
-                       tostring(charge_max) .. "]" .. "label[6,2;" .. tostring(charge_percent) .. "%" .. "]" .. act_msg ..
-                       power_field .. demand_field .. input_field
+                       btnColor .. "button[3,2.6;4,1;toggle;" .. btnName .. "]" .. 
+                       "label[3,2;Charge " .. tostring(charge) .. " of " .. tostring(charge_max) .. "]" .. 
+                       "label[6,2;" .. tostring(charge_percent) .. "%" .. "]" .. 
+                       act_msg .. power_field .. demand_field .. input_field
     end
     if data.upgrade then
         formspec = formspec .. "list[current_name;upgrade1;0.5,3;1,1;]" .. "list[current_name;upgrade2;1.5,3;1,1;]" ..

@@ -42,10 +42,13 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
             charge_percent = round(math.floor(charge / (charge_max) * 100 * 100) / 100, 100)
         end
         local btnName = "State: "
+        local btnColor = ""
         if enabled then
             btnName = btnName .. "<Enabled>"
+            btnColor = "style[toggle;bgcolor=#34eb7420]"
         else
             btnName = btnName .. "<Disabled>"
+            btnColor = "style[toggle;bgcolor=#eb403410]"
         end
 
         local image = "image[4,1;1,1;" .. "lv_engine_front.png" .. "]"
@@ -68,8 +71,9 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
                        ":gui_furnace_arrow_fg.png^[transformR270]" .. "listring[current_name;dst]" ..
                        "listring[current_player;main]" .. "listring[current_name;src]" ..
                        "listring[current_player;main]" .. "image[2,1;1,1;" .. mese_image_mask .. "]" ..
-                       "button[3,2.5;3,1;toggle;" .. btnName .. "]" .. "label[2,2;Charge " .. tostring(charge) .. " of " ..
-                       tostring(charge_max) .. "]" .. "label[5,2;" .. tostring(charge_percent) .. "%" .. "]" ..
+                       btnColor .. "button[3,2.5;3,1;toggle;" .. btnName .. "]" .. 
+                       "label[2,2;Charge " .. tostring(charge) .. " of " .. tostring(charge_max) .. "]" .. 
+                       "label[5,2;" .. tostring(charge_percent) .. "%" .. "]" ..
                        power_field .. input_field .. output_field ..
                        "image[3,1.25;1,1;gui_furnace_arrow_bg.png^[lowpart:" .. tostring(percent) ..
                        ":gui_furnace_arrow_fg.png^[transformR270]" .. "label[4,0.6;" .. tostring(tick_percent) .. "%" ..
