@@ -423,6 +423,42 @@ local function update_tubes(pos1, pos2, offset)
     end
 end
 
+local function clear_switching_station(pos)
+    local node = core.get_node(pos)
+    if node.name ~= "technic:switching_station" then
+        return
+    end
+    local network_id = technic.sw_pos2network(pos)
+    if network_id then
+        technic.remove_network(network_id)
+    end
+    core.set_node(pos, {name = "air"})
+end
+
+local function setup_switching_station(pos)
+    local node = core.get_node(pos)
+    if node.name ~= "technic:switching_station" then
+        return
+    end
+    local network_id = technic.create_network(pos)
+    local network = network_id and technic.networks[network_id]
+    if network and technic.switch_insert(pos, network) > 0 then
+        technic.activate_network(network_id)
+        schem_lib.func.do_particle_zap(vector.subtract(pos, {x=0,y=1,z=0}))
+    end
+end
+
+local function update_switching_stations(pos1, pos2, clear)
+    local switch_nodes = minetest.find_nodes_in_area(pos1, pos2, "technic:switching_station")
+    for _, sw_pos in pairs(switch_nodes) do
+        if clear then
+            clear_switching_station(sw_pos)
+        else
+            setup_switching_station(sw_pos)
+        end
+    end
+end
+
 local function do_effect(pos1, pos2)
     local function _effect(obj, i)
         minetest.after(i, function()
@@ -470,10 +506,14 @@ local function post_emerge_complete(meta)
     update_tubes(pos1, pos2, offset)
     -- move offline player locations
     move_offline_players(pos, offset)
+    -- clear prior wire networks
+    update_switching_stations(pos1, pos2, true)
     -- update screens
     local dest_pos1 = vector.subtract(dest, vector.new(size.width, size.height, size.length))
     local dest_pos2 = vector.add(dest, vector.new(size.width, size.height, size.length))
     schem_lib.func.update_screens(dest_pos1, dest_pos2)
+    -- rebuild wire networks
+    update_switching_stations(dest_pos1, dest_pos2, false)
     --core.log("post emerge complete")
 end
 
@@ -484,7 +524,7 @@ local function emerge_callback_on_complete(data)
     minetest.after(0, function()
         post_emerge_complete(data.meta) 
     end)
-    minetest.after(0, function()
+    minetest.after(0.5, function()
         schem_lib.func.jump_ship_move_contents(data.meta)
     end)
     minetest.after(3, function()
