@@ -500,25 +500,29 @@ function ship_machine.register_control_console(custom_data)
             y = move_y,
             z = move_z
         }
-        local ncount, dest = ship_machine.get_jump_dest(jpos, offset, def.size)
+
+        local ship, ships_other = ship_machine.get_local_ships(pos, def.size)
+        local dest = ship_machine.get_jump_dest_from_drive(ship.ship_pos, offset)
         local panel_dest = vector.add(pos, offset)
 
-        if ncount == 0 and dest == nil then
+        --core.log("found other ships= " .. tostring(#ships_other))
+
+        if ship == nil or dest == nil then
             meta:set_int("travel_ready", 0)
             message = "FTL Engines not found..."
-        elseif ncount > 1 then
+        --[[elseif #ships_other > 0 then
             meta:set_int("travel_ready", 0)
-            message = "FTL Engine Mismatch! Actuality Conflict..."
+            message = "FTL Engine Mismatch! Actuality Conflict..."]]
         elseif isNumError then
             meta:set_int("travel_ready", 0)
             message = "Must input a valid number..."
-        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) < def.min_dist and not fields.submit_dock then
+        elseif fields.submit_nav and not is_deepspace and vector.distance(ship.ship_pos, dest) < def.min_dist and not fields.submit_dock then
             meta:set_int("travel_ready", 0)
             message = "Jump distance below engine range..."
         elseif fields.submit_nav and not is_deepspace and docked and fields.submit_dock then
             meta:set_int("travel_ready", 0)
             message = "You are already Docked..."
-        elseif fields.submit_nav and not is_deepspace and vector.distance(pos, dest) > jump_dis + 1 then
+        elseif fields.submit_nav and not is_deepspace and vector.distance(ship.ship_pos, dest) > jump_dis + 1 then
             meta:set_int("travel_ready", 0)
             message = "Jump distance beyond engine range..."
         elseif fields.submit_nav and not is_deepspace and dest.y > 22000 then
@@ -573,7 +577,7 @@ function ship_machine.register_control_console(custom_data)
                     message = "Travel obstructed at " .. "(" .. dest.x .. "," .. dest.y .. "," .. dest.z .. ")"
                 elseif j == -3 then
                     meta:set_int("travel_ready", 0)
-                    message = "FTL Jump Drive not found..."
+                    message = "FTL Jump Drive priority error!"
                 else
                     meta:set_int("travel_ready", 0)
                     message = "FTL Engines Failed to Start?"
@@ -584,7 +588,7 @@ function ship_machine.register_control_console(custom_data)
             end
 
             -- async jump with callback
-            ship_machine.engine_do_jump(pos, def.size, jump_callback, offset)
+            ship_machine.engine_do_jump_fleet(ship, ships_other, jump_callback, offset)
 
             return
         elseif fields.submit_nav and not changed then

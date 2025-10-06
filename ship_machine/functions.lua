@@ -679,15 +679,17 @@ local function engines_charged_spend(pos, dist, size)
     return false
 end
 
-local function do_jump(pos, dest, size, jcb, offset)
+local function do_jump(pos, dest, size, jcb, offset, use_charge)
     local meta = minetest.get_meta(pos)
     local owner = meta:get_string("owner")
 
-    if check_engines_charged(pos, size) == true then
+    if not use_charge or check_engines_charged(pos, size) == true then
         digilines.receptor_send(pos, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_prepare')
 
         local dist = vector.distance(pos, dest)
-        engines_charged_spend(pos, dist, size)
+        if use_charge then
+            engines_charged_spend(pos, dist, size)
+        end
         transport_jumpship(pos, dest, size, owner, offset)
 
         local drv = vector.add(pos, offset)
@@ -701,7 +703,32 @@ local function do_jump(pos, dest, size, jcb, offset)
     return
 end
 
-local function perform_jump(pos, size, jcb, offset)
+local function check_jump_dest_jump(pos, size, jcb, offset)
+
+    local hash = core.hash_node_position(pos)
+    local dest = vector.add(pos, offset)
+
+    local area_clear = true
+    if not schem_lib.func.check_dest_clear(pos, dest, size) then
+        area_clear = false
+    end
+
+    minetest.after(0.5, function()
+        if area_clear then
+            jcb(1, hash)
+        else
+            area_clear = schem_lib.func.check_dest_clear(pos, dest, size)
+            if not area_clear then
+                jcb(-1, hash)
+                return
+            else
+                jcb(1, hash)
+            end
+        end
+    end)
+end
+
+local function perform_jump(pos, size, jcb, offset, use_charge)
 
     local dest = vector.add(pos, offset)
 
@@ -725,7 +752,7 @@ local function perform_jump(pos, size, jcb, offset)
         end
         meta:set_int("jumps", meta:get_int("jumps") + 1)
 
-        do_jump(pos, dest, size, jcb, offset)
+        do_jump(pos, dest, size, jcb, offset, use_charge)
 
         do_particles(dest, 20)
     end)
@@ -885,10 +912,299 @@ function ship_machine.engine_do_jump(pos, size, jump_callback, dest_offset)
     end
 
     if drive then
-        return perform_jump(drive, size, jump_callback, dest_offset)
+        return perform_jump(drive, size, jump_callback, dest_offset, true)
     end
 
     jump_callback(-3)
+end
+
+local function engine_do_jump_ship(ship, jump_callback, dest_offset)
+    local pos = ship.ship_pos
+    local size = ship.size
+    if ship.priority == 1 then
+        return perform_jump(pos, size, jump_callback, dest_offset, true)
+    end
+    jump_callback(-3)
+end
+
+local function engine_do_jump_ships(ship, fleet, jump_callback, dest_offset)
+    local pos = ship.ship_pos
+    local size = ship.size
+
+    local fleet_cache = {}
+    for _, f_ship in pairs(fleet) do
+        local h = core.hash_node_position(f_ship.ship_pos)
+        fleet_cache[h] = false
+    end
+
+    local hash = core.hash_node_position(pos)
+    ship_machine.jumpships.cache[hash] = { ready = false, base_clear = false, fleet = fleet_cache }
+
+    local function ship_do_jump()
+
+        local function jump_callback1(j)
+            ship_machine.jumpships.cache[hash] = nil
+            jump_callback(j)
+        end
+
+        local function jump_callback2(j)
+            --core.log("Ship jumped by fleet... " .. j)
+        end
+
+        perform_jump(pos, size, jump_callback1, dest_offset, true)
+
+        core.after(0.5, function()
+            for _, f_ship in pairs(fleet) do
+                perform_jump(f_ship.ship_pos, f_ship.size, jump_callback2, dest_offset, false)
+            end
+        end)
+    end
+
+    local function ship_check_final(h)
+        local c = ship_machine.jumpships.cache[h]
+        local fleet_clear = true
+        if c.base_clear then
+            for _, f in pairs(c.fleet) do
+                if not f then
+                    fleet_clear = false
+                end
+            end
+        end
+        if c.base_clear and fleet_clear then
+            c.ready = true
+        end
+        if not c.ready then
+            jump_callback(-1)
+            return
+        else
+            ship_do_jump()
+        end
+    end
+
+    local function ship_check_dest_callback(r, h)
+        if r == 1 then
+            ship_machine.jumpships.cache[hash].fleet[h] = true
+        end
+    end
+
+    local function ship_check_dest_callback_final(r, h)
+        if hash ~= h then
+            core.log("hash mismatch on ship_check_dest_callback_final()")
+            jump_callback(-3)
+            return
+        end
+        if r == 1 then
+            ship_machine.jumpships.cache[hash].base_clear = true
+        end
+        ship_check_final(hash)
+    end
+    
+    for _, f_ship in pairs(fleet) do
+        check_jump_dest_jump(f_ship.ship_pos, f_ship.size, ship_check_dest_callback, dest_offset)
+    end
+
+    check_jump_dest_jump(pos, size, ship_check_dest_callback_final, dest_offset)
+
+end
+
+function ship_machine.engine_do_jump_fleet(ship, fleet, jump_callback, dest_offset)
+    if ship.priority == 1 then
+        return engine_do_jump_ship(ship, jump_callback, dest_offset)
+    elseif ship.priority == 2 then
+        return engine_do_jump_ships(ship, fleet, jump_callback, dest_offset)
+    end
+    core.log("Priority invalid on engine_do_jump_fleet()")
+    jump_callback(-3)
+end
+
+local function find_ship_by_beacon(pos, r)
+    local ships = {}
+    local objs = core.get_objects_inside_radius(pos, r + 0.251)
+    for _, obj in pairs(objs) do
+        local obj_pos = obj:get_pos()
+        if obj_pos then
+            -- handle entities
+            if obj:get_luaentity() and not obj:is_player() then
+                local ent = obj:get_luaentity()
+                if ent.type and (ent.type == "jumpship") then -- jumpship beacon
+                    table.insert(ships, {pos = vector.subtract(obj_pos, {x=0,y=2,z=0})})
+                end
+            end
+        end
+    end
+    return ships
+end
+
+local function find_ship_by_beacon_in_area(pos1, pos2)
+    local ships = {}
+    local objs = core.get_objects_in_area(pos1, pos2)
+    for _, obj in pairs(objs) do
+        local obj_pos = obj:get_pos()
+        if obj_pos then
+            -- handle entities
+            if obj:get_luaentity() and not obj:is_player() then
+                local ent = obj:get_luaentity()
+                if ent.type and (ent.type == "jumpship") then -- jumpship beacon
+                    --table.insert(ships, {pos = vector.subtract(obj_pos, {x=0,y=2,z=0})})
+                    table.insert(ships, {pos = obj_pos})
+                end
+            end
+        end
+    end
+    return ships
+end
+
+local function is_vector_equal(v1, v2)
+    return v1.x == v2.x and v1.y == v2.y and v1.z == v2.z
+end
+
+local function get_ship_volume(pos, size)
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    return schemlib.volume(pos1, pos2)
+end
+
+local function check_cuboid_overlap(cuboid1, cuboid2)
+    -- Check for overlap on the X-axis
+    local overlapX = (cuboid1.minX <= cuboid2.maxX) and (cuboid1.maxX >= cuboid2.minX)
+    -- Check for overlap on the Y-axis
+    local overlapY = (cuboid1.minY <= cuboid2.maxY) and (cuboid1.maxY >= cuboid2.minY)
+    -- Check for overlap on the Z-axis
+    local overlapZ = (cuboid1.minZ <= cuboid2.maxZ) and (cuboid1.maxZ >= cuboid2.minZ)
+    -- If there's overlap on all three axes, the cuboids overlap
+    return overlapX and overlapY and overlapZ
+end
+
+local function is_in_cuboid(pos, pos2, size)
+    local min_bounds = { x = pos2.x - size.w, y = pos2.y - size.h, z = pos2.z - size.l }
+    local max_bounds = { x = pos2.x + size.w, y = pos2.y + size.h, z = pos2.z + size.l }
+    return (pos.x >= min_bounds.x and pos.x <= max_bounds.x)
+        and (pos.y >= min_bounds.y and pos.y <= max_bounds.y)
+        and (pos.z >= min_bounds.z and pos.z <= max_bounds.z)
+end
+
+local function check_for_overlap(this, others)
+    local s_pos = this.ship_pos
+    local s_size = this.size
+    -- build cuboid for ship
+    local cube1 = {
+        minX = s_pos.x - s_size.w,
+        maxX = s_pos.x + s_size.w,
+        minY = s_pos.z - s_size.l,
+        maxY = s_pos.z + s_size.l,
+        minZ = s_pos.y - s_size.h,
+        maxZ = s_pos.y + s_size.h
+    }
+    local overlapping = {}
+    -- iterate over ship positions
+    for _, ship in pairs(others) do
+        local o_pos = ship.ship_pos
+        local o_prot = ship.prot_pos
+        local o_size = ship.size
+        -- build cuboid for other ship
+        local cube2 = {
+            minX = o_pos.x - o_size.w,
+            maxX = o_pos.x + o_size.w,
+            minY = o_pos.z - o_size.l,
+            maxY = o_pos.z + o_size.l,
+            minZ = o_pos.y - o_size.h,
+            maxZ = o_pos.y + o_size.h
+        }
+        -- check for overlaps
+        local overlap = check_cuboid_overlap(cube1, cube2)
+        if overlap then
+            table.insert(overlapping, ship)
+        end
+    end
+    return overlapping
+end
+
+local function find_ships_near(pos, size)
+    local pos1 = vector.subtract(pos, {
+        x = size.w * 2.05,
+        y = size.h * 2.05,
+        z = size.l * 2.05
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w * 2.05,
+        y = size.h * 2.05,
+        z = size.l * 2.05
+    })
+    local beacons = find_ship_by_beacon_in_area(pos1, pos2)
+    local ship_pos = vector.subtract(pos, {x=0, y=2, z=0})
+    local this_ship = { ship_pos = ship_pos, prot_pos = pos, size = size }
+
+    for _, beacon in pairs(beacons) do
+        ship_pos = vector.subtract(beacon.pos, {x=0, y=2, z=0})
+        if is_in_cuboid(pos, ship_pos, size) then
+            local volume = get_ship_volume(ship_pos, size)
+            this_ship = { ship_pos = ship_pos, prot_pos = beacon.pos, size = size, volume = volume }
+            break
+        end
+    end
+
+    --core.log("found beacons= " .. tostring(#beacons))
+
+    local ships = {}
+    for _, beacon in pairs(beacons) do
+        if not is_vector_equal(beacon.pos, this_ship.prot_pos) then
+            local ship_pos = vector.subtract(beacon.pos, {x=0, y=2, z=0})
+            local ship_meta = core.get_meta(beacon.pos)
+            local _size = {
+                w = ship_meta and ship_meta:get_int("p_width") or size.w,
+                l = ship_meta and ship_meta:get_int("p_length") or size.l,
+                h = ship_meta and ship_meta:get_int("p_height") or size.h
+            }
+            local volume = get_ship_volume(ship_pos, _size)
+            --core.log("found volume= " .. tostring(volume))
+            table.insert(ships, { ship_pos = ship_pos, prot_pos = beacon.pos, size = _size, volume = volume })
+        end
+    end
+    local overlaps = check_for_overlap(this_ship, ships)
+    return this_ship, overlaps
+end
+
+function ship_machine.get_local_ships(pos, size)
+
+    local this_ship, overlaps = find_ships_near(pos, size)
+
+    --core.log("found overlaps= " .. tostring(#overlaps))
+
+    this_ship.priority = 0
+    if this_ship and #overlaps == 0 then
+        this_ship.priority = 1
+        
+    elseif this_ship and #overlaps > 0 then
+        this_ship.priority = 1
+        for _, o_ship in pairs(overlaps) do
+            if this_ship.volume > o_ship.volume then
+                this_ship.priority = 2
+                o_ship.priority = 1
+            end
+        end
+
+    end
+
+    --core.log("local priority= " .. tostring(this_ship.priority))
+
+    return this_ship, overlaps
+end
+
+function ship_machine.get_jump_dest_from_drive(pos, offset)
+    local node = core.get_node(pos)
+    local group = minetest.get_item_group(node.name, "jumpdrive");
+    if group then
+        return vector.add(pos, offset)
+    end
+    return nil
 end
 
 function ship_machine.get_jump_dest(pos, offset, size)

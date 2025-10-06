@@ -3,6 +3,8 @@ local S = minetest.get_translator(minetest.get_current_modname())
 ship_machine = {}
 
 ship_machine.locations = {}
+ship_machine.jumpships = {}
+ship_machine.jumpships.cache = {}
 
 -- load files
 local default_path = minetest.get_modpath("ship_machine")
