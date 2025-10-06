@@ -444,7 +444,7 @@ local function setup_switching_station(pos)
     local network = network_id and technic.networks[network_id]
     if network and technic.switch_insert(pos, network) > 0 then
         technic.activate_network(network_id)
-        schem_lib.func.do_particle_zap(vector.subtract(pos, {x=0,y=1,z=0}))
+        schem_lib.func.do_particle_zap(vector.subtract(pos, {x=0,y=1,z=0}), 1)
     end
 end
 
@@ -506,8 +506,6 @@ local function post_emerge_complete(meta)
     update_tubes(pos1, pos2, offset)
     -- move offline player locations
     move_offline_players(pos, offset)
-    -- clear prior wire networks
-    update_switching_stations(pos1, pos2, true)
     -- update screens
     local dest_pos1 = vector.subtract(dest, vector.new(size.width, size.height, size.length))
     local dest_pos2 = vector.add(dest, vector.new(size.width, size.height, size.length))
@@ -575,6 +573,9 @@ local function transport_jumpship(pos, dest, size, owner, offset)
             moveObj = true
         })
     else
+        -- clear prior wire networks
+        update_switching_stations(pos1, pos2, true)
+        -- emit players
         schem_lib.func.jump_ship_emit_player(schem_data.meta, false)
         -- load the schematic from cache..
         local count, ver, lmeta = schemlib.process_emitted(nil, nil, schem_data, emerge_callback_on_complete)
