@@ -432,7 +432,7 @@ local function clear_switching_station(pos)
     if network_id then
         technic.remove_network(network_id)
     end
-    --core.set_node(pos, {name = "air"})
+    minetest.get_node_timer(pos):stop()
 end
 
 local function setup_switching_station(pos)
@@ -446,6 +446,7 @@ local function setup_switching_station(pos)
         technic.activate_network(network_id)
         schem_lib.func.do_particle_zap(vector.subtract(pos, {x=0,y=1,z=0}), 1)
     end
+    minetest.get_node_timer(pos):start(1.0)
 end
 
 local function update_switching_stations(pos1, pos2, clear)
