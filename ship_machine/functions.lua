@@ -432,7 +432,7 @@ local function clear_switching_station(pos)
     if network_id then
         technic.remove_network(network_id)
     end
-    core.set_node(pos, {name = "air"})
+    --core.set_node(pos, {name = "air"})
 end
 
 local function setup_switching_station(pos)
