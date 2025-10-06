@@ -16,8 +16,14 @@ local screen_collision_box = {
     }
 }
 
+local digiline_rules_allfaces = {
+    {x= 1, y= 0, z= 0}, {x=-1, y= 0, z= 0}, -- along x beside
+    {x= 0, y= 1, z= 0}, {x= 0, y=-1, z= 0}, -- along y above and below
+    {x= 0, y= 0, z= 1}, {x= 0, y= 0, z=-1}, -- along z beside
+}
+
 digiterms.register_monitor('buckshot_test:game_counter', {
-    description = "Black cathodic monitor with white screen",
+    description = "Simple Game Counter",
     paramtype = "light",
     paramtype2 = "facedir",
     sunlight_propagates = false,
@@ -51,5 +57,21 @@ digiterms.register_monitor('buckshot_test:game_counter', {
         }
     },
     tiles = {"game_screen_side.png", "game_screen_side.png", "game_screen_side.png",
-             "game_screen_side.png^[transformFX]", "game_screen_side.png", "game_screen_front.png"}
+             "game_screen_side.png^[transformFX]", "game_screen_side.png", "game_screen_front.png"},
+	digiline = {
+		wire = { use_autoconnect = false },
+		receptor = {},
+		effector = {
+            rules = digiline_rules_allfaces,
+			action = function(pos, _, channel, msg)
+					if channel ~= minetest.get_meta(pos):get_string("channel") then
+						return
+					end
+					if type(msg) ~= "string" then
+						return
+					end
+					digiterms.push_text_on_screen(pos, msg)
+				end,
+		},
+	},
 })
