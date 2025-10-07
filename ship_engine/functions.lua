@@ -199,8 +199,11 @@ end
 local function spend_charge(pos, amt)
     local meta = minetest.get_meta(pos)
     local charge = meta:get_int("charge")
-    -- local charge_max = meta:get_int("charge_max")
-    meta:set_int("charge", charge - amt)
+    local new_charge = charge - amt
+    if new_charge < 0 then
+        new_charge = 0
+    end
+    meta:set_int("charge", new_charge)
 end
 
 function ship_engine.ship_jump(pos, chrg)

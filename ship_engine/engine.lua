@@ -173,12 +173,6 @@ function ship_engine.register_engine(data)
             local xclear = meta:get_int("exhaust_clear") >= 1
             local editing = meta:get_int("editing") > 0
 
-            if needs_charge then
-                meta:set_int(tier .. "_EU_demand", machine_demand[1])
-            else
-                meta:set_int(tier .. "_EU_demand", 0)
-            end
-
             if not powered and chrg ~= 0 then
                 technic.swap_node(pos, machine_node)
                 meta:set_string("infotext", machine_desc_tier .. S(" Not Powered"))
@@ -198,6 +192,12 @@ function ship_engine.register_engine(data)
                     meta:set_string("formspec", formspec)
                 end
                 return
+            end
+
+            if needs_charge then
+                meta:set_int(tier .. "_EU_demand", machine_demand[1])
+            else
+                meta:set_int(tier .. "_EU_demand", 0)
             end
 
             if (not xclear) then

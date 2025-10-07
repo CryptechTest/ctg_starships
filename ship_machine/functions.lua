@@ -616,7 +616,7 @@ local function transport_jumpship(pos, dest, size, owner, offset)
     end
 end
 
-local function check_engines_charged(pos, size)
+local function check_engines_charged(pos, size, dist, use_charge)
 
     local pos1 = vector.subtract(pos, {
         x = size.w,
@@ -642,12 +642,16 @@ local function check_engines_charged(pos, size)
         local charge_max1 = eng1:get_int('charge_max')
         local charge_max2 = eng2:get_int('charge_max')
 
+        local max = 2500
+        local c_max = 160
+        local req_charge = math.max(3, (c_max / max) * dist)
+
         local charged1 = false
         local charged2 = false
-        if (charge1 >= charge_max1) then
+        if (charge1 >= charge_max1 or charge1 >= req_charge) then
             charged1 = true
         end
-        if (charge2 >= charge_max2) then
+        if (charge2 >= charge_max2 or charge2 >= req_charge) then
             charged2 = true
         end
 
@@ -655,13 +659,19 @@ local function check_engines_charged(pos, size)
             return true
         end
     elseif #nodes > 2 then
+
+        local max = 2500
+        local c_max = 160
+        local req_charge = math.max(3, ((c_max / max) * dist) / #nodes)
+
         local charged = 0
+
         for _, node in pairs(nodes) do
             local eng = minetest.get_meta(node)
             local charge = eng:get_int('charge')
             local charge_max = eng:get_int('charge_max')
             local _charged = false
-            if (charge >= charge_max) then
+            if (charge >= charge_max or charge >= req_charge) then
                 _charged = true
             end
             if _charged then
@@ -690,18 +700,18 @@ local function engines_charged_spend(pos, dist, size)
 
     if #nodes == 2 then
 
-        local max = 2000
+        local max = 2500
         local c_max = 160
-        local chrg = (c_max / max) * dist
+        local chrg = math.max(3, (c_max / max) * dist)
 
         ship_engine.ship_jump(nodes[1], chrg)
         ship_engine.ship_jump(nodes[2], chrg)
 
         return true
     elseif #nodes > 2 then
-        local max = 2000
+        local max = 2500
         local c_max = 160
-        local chrg = ((c_max / max) * dist) / #nodes
+        local chrg = math.max(3, ((c_max / max) * dist) / #nodes)
         for _, eng in pairs(nodes) do
             ship_engine.ship_jump(eng, chrg)
         end
@@ -713,11 +723,11 @@ end
 local function do_jump(pos, dest, size, jcb, offset, use_charge)
     local meta = minetest.get_meta(pos)
     local owner = meta:get_string("owner")
+    local dist = vector.distance(pos, dest)
 
-    if not use_charge or check_engines_charged(pos, size) == true then
+    if not use_charge or check_engines_charged(pos, size, dist, use_charge) == true then
         digilines.receptor_send(pos, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_prepare')
 
-        local dist = vector.distance(pos, dest)
         if use_charge then
             engines_charged_spend(pos, dist, size)
         end
