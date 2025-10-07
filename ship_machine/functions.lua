@@ -116,7 +116,8 @@ function ship_machine.update_jumpdrive_formspec(data, meta)
     return formspec
 end
 
-local function do_particles(pos, amount)
+local function do_particles(pos, amount, radius)
+    local r = radius ~= nil and radius or 5
     local prt = {
         texture = {
             name = "vacuum_air_particle_1.png",
@@ -146,14 +147,14 @@ local function do_particles(pos, amount)
         amount = amount,
         time = prt.time + math.random(0.5, 1),
         minpos = {
-            x = exm.x - 5,
+            x = exm.x - r,
             y = exm.y - 1,
-            z = exm.z - 5
+            z = exm.z - r
         },
         maxpos = {
-            x = exm.x + 5,
+            x = exm.x + r,
             y = exm.y + 4,
-            z = exm.z + 5
+            z = exm.z + r
         },
         minvel = {
             x = rx,
@@ -189,12 +190,13 @@ local function do_particles(pos, amount)
     })
 end
 
-local function do_particle_tele(pos, amount)
+local function do_particle_tele(pos, amount, radius)
+    local r = radius ~= nil and radius or 5
     local prt = {
         texture = "teleport_effect01.png",
         texture_r180 = "teleport_effect01.png" .. "^[transformR180",
         vel = 13,
-        time = 0.6,
+        time = 0.67,
         size = 5,
         glow = 7,
         cols = false
@@ -210,16 +212,16 @@ local function do_particle_tele(pos, amount)
 
     minetest.add_particlespawner({
         amount = amount,
-        time = prt.time + math.random(0.8, 2.0),
+        time = prt.time + math.random(1, 2.25),
         minpos = {
-            x = exm.x - 5,
+            x = exm.x - r,
             y = exm.y - 3,
-            z = exm.z - 5
+            z = exm.z - r
         },
         maxpos = {
-            x = exm.x + 5,
+            x = exm.x + r,
             y = exm.y + 1,
-            z = exm.z + 5
+            z = exm.z + r
         },
         minvel = {
             x = rx,
@@ -460,9 +462,19 @@ local function update_switching_stations(pos1, pos2, clear)
     end
 end
 
-local function do_effect(pos1, pos2)
+local function clear_active_miners(pos1, pos2)
+    if not minetest.get_modpath("testcoin") then
+        return
+    end
+    local rigs = minetest.find_nodes_in_area(pos1, pos2, "group:mining_rig")
+    for _, r_pos in pairs(rigs) do
+        testcoin.remove_active_miner(r_pos)
+    end
+end
+
+local function do_effect(pos, pos1, pos2)
     local function _effect(obj, i)
-        minetest.after(i, function()
+        minetest.after(i+0.5, function()
             if (obj ~= nil) then
                 local name = obj:get_player_name()
                 minetest.sound_play("tele_drone", {
@@ -484,59 +496,73 @@ local function do_effect(pos1, pos2)
             table.insert(players, obj)
         end
     end
+    do_particle_tele(pos, 50, 7)
     -- play effects to players in area
     for _, obj in pairs(players) do
-        for i = 0, 3 do
+        for i = 0, 1 do
             _effect(obj, i)
         end
     end
 end
 
 local function post_emerge_complete(meta)
-    if not meta or not meta.origin or not meta.size or not meta.dest then
+    if meta == nil then
+        core.log("post_emerge_complete() meta nil")
+        return
+    elseif not meta.origin or not meta.offset or not meta.dest then
+        core.log("post_emerge_complete() meta data nil")
         return
     end
     local pos = meta.origin
     local dest = meta.dest
-    local size = meta.size
+    local size = meta.offset
     local offset = vector.subtract(dest, pos)
-    local pos1 = vector.subtract(pos, vector.new(size.width, size.height, size.length))
-    local pos2 = vector.add(pos, vector.new(size.width, size.height, size.length))
+    -- origin positions
+    local pos1 = vector.subtract(pos, vector.new(size.x, size.y, size.z))
+    local pos2 = vector.add(pos, vector.new(size.x, size.y, size.z))
     -- move beds and update tubes
     move_beds(pos1, pos2, offset)
     update_tubes(pos1, pos2, offset)
+    -- clear miners active in area
+    clear_active_miners(pos1, pos2)
     -- move offline player locations
     move_offline_players(pos, offset)
+    -- dest positions
+    local dest_pos1 = vector.subtract(dest, vector.new(size.x, size.y, size.z))
+    local dest_pos2 = vector.add(dest, vector.new(size.x, size.y, size.z))
     -- update screens
-    local dest_pos1 = vector.subtract(dest, vector.new(size.width, size.height, size.length))
-    local dest_pos2 = vector.add(dest, vector.new(size.width, size.height, size.length))
     schem_lib.func.update_screens(dest_pos1, dest_pos2)
     -- rebuild wire networks
     update_switching_stations(dest_pos1, dest_pos2, false)
+    -- effects
+    do_particles(dest, 128, math.min(size.x, size.z))
+    do_particle_tele(dest, 256, math.min(size.x, size.z))
     --core.log("post emerge complete")
 end
 
-local function emerge_callback_on_complete(data)
-    if data == nil or data.meta == nil then
+local function emerge_callback_on_complete(meta, flags)
+    if meta == nil or flags == nil then
+        core.log("emerge_callback_on_complete data is nil")
         return
     end
+    local ttl = 3;
+    if meta.ttl ~= nil and meta.ttl > 0 then
+        ttl = meta.ttl
+    end
     minetest.after(0, function()
-        post_emerge_complete(data.meta) 
+        post_emerge_complete(meta) 
     end)
     minetest.after(0.5, function()
-        schem_lib.func.jump_ship_move_contents(data.meta)
+        schem_lib.func.jump_ship_move_contents(meta)
     end)
-    minetest.after(3, function()
-        schem_lib.func.jump_ship_emit_player(data.meta, true)
+    minetest.after(ttl - 0.5, function()
+        schem_lib.func.jump_ship_emit_player(meta, true)
     end)
-    if data.flags and data.flags.origin_clear and data.meta.ttl and data.meta.ttl > 0 then
-        local size = data.meta.offset
-        local pos1 = vector.subtract(data.meta.origin, vector.new(size.x, size.y, size.z))
-        local pos2 = vector.add(data.meta.origin, vector.new(size.x, size.y, size.z))
-        minetest.after(data.meta.ttl or 3, function()
-            schem_lib.func.clear_position(pos1, pos2)
-        end)
-        minetest.after((data.meta.ttl or 3) * 2, function()
+    if flags and flags.origin_clear then
+        local size = meta.offset
+        local pos1 = vector.subtract(meta.origin, vector.new(size.x, size.y, size.z))
+        local pos2 = vector.add(meta.origin, vector.new(size.x, size.y, size.z))
+        minetest.after(ttl + 0.25, function()
             schem_lib.func.clear_position(pos1, pos2)
         end)
     end
@@ -548,7 +574,9 @@ local function transport_jumpship(pos, dest, size, owner, offset)
         file_cache = save,
         keep_inv = true,
         keep_meta = true,
-        origin_clear = true
+        origin_clear = true,
+        keep_timers = true,
+        stop_timers = true,
     }
     local ship_name = "jumpship_1_" .. owner
     -- position min/max
@@ -557,7 +585,7 @@ local function transport_jumpship(pos, dest, size, owner, offset)
     local data = {
         filename = ship_name,
         owner = owner,
-        ttl = 4,
+        ttl = 3,
         min = pos1,
         max = pos2,
         offset = vector.new(size.w, size.h, size.l),
@@ -574,14 +602,17 @@ local function transport_jumpship(pos, dest, size, owner, offset)
             moveObj = true
         })
     else
+        -- do jump tele effects
+        do_effect(pos, pos1, pos2)
+        do_particle_tele(pos, 64, math.min(size.l, size.w))
         -- clear prior wire networks
         update_switching_stations(pos1, pos2, true)
         -- emit players
         schem_lib.func.jump_ship_emit_player(schem_data.meta, false)
+        -- clear screens...
+        schem_lib.func.clear_screens(pos1, pos2)
         -- load the schematic from cache..
         local count, ver, lmeta = schemlib.process_emitted(nil, nil, schem_data, emerge_callback_on_complete)
-        -- do jump tele effects
-        do_effect(pos1, pos2)
     end
 end
 
@@ -737,7 +768,7 @@ local function perform_jump(pos, size, jcb, offset, use_charge)
         area_clear = false
     end
 
-    minetest.after(2, function()
+    minetest.after(1, function()
         if not area_clear then
             area_clear = schem_lib.func.check_dest_clear(pos, dest, size)
             if not area_clear then

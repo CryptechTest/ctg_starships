@@ -152,6 +152,7 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
                 digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', msg)
             end
             -- async jump with callback
+            -- FIXME: update to use fleet...
             ship_machine.engine_do_jump(pos, size, jump_callback, msg.offset)
         else
             local msg = {
