@@ -67,7 +67,7 @@ if true then
     local si = "basic_materials:silicon"
     local mc = "default:mese_crystal"
     local me = "default:mese"
-    local gl = "mesecons_materials:glue"
+    local glu = "mesecons_materials:glue"
     local fb = "mesecons_materials:fiber"
     local so = "mesecons_solarpanel:solar_panel_off"
     local sp = "technic:solar_panel"
@@ -98,6 +98,17 @@ if true then
     local dgt = "pipeworks:digiline_conductor_tube_1"
     local met = "pipeworks:conductor_tube_off_1"
     local lcd = "digilines:lcd"
+
+    local dot1 = "ship_parts:light_dot_white"
+    local plst = "scifi_nodes:white2"
+    local dye_yel = "dye:yellow"
+    local dye_red = "dye:red"
+    local dye_grn = "dye:green"
+    local dye_blu = "dye:blue"
+    local dye_cyn = "dye:cyan"
+    local dye_vol = "dye:violet"
+    local dye_org = "dye:orange"
+    local dye_mag = "dye:magenta"
 
     minetest.register_craft({
         output = "ship_parts:assembler",
@@ -182,6 +193,70 @@ if true then
     minetest.register_craft({
         output = "ship_parts:engine_part5",
         recipe = {{lcd, ps, lcd}, {ps, dw, ps}, {"", pm, ""}}
+    })
+
+    minetest.register_craft({
+        output = "ship_parts:lightbar_white 6",
+        recipe = {{"", gl, gl}, {"", mc, mc}, {"", plst, glu}}
+    })
+
+    minetest.register_craft({
+        type = "shapeless",
+        output = "ship_parts:lightbar_blue",
+        recipe = {dye_blu, "ship_parts:lightbar_white"}
+    })
+
+    minetest.register_craft({
+        output = "ship_parts:light_dot_white 8",
+        recipe = {{"", gl, ""}, {mc, glu, mc}, {"", plst, ""}}
+    })
+
+    minetest.register_craft({
+        type = "shapeless",
+        output = "ship_parts:light_dot_blue",
+        recipe = {dye_cyn, dye_cyn, dot1}
+    })
+
+    minetest.register_craft({
+        type = "shapeless",
+        output = "ship_parts:light_dot_red",
+        recipe = {dye_red, dye_red, dot1}
+    })
+
+    minetest.register_craft({
+        type = "shapeless",
+        output = "ship_parts:light_dot_yellow",
+        recipe = {dye_yel, dye_yel, dot1}
+    })
+
+    minetest.register_craft({
+        type = "shapeless",
+        output = "ship_parts:light_dot_green",
+        recipe = {dye_grn, dye_grn, dot1}
+    })
+
+    minetest.register_craft({
+        type = "shapeless",
+        output = "ship_parts:light_dot_orange",
+        recipe = {dye_org, dye_org, dot1}
+    })
+
+    minetest.register_craft({
+        type = "shapeless",
+        output = "ship_parts:light_dot_purple",
+        recipe = {dye_vol, dye_vol, dot1}
+    })
+
+    minetest.register_craft({
+        type = "shapeless",
+        output = "ship_parts:light_dot_magenta",
+        recipe = {dye_mag, dye_mag, dot1}
+    })
+
+    minetest.register_craft({
+        type = "shapeless",
+        output = "ship_parts:light_dot_navy",
+        recipe = {dye_blu, dye_blu, dot1}
     })
 
 end
