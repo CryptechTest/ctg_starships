@@ -5,11 +5,11 @@ ship_battle_cruiser = {}
 local ship_def = {}
 ship_def.name = "Deucalion"
 ship_def.size = {
-    w = 70,
-    h = 21,
+    w = 64,
+    h = 22,
     l = 36
 }
-ship_def.hp = 45000
+ship_def.hp = 25000
 ship_def.shield = 10000
 
 -- load files
