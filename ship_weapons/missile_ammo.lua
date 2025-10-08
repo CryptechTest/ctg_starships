@@ -29,7 +29,7 @@ register_ammo({
     recipe = {{{'technic:carbon_plate', 'ship_parts:circuit_standard', 'technic:carbon_plate'},
                {'tnt:gunpowder', 'default:mese_crystal', 'tnt:gunpowder'},
                {'ctg_world:aluminum_ingot', 'group:coolant_water', 'ctg_world:aluminum_ingot'}}},
-    amount = 4
+    amount = 8
 })
 
 register_ammo({
@@ -39,7 +39,7 @@ register_ammo({
     recipe = {{{'technic:carbon_plate', 'ship_parts:circuit_standard', 'technic:carbon_plate'},
                {'tnt:gunpowder', 'ship_weapons:lv_missile', 'tnt:gunpowder'},
                {'ctg_world:aluminum_ingot', 'group:coolant_water', 'ctg_world:aluminum_ingot'}}},
-    amount = 3
+    amount = 6
 })
 
 register_ammo({
@@ -49,5 +49,5 @@ register_ammo({
     recipe = {{{'technic:carbon_plate', 'ship_parts:circuit_advanced', 'technic:carbon_plate'},
                {'tnt:gunpowder', 'ship_weapons:mv_missile', 'tnt:gunpowder'},
                {'ctg_world:titanium_ingot', 'group:coolant_water', 'ctg_world:titanium_ingot'}}},
-    amount = 2
+    amount = 4
 })
