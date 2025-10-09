@@ -92,7 +92,7 @@ end
 function ship_machine.update_jumpdrive_formspec(data, meta)
     local locked = meta:get_int("locked") == 1
     if locked then
-        return formspec
+        return ''
     end
 
     local machine_name = data.machine_name
@@ -105,12 +105,14 @@ function ship_machine.update_jumpdrive_formspec(data, meta)
     if typename == 'jump_drive' or typename == 'jump_drive_spawn' then
         local owner = "label[5,0;Owner:]label[6,0;" .. meta:get_string("owner") .. "]"
         local set_owner = "field[1,2.65;4,1;owner_name;Owner Name;]button[5,2.25;1,1;set_owner;Set]"
-        local set_owner_local = "field[1,3.85;4,1;owner_name_local;Owner Local;]button[5,3.85;1,1;set_owner_local;Set]"
+        local set_owner_local = "field[1,3.85;4,1;owner_name_local;Owner Local;]button[5,3.45;1,1;set_owner_local;Set]"
         local input_name = "field[1,1.45;4,1;file_name;File Name;]"
         local input_save_load = "button[5,1;1,1;save;Save]button[6,1;1,1;load;Load]"
+        local btn_lock = "button[6,3.45;1,1;setup;Lock]"
 
-        formspec = "formspec_version[3]" .. "size[8,5;]" .. "real_coordinates[false]" .. "label[0,0;" ..
-                       machine_desc:format(tier) .. "]" .. input_name .. input_save_load .. owner .. set_owner .. set_owner_local
+        formspec = "formspec_version[3]" .. "size[8,5;]" .. "real_coordinates[false]" .. 
+                    "label[0,0;" .. machine_desc:format(tier) .. "]" .. input_name .. 
+                    input_save_load .. owner .. set_owner .. set_owner_local .. btn_lock
     end
 
     return formspec

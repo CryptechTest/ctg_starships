@@ -260,7 +260,15 @@ function ship_machine.register_jumpship(data)
                 is_admin = true
             end
             if not is_admin then
-                -- meta:set_string("formspec", '')
+                if meta:get_int("locked") > 0 then
+                    meta:set_string("formspec", '')
+                end
+                return
+            end
+            if fields.lock then
+                meta:set_int("locked", 1)
+                local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
+                meta:set_string("formspec", formspec)
                 return
             end
 		    core.get_node_timer(pos):start(5)
@@ -292,12 +300,12 @@ function ship_machine.register_jumpship(data)
             if fields.file_name then
                 file_name = fields.file_name
             end
-            if fields.save then
+            if fields.save and #fields.save > 1 then
                 minetest.after(0, function()
                     ship_machine.save_jumpship(pos, data.size, sender, file_name)
                 end)
             end
-            if fields.load then
+            if fields.load and #fields.load > 1 then
                 minetest.after(0, function()
                     ship_machine.load_jumpship(pos, sender, file_name)
                 end)

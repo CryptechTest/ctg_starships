@@ -121,7 +121,7 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
         local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
         local enabled = meta:get_int("enable") == 1
-        local locked = meta:get_int("locked") == 1
+        local busy = meta:get_int("busy") or 0 == 1
         local w = core.get_item_group(node.name, 'ship_size_w')
         local h = core.get_item_group(node.name, 'ship_size_h')
         local l = core.get_item_group(node.name, 'ship_size_l')
@@ -130,7 +130,7 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
             h = h,
             l = l
         }
-        if locked then
+        if busy then
             local msg = {
                 success = false,
                 message = "FTL Drive is busy!"
@@ -165,18 +165,18 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
                 if success then
                     local o_pos = vector.add(pos, msg.offset)
                     local meta = core.get_meta(o_pos)
-                    meta:set_int("locked", 0)
+                    meta:set_int("busy", 0)
                     digilines.receptor_send(o_pos, digilines.rules.default, 'jumpdrive', msg)
                 else
                     local meta = core.get_meta(pos)
-                    meta:set_int("locked", 0)
+                    meta:set_int("busy", 0)
                     digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', msg)
                 end
             end
             -- get ship
             local ship, ships_other = ship_machine.get_local_ships(pos, size)
             if ship then
-                meta:set_int("locked", 1)
+                meta:set_int("busy", 1)
                 -- async jump with callback
                 ship_machine.engine_do_jump_fleet(ship, ships_other, jump_callback, msg.offset)
             end
