@@ -121,6 +121,7 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
         local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
         local enabled = meta:get_int("enable") == 1
+        local locked = meta:get_int("locked") == 1
         local w = core.get_item_group(node.name, 'ship_size_w')
         local h = core.get_item_group(node.name, 'ship_size_h')
         local l = core.get_item_group(node.name, 'ship_size_l')
@@ -129,19 +130,31 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
             h = h,
             l = l
         }
-        if enabled then
+        if locked then
+            local msg = {
+                success = false,
+                message = "FTL Drive is busy!"
+            }
+            digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', msg)
+        elseif not enabled then
+            local msg = {
+                success = false,
+                message = "FTL Drive not enabled."
+            }
+            digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', msg)
+        else
             local function jump_callback(j)
                 local success = false
                 local message = ""
                 if j == 1 then
                     success = true
-                    message = "Performing Jump!"
+                    message = "Performed Jump!"
                 elseif j == 0 then
                     message = "FTL Engines require more charge..."
                 elseif j == -1 then
                     message = "Travel obstructed at destination."
                 elseif j == -3 then
-                    message = "FTL Jump Drive not found..."
+                    message = "FTL Jump Drive Error..."
                 else
                     message = "FTL Engines Failed to Start?"
                 end
@@ -149,17 +162,24 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
                     success,
                     message
                 }
-                digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', msg)
+                if success then
+                    local o_pos = vector.add(pos, msg.offset)
+                    local meta = core.get_meta(o_pos)
+                    meta:set_int("locked", 0)
+                    digilines.receptor_send(o_pos, digilines.rules.default, 'jumpdrive', msg)
+                else
+                    local meta = core.get_meta(pos)
+                    meta:set_int("locked", 0)
+                    digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', msg)
+                end
             end
-            -- async jump with callback
-            -- FIXME: update to use fleet...
-            ship_machine.engine_do_jump(pos, size, jump_callback, msg.offset)
-        else
-            local msg = {
-                success = false,
-                message = "FTL Drive not enabled."
-            }
-            digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', msg)
+            -- get ship
+            local ship, ships_other = ship_machine.get_local_ships(pos, size)
+            if ship then
+                meta:set_int("locked", 1)
+                -- async jump with callback
+                ship_machine.engine_do_jump_fleet(ship, ships_other, jump_callback, msg.offset)
+            end
         end
     end
 
