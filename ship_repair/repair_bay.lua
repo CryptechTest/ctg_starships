@@ -660,6 +660,13 @@ function ship_repair.register_repair_box(custom_data)
         while true do
             local enabled = meta:get_int("enabled") == 1
 
+            if not enabled then
+                meta:set_string("infotext", machine_desc_tier .. S(" - Offline"))
+                meta:set_int(tier .. "_EU_demand", 0)
+                technic.swap_node(pos, machine_node)
+                break
+            end
+
             meta:set_int(tier .. "_EU_demand", machine_demand_idle)
 
             if not powered then
@@ -668,15 +675,7 @@ function ship_repair.register_repair_box(custom_data)
                 break
             end
 
-            if not enabled then
-                meta:set_string("infotext", machine_desc_tier .. S(" - Offline"))
-                meta:set_int(tier .. "_EU_demand", 0)
-                technic.swap_node(pos, machine_node)
-                break
-            end
-
             meta:set_string("infotext", machine_desc_tier .. S(" - Online"))
-
             local ship = update_get_ship_protect(pos)
             if ship then
                 if not show_repair(pos, ship) then
