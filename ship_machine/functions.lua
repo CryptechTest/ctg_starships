@@ -811,7 +811,9 @@ function ship_machine.save_jumpship(pos, size, player, ship_name)
         file_cache = save,
         keep_inv = true,
         keep_meta = true,
-        origin_clear = false
+        origin_clear = false,
+        keep_timers = true,
+        stop_timers = false,
     }
     local owner = player:get_player_name()
     -- save to cache
