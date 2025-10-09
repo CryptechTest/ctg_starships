@@ -1421,7 +1421,7 @@ function ship_machine.update_ship_vents_all(pos, size)
         for x = pos1.x, pos2.x do
             for z = pos1.z, pos2.z do
                 local p = vector.new(x,y,z)
-                if ctg_airs.check_node_tube(p) then
+                if ctg_airs.is_duct_tube(p) then
                     local meta = core.get_meta(p)
                     if meta and meta:get_string("infotext") ~= nil then
                         meta:set_string("infotext", "")
