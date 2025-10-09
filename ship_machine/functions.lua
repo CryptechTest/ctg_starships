@@ -1351,16 +1351,25 @@ function ship_machine.colorize_text_hp(hp, hp_max)
 end
 
 function ship_machine.update_ship_owner_all(pos, size, new_owner)
-    local s = size
-    for y = pos.y - s.w, pos.y + s.w do
-        for x = pos.x - s.w, pos.x + s.w do
-            for z = pos.z - s.w, pos.z + s.w do
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    for y = pos1.y, pos2.y do
+        for x = pos1.x, pos2.x do
+            for z = pos1.z, pos2.z do
                 local p = {
                     x = x,
                     y = y,
                     z = z
                 }
-                local meta = minetest.get_meta(p)
+                local meta = core.get_meta(p)
                 if meta and meta:get_string("owner") and meta:get_string("owner") ~= "" then
                     meta:set_string("owner", new_owner)
                 end
@@ -1370,18 +1379,53 @@ function ship_machine.update_ship_owner_all(pos, size, new_owner)
 end
 
 function ship_machine.update_ship_members_clear(pos, size)
-    local s = size
-    for y = pos.y - s.w, pos.y + s.w do
-        for x = pos.x - s.w, pos.x + s.w do
-            for z = pos.z - s.w, pos.z + s.w do
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    for y = pos1.y, pos2.y do
+        for x = pos1.x, pos2.x do
+            for z = pos1.z, pos2.z do
                 local p = {
                     x = x,
                     y = y,
                     z = z
                 }
-                local meta = minetest.get_meta(p)
+                local meta = core.get_meta(p)
                 if meta and meta:get_string("members") and meta:get_string("members") ~= "" then
                     meta:set_string("members", "")
+                end
+            end
+        end
+    end
+end
+
+function ship_machine.update_ship_vents_all(pos, size)
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    for y = pos1.y, pos2.y do
+        for x = pos1.x, pos2.x do
+            for z = pos1.z, pos2.z do
+                local p = vector.new(x,y,z)
+                if ctg_airs.check_node_tube(p) then
+                    local meta = core.get_meta(p)
+                    if meta and meta:get_string("infotext") ~= nil then
+                        meta:set_string("infotext", "")
+                    end
                 end
             end
         end

@@ -126,7 +126,7 @@ local function register_assembler_bay(data)
                 minetest.chat_send_player(sender:get_player_name(), S("Assembling Jumpship..."))
 
                 -- load shuttle
-                load_schematic_ship_shell(core_pos, "small_shuttle_3");
+                load_schematic_ship_shell(core_pos, "small_shuttle_5");
 
                 minetest.after(5, function()   
                     minetest.set_node(core_pos, {
@@ -140,15 +140,32 @@ local function register_assembler_bay(data)
                     minetest.set_node(prot_pos, {
                         name = "ship_shuttle:shield_protect"
                     })
+                    local ship_def_shuttle = {
+                        size = {
+                            w = 12,
+                            h = 5,
+                            l = 7
+                        },
+                        name = "Shuttle",
+                        hp = 1000,
+                        shield = 1100
+                    }
                     local prot_meta = minetest.get_meta(prot_pos);
                     prot_meta:set_string("owner", op)
                     prot_meta:set_string("members", "")
+                    prot_meta:set_string("allies", "")
                     prot_meta:set_string("infotext", S("Protection (owned by @1)", op))
-                    prot_meta:set_int("p_width", 12);
-                    prot_meta:set_int("p_length", 7);
-                    prot_meta:set_int("p_height", 5);
+                    prot_meta:set_int("p_width", ship_def_shuttle.size.w);
+                    prot_meta:set_int("p_length", ship_def_shuttle.size.l);
+                    prot_meta:set_int("p_height", ship_def_shuttle.size.h);
                     prot_meta:set_int("combat_ready", 2)
-                    ship_machine.update_ship_owner_all(core_pos, {l = 7, w = 12, h = 5}, op)
+                    prot_meta:set_int("hp_max", ship_def_shuttle.hp)
+                    prot_meta:set_int("hp", ship_def_shuttle.hp)
+                    prot_meta:set_int("shield_hit", 0)
+                    prot_meta:set_int("shield_max", ship_def_shuttle.shield)
+                    prot_meta:set_int("shield", ship_def_shuttle.shield)
+                    ship_machine.update_ship_owner_all(core_pos, ship_def_shuttle.size, op)
+                    ship_machine.update_ship_vents_all(core_pos, ship_def_shuttle.size)
                     minetest.chat_send_player(sender:get_player_name(),
                         S("Jumpship Assembly Ready!"))
                 end)
@@ -194,15 +211,31 @@ local function register_assembler_bay(data)
                     minetest.set_node(prot_pos, {
                         name = "ship_scout:shield_protect"
                     })
+                    local ship_def_proto = {
+                        size = {
+                            w = 12,
+                            h = 12,
+                            l = 15
+                        },
+                        name = "Proto-Scout",
+                        hp = 4000,
+                        shield = 2000
+                    }
                     local prot_meta = minetest.get_meta(prot_pos);
                     prot_meta:set_string("owner", op)
                     prot_meta:set_string("members", "")
                     prot_meta:set_string("infotext", S("Protection (owned by @1)", op))
-                    prot_meta:set_int("p_width", 12);
-                    prot_meta:set_int("p_length", 15);
-                    prot_meta:set_int("p_height", 12);
-                    prot_meta:set_int("combat_ready", 2)                    
-                    ship_machine.update_ship_owner_all(core_pos, {l = 15, w = 12, h = 12}, op)
+                    prot_meta:set_int("p_width", ship_def_proto.size.w);
+                    prot_meta:set_int("p_length", ship_def_proto.size.l);
+                    prot_meta:set_int("p_height", ship_def_proto.size.h);
+                    prot_meta:set_int("combat_ready", 2)
+                    prot_meta:set_int("hp_max", ship_def_proto.hp)
+                    prot_meta:set_int("hp", ship_def_proto.hp)
+                    prot_meta:set_int("shield_hit", 0)
+                    prot_meta:set_int("shield_max", ship_def_proto.shield)
+                    prot_meta:set_int("shield", ship_def_proto.shield)                  
+                    ship_machine.update_ship_owner_all(core_pos, ship_def_proto.size, op)
+                    ship_machine.update_ship_vents_all(core_pos, ship_def_proto.size)
                     minetest.chat_send_player(sender:get_player_name(),
                         S("Jumpship Assembly Ready!"))
                 end)
@@ -254,13 +287,30 @@ local function register_assembler_bay(data)
                     minetest.set_node(prot_pos, {
                         name = "ship_scout:shield_protect"
                     })
+                    local ship_def_proto = {
+                        size = {
+                            w = 12,
+                            h = 12,
+                            l = 15
+                        },
+                        name = "Proto-Scout",
+                        hp = 4000,
+                        shield = 2000
+                    }
                     local prot_meta = minetest.get_meta(prot_pos);
                     prot_meta:set_string("owner", op)
                     prot_meta:set_string("members", "")
                     prot_meta:set_string("infotext", S("Protection (owned by @1)", op))
-                    prot_meta:set_int("p_width", 12);
-                    prot_meta:set_int("p_length", 15);
-                    prot_meta:set_int("p_height", 12);
+                    prot_meta:set_int("p_width", ship_def_proto.size.w);
+                    prot_meta:set_int("p_length", ship_def_proto.size.l);
+                    prot_meta:set_int("p_height", ship_def_proto.size.h);
+                    prot_meta:set_int("combat_ready", 0)
+                    prot_meta:set_int("hp_max", ship_def_proto.hp)
+                    prot_meta:set_int("hp", ship_def_proto.hp)
+                    prot_meta:set_int("shield_hit", 0)
+                    prot_meta:set_int("shield_max", ship_def_proto.shield)
+                    prot_meta:set_int("shield", ship_def_proto.shield)                  
+                    ship_machine.update_ship_owner_all(core_pos, ship_def_proto.size, op)
                     minetest.chat_send_player(sender:get_player_name(),
                         S("Jumpship Framing Ready!"))
                 end)

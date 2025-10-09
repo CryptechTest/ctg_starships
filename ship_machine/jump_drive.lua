@@ -275,6 +275,7 @@ function ship_machine.register_jumpship(data)
                     meta2:set_string("owner", owner_name)
                     meta2:set_string("infotext", S("Protection (owned by @1)", meta2:get_string("owner")))
                     ship_machine.update_ship_owner_all(pos, data.size, owner_name)
+                    ship_machine.update_ship_vents_all(pos, data.size)
                 end
             end
             if fields.set_owner_local and fields.owner_name_local then
