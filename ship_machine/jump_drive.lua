@@ -300,12 +300,12 @@ function ship_machine.register_jumpship(data)
             if fields.file_name then
                 file_name = fields.file_name
             end
-            if fields.save and #fields.save > 1 then
+            if fields.save and #file_name > 1 then
                 minetest.after(0, function()
                     ship_machine.save_jumpship(pos, data.size, sender, file_name)
                 end)
             end
-            if fields.load and #fields.load > 1 then
+            if fields.load and #file_name > 1 then
                 minetest.after(0, function()
                     ship_machine.load_jumpship(pos, sender, file_name)
                 end)
