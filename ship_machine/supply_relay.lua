@@ -94,6 +94,46 @@ local match_facing = function(pos1, pos2)
 end
 
 
+local function do_beam_damage(pos, p)
+	pos = vector.subtract(pos, {x=0,y=0.65,z=0})
+	local range = 0.88
+	local damage = randFloat(1, 3, 1) * p
+	local objs = core.get_objects_inside_radius(pos, range + 0.251)
+	for _, obj in pairs(objs) do
+		local obj_pos = obj:get_pos()
+		local dist = vector.distance(pos, obj_pos)
+		local dmg = math.max(0.5, damage - dist)
+		if obj:get_luaentity() and not obj:is_player() then
+			local ent = obj:get_luaentity()
+			if ent.name == "__builtin:item" then
+				if math.random(1, 4) == 1 then
+					break
+				end
+				-- objects...
+				local item1 = obj:get_luaentity().itemstring
+				local hp = obj:get_hp()
+				obj:set_hp(hp - 1)
+			elseif ent.name:match("_ship_missile_projectile") then
+				-- missiles?
+				local hp = obj:get_hp()
+				obj:set_hp(hp - 5)
+			elseif ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
+				-- mobs
+				ent.health = ent.health - dmg
+			end
+		elseif obj:is_player() then
+			local name = obj:get_player_name()
+			-- players
+			if math.random(1, 6) == 1 then
+				break
+			end
+			local hp = obj:get_hp()
+			obj:set_hp(hp - dmg)
+		end
+	end
+
+end
+
 local function spawn_particle(pos, dir, i, dist, tier, size)
     local grav = 1;
     if (pos.y > 4000) then
@@ -120,7 +160,7 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
         },
 
         expirationtime = t,
-        size = randFloat(2.62, 2.8),
+        size = randFloat(2.14, 2.42) * size * 2,
         collisiondetection = false,
         collision_removal = false,
         object_collision = false,
@@ -129,7 +169,7 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
         texture = {
             name = "ctg_beam_effect_anim_" .. tier .. ".png",
             alpha = 1.0,
-            alpha_tween = {1, 0},
+            alpha_tween = {1, 0.8, 0},
             scale_tween = {{
                 x = 0.5,
                 y = 0.5
@@ -152,25 +192,34 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
 end
 
 local function create_beam(pos_start, pos_end, tier, p)
-
-	tier = (tier and tier or "LV"):lower()
-
+	
     local target = vector.add(pos_end, {
-        x = randFloat(-0.05, 0.05),
-        y = randFloat(-0.05, 0.05),
-        z = randFloat(-0.05, 0.05)
+        x = randFloat(-0.025, 0.025),
+        y = randFloat(-0.025, 0.025),
+        z = randFloat(-0.025, 0.025)
     })
 
+	local tier = (tier and tier or "LV"):lower()
+	local size = math.max(0.20, p > 100 and p / 20000 or 0.20)
     local dir = vector.direction(pos_start, target)
     local dist = vector.distance(pos_start, target)
-    local step_min = 0.20
+    local step_min = 0.10
+	if size >= 0.6 then
+		step_min = 0.30
+	elseif size >= 0.4 then
+		step_min = 0.20
+	end
     local step = vector.multiply(dir, {
         x = step_min,
         y = step_min,
         z = step_min
     })
 
-	local size = 1
+    local dmg_step = vector.multiply(dir, {
+        x = 1.0,
+        y = 1.0,
+        z = 1.0
+    })
 
     core.after(0, function()
         local i = 1
@@ -179,7 +228,20 @@ local function create_beam(pos_start, pos_end, tier, p)
             spawn_particle(cur_pos, dir, i, vector.distance(cur_pos, target), tier, size)
             cur_pos = vector.add(cur_pos, step)
             i = i + 1
-            if i > 256 then
+            if i > 128 then
+                break
+            end
+        end
+    end)
+
+    core.after(0, function()
+        local i = 1
+        local cur_pos = pos_start
+        while (vector.distance(cur_pos, target) > 1.0) do
+            do_beam_damage(cur_pos, size)
+            cur_pos = vector.add(cur_pos, dmg_step)
+            i = i + 1
+            if i > 16 then
                 break
             end
         end
@@ -189,7 +251,7 @@ local function create_beam(pos_start, pos_end, tier, p)
 		if math.random(0,1) == 0 then
 			core.sound_play("ctg_zap", {
 				pos = pos_start,
-				gain = 0.02,
+				gain = 0.0245,
 				pitch = randFloat(1.67, 1.8),
 				max_hear_distance = 3
 			})
@@ -214,7 +276,8 @@ local function set_supply_converter_formspec(meta)
 	if meta:get_int("relay_mode") == 1 then
 		formspec = formspec .. "field[0.3,0.5;2,1;power;"..S("Input Power")..";${power}]"
 	else
-		formspec = formspec .. "label[0.0,-0.105;Output Power]".."label[0.0,0.4;70% Loss]"
+		local eff = meta:get_int("relay_eff") or 0
+		formspec = formspec .. "label[0.0,-0.105;Output Power]".."label[0.0,0.4;"..eff.."% Loss]"
 	end
 	if meta:get_int("mesecon_mode") == 0 then
 		formspec = formspec.."button[0,1;5,1;mesecon_mode_1;"..S("Ignoring Mesecon Signal").."]"
@@ -327,7 +390,7 @@ local digiline_def = {
 
 local run = function(pos, node, run_stage)
 
-	local remain = 0.7
+	local remain = 0.9
 	-- Machine information
 	local machine_name  = S("Supply Relay")
 	local meta          = core.get_meta(pos)
@@ -346,14 +409,39 @@ local run = function(pos, node, run_stage)
 	local next_relay = nil
 	local next_pos = pos
 
+	local dist = 0
 	if enabled then
-		for n = 1, 7 do
+		for n = 1, 8 do
 			next_pos = vector.add(next_pos, dir)
 			local s_node = core.get_node(next_pos)
 			if s_node.name == "ship_machine:supply_relay" then
 				next_relay = next_pos
+				dist = n
 				break
 			end
+		end
+	end
+
+	local function get_eff_by_dist(dist)
+		-- 100%, 90%, 80%, 60%, 40%, 20%, 10%, 0%
+		if dist <= 0 then
+			return 1.0
+		elseif dist == 1 then
+			return 1.0
+		elseif dist == 2 then
+			return 0.9
+		elseif dist == 3 then
+			return 0.8
+		elseif dist == 4 then
+			return 0.6
+		elseif dist == 5 then
+			return 0.4
+		elseif dist == 6 then
+			return 0.2
+		elseif dist == 7 then
+			return 0.1
+		elseif dist >= 8 then
+			return 0
 		end
 	end
 
@@ -395,10 +483,12 @@ local run = function(pos, node, run_stage)
 					-- Supply converter timed out, either RE or PR network is not running anymore
 					input = 0
 				end
+				remain = get_eff_by_dist(dist - 1)
 				meta:set_int(from.."_EU_demand", demand)
 				meta:set_int(from.."_EU_supply", 0)
 				meta_next_relay:set_int(to.."_EU_demand", 0)
 				meta_next_relay:set_int(to.."_EU_supply", input * remain)
+				meta_next_relay:set_int("relay_eff", remain * 100)
 				meta:set_string("infotext", S("@1 is Bridged \n(@2 @3 -> @4 @5)", machine_name,
 					technic.EU_string(input), from,
 					technic.EU_string(input * remain), to))
@@ -451,12 +541,13 @@ core.register_node("ship_machine:supply_relay", {
 		"ctg_power_relay_back.png".."^[transformFX"..cable_entry
 		},
 	paramtype2 = "facedir",
+	legacy_facedir_simple = true,
 	groups = {snappy=2, choppy=2, oddly_breakable_by_hand=2,
 		technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay = 1},
 	is_ground_content = false,
 	_mcl_blast_resistance = 1,
 	_mcl_hardness = 0.8,
-	connect_sides = {"front"},
+	connect_sides = {"front", "top", "bottom"},
 	sounds = technic.sounds.node_sound_metal_defaults(),
 	on_receive_fields = supply_converter_receive_fields,
 	on_construct = function(pos)
