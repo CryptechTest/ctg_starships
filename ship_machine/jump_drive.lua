@@ -267,8 +267,7 @@ function ship_machine.register_jumpship(data)
             end
             if fields.lock then
                 meta:set_int("locked", 1)
-                local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
-                meta:set_string("formspec", formspec)
+                meta:set_string("formspec", '')
                 return
             end
 		    core.get_node_timer(pos):start(5)

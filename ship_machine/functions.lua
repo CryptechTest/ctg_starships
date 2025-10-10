@@ -108,7 +108,7 @@ function ship_machine.update_jumpdrive_formspec(data, meta)
         local set_owner_local = "field[1,3.85;4,1;owner_name_local;Owner Local;]button[5,3.45;1,1;set_owner_local;Set]"
         local input_name = "field[1,1.45;4,1;file_name;File Name;]"
         local input_save_load = "button[5,1;1,1;save;Save]button[6,1;1,1;load;Load]"
-        local btn_lock = "button[6,3.45;1,1;setup;Lock]"
+        local btn_lock = "button[6,3.45;1,1;lock;Lock]"
 
         formspec = "formspec_version[3]" .. "size[8,5;]" .. "real_coordinates[false]" .. 
                     "label[0,0;" .. machine_desc:format(tier) .. "]" .. input_name .. 
