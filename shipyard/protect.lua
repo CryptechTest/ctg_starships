@@ -270,33 +270,6 @@ shipyard.protector.can_dig = function(s, dig_pos, digger, onlyowner, infolevel)
         return true
     end
 
-    -- find the protector nodes
-    --[[local prots = minetest.find_nodes_in_area({
-        x = pos.x - s.w,
-        y = (pos.y - s.h) + 2,
-        z = pos.z - s.l
-    }, {
-        x = pos.x + s.w,
-        y = (pos.y + s.h) + 2,
-        z = pos.z + s.l
-    }, {"shipyard:shield_protect"})]]
-
-    --[[if prots and #prots > 0 and prots[1] ~= nil then
-        local jumpdrive_pos = vector.add(prots[1], {
-            x = 0,
-            y = -2,
-            z = 0
-        })
-        local jumpdrive = minetest.get_node(jumpdrive_pos)
-        if jumpdrive.name ~= "shipyard:jump_drive" then
-            -- pos = jumpdrive_pos
-        end
-    end]]
-
-    --[[if #prots == 0 then
-        return true
-    end]]
-
     local childs = minetest.find_nodes_in_area({
         x = dig_pos.x - s.w,
         y = (dig_pos.y - s.h) + 2,
@@ -341,7 +314,7 @@ shipyard.protector.can_dig = function(s, dig_pos, digger, onlyowner, infolevel)
                 x = dig_pos.x + sc.w,
                 y = (dig_pos.y + sc.h) + 2,
                 z = dig_pos.z + sc.l
-            }, {"ship_scout:shield_protect", "ship_raider:shield_protect"})
+            }, {"ship_scout:shield_protect", "ship_raider:shield_protect", "ship_shuttle:shield_protect"})
 
             if #childArea > 0 then
                 -- node change and digger is owner
