@@ -21,6 +21,7 @@ dofile(default_path .. DIR_DELIM .. "nodes.lua")
 dofile(default_path .. DIR_DELIM .. "crafts.lua")
 dofile(default_path .. DIR_DELIM .. "coolants.lua")
 dofile(default_path .. DIR_DELIM .. "chemical_lab.lua")
+dofile(default_path .. DIR_DELIM .. "supply_relay.lua")
 
 minetest.register_privilege("jumpship_admin", {
 	description = "Allow player to admin jumpdrives",
