@@ -13,12 +13,6 @@ local S = technic.getter
 
 local cable_entry = "^technic_cable_connection_overlay.png"
 
-local dirs = {
-	{x= 1, y= 0, z= 0}, {x=-1, y= 0, z= 0}, -- along x beside
-	{x= 0, y= 1, z= 0}, {x= 0, y=-1, z= 0}, -- along y above and below
-	{x= 0, y= 0, z= 1}, {x= 0, y= 0, z=-1}, -- along z beside
-}
-
 local function get_facing_vector(pos)
 	local node = core.get_node(pos)
 	local param2 = node.param2
@@ -140,12 +134,16 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
         grav = 0.4;
     end
     dir = vector.multiply(dir, {
-        x = 0.125,
-        y = 0.125,
-        z = 0.125
+        x = 0.45,
+        y = 0.45,
+        z = 0.45
     })
     local i = (dist - (dist - i * 0.1)) * 0.064
-    local t = 0.8 + i
+    local t = 1.88 + i + randFloat(0, 0.525)
+	local texture = "ctg_" .. tier .. "_energy_particle.png"
+	if math.random(0,1) == 0 then
+		texture = "ctg_" .. tier .. "_energy_particle.png^[transformR90"
+	end
     local def = {
         pos = pos,
         velocity = {
@@ -160,35 +158,51 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
         },
 
         expirationtime = t,
-        size = randFloat(2.14, 2.42) * size * 2,
+        size = randFloat(1.08, 1.42) * ((size + 1) / 2),
         collisiondetection = false,
         collision_removal = false,
         object_collision = false,
         vertical = false,
 
         texture = {
-            name = "ctg_beam_effect_anim_" .. tier .. ".png",
+            name = texture,
             alpha = 1.0,
-            alpha_tween = {1, 0.8, 0},
+            alpha_tween = {1, 0.2},
             scale_tween = {{
-                x = 0.5,
-                y = 0.5
+                x = 1.0,
+                y = 1.0
             }, {
-                x = 1.5,
-                y = 1.5
+                x = 0.0,
+                y = 0.0
             }},
             blend = "alpha"
         },
-        animation = {
-            type = "vertical_frames",
-            aspect_w = 16,
-            aspect_h = 16,
-            length = t + 0.1
-        },
-        glow = 12
+        glow = 13
     }
 
     core.add_particle(def);
+end
+
+local function spawn_particles(pos, dir, i, dist, tier, size)
+	local c = 7
+	if size <= 0.25 then
+		c = 1
+	elseif size <= 0.4 then
+		c = 2
+	elseif size <= 0.55 then
+		c = 3
+	elseif size <= 0.67 then
+		c = 4
+	elseif size <= 0.8 then
+		c = 5
+	elseif size <= 0.9 then
+		c = 6
+	end
+	for n = 1, c do
+		local r = 0.175 * ((size + 1) / 2)
+		local p = vector.add(pos, {x=randFloat(-r,r),y=randFloat(-r,r),z=randFloat(-r,r)})
+		spawn_particle(p, dir, i, dist, tier, size)
+	end
 end
 
 local function create_beam(pos_start, pos_end, tier, p)
@@ -200,7 +214,7 @@ local function create_beam(pos_start, pos_end, tier, p)
     })
 
 	local tier = (tier and tier or "LV"):lower()
-	local size = math.max(0.20, p > 100 and p / 20000 or 0.20)
+	local size = math.max(0.1, p / 20000)
     local dir = vector.direction(pos_start, target)
     local dist = vector.distance(pos_start, target)
     local step_min = 0.10
@@ -224,8 +238,8 @@ local function create_beam(pos_start, pos_end, tier, p)
     core.after(0, function()
         local i = 1
         local cur_pos = pos_start
-        while (vector.distance(cur_pos, target) > step_min) do
-            spawn_particle(cur_pos, dir, i, vector.distance(cur_pos, target), tier, size)
+        while (vector.distance(cur_pos, target) > step_min * 4) do
+            spawn_particles(cur_pos, dir, i, vector.distance(cur_pos, target), tier, size)
             cur_pos = vector.add(cur_pos, step)
             i = i + 1
             if i > 128 then
