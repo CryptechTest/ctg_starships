@@ -87,6 +87,31 @@ local match_facing = function(pos1, pos2)
     return dir1.x == -dir2.x and dir1.y == -dir2.y and dir1.z == -dir2.z
 end
 
+local function get_eff_by_dist(dist)
+	-- 100%, 90%, 80%, 60%, 40%, 20%, 10%, 0%
+	if dist <= 0 then
+		return 1.0
+	elseif dist == 1 then
+		return 1.0
+	elseif dist == 2 then
+		return 0.9
+	elseif dist == 3 then
+		return 0.8
+	elseif dist == 4 then
+		return 0.6
+	elseif dist == 5 then
+		return 0.4
+	elseif dist == 6 then
+		return 0.2
+	elseif dist == 7 then
+		return 0.1
+	elseif dist == 8 then
+		return 0.05
+	elseif dist > 8 then
+		return 0
+	end
+end
+
 
 local function do_beam_damage(pos, p)
     pos = vector.subtract(pos, {x=0,y=0.65,z=0})
@@ -139,7 +164,7 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
         z = 0.45
     })
     local i = (dist - (dist - i * 0.1)) * 0.064
-    local t = 1.88 + i + randFloat(0, 0.525)
+    local t = 1.88 + i + randFloat(0, 0.65)
     local texture = "ctg_" .. tier .. "_energy_particle.png"
     if math.random(0,1) == 0 then
         texture = "ctg_" .. tier .. "_energy_particle.png^[transformR90"
@@ -152,13 +177,13 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
             z = dir.z
         },
         acceleration = {
-            x = 0,
+            x = -dir.x * 0.1,
             y = randFloat(-0.02, 0.05) * grav,
-            z = 0
+            z = -dir.z * 0.1
         },
 
         expirationtime = t,
-        size = randFloat(1.08, 1.42) * ((size + 1) / 2),
+        size = randFloat(1.02, 1.42) * ((size + 0.75) / 2),
         collisiondetection = false,
         collision_removal = false,
         object_collision = false,
@@ -167,7 +192,7 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
         texture = {
             name = texture,
             alpha = 1.0,
-            alpha_tween = {1, 0.2},
+            alpha_tween = {1, 0.1},
             scale_tween = {{
                 x = 1.0,
                 y = 1.0
@@ -199,7 +224,7 @@ local function spawn_particles(pos, dir, i, dist, tier, size)
         c = 6
     end
     for n = 1, c do
-        local r = 0.175 * ((size + 0.6) / 2)
+        local r = 0.18 * ((size + 0.5) / 2)
         local p = vector.add(pos, {x=randFloat(-r,r),y=randFloat(-r,r),z=randFloat(-r,r)})
         spawn_particle(p, dir, i, dist, tier, size)
     end
@@ -404,7 +429,6 @@ local digiline_def = {
 
 local run = function(pos, node, run_stage)
 
-    local remain = 0.9
     -- Machine information
     local machine_name  = S("Supply Relay")
     local meta          = core.get_meta(pos)
@@ -436,28 +460,7 @@ local run = function(pos, node, run_stage)
         end
     end
 
-    local function get_eff_by_dist(dist)
-        -- 100%, 90%, 80%, 60%, 40%, 20%, 10%, 0%
-        if dist <= 0 then
-            return 1.0
-        elseif dist == 1 then
-            return 1.0
-        elseif dist == 2 then
-            return 0.9
-        elseif dist == 3 then
-            return 0.8
-        elseif dist == 4 then
-            return 0.6
-        elseif dist == 5 then
-            return 0.4
-        elseif dist == 6 then
-            return 0.2
-        elseif dist == 7 then
-            return 0.1
-        elseif dist >= 8 then
-            return 0
-        end
-    end
+	local remain = get_eff_by_dist(dist - 1)
 
     if not emitter then
         if cable and next_relay then
@@ -467,8 +470,8 @@ local run = function(pos, node, run_stage)
                 meta:set_string("infotext", S("@1 Emitter is Disabled", machine_name))
             else
                 local input = meta:get_int(cable.."_EU_supply")
-                meta:set_string("infotext", S("@1 is Bridged (Receiving: @2 @3)", machine_name,
-                    technic.EU_string(input), cable))
+                meta:set_string("infotext", S("@1 is Bridged \nReceiving: @2 @3\n@4 @5%", machine_name,
+                    technic.EU_string(input), cable, "EU Losses:", (1 - remain) * 100))
             end
         elseif cable then
             if not enabled then
@@ -497,15 +500,15 @@ local run = function(pos, node, run_stage)
                     -- Supply converter timed out, either RE or PR network is not running anymore
                     input = 0
                 end
-                remain = get_eff_by_dist(dist - 1)
                 meta:set_int(from.."_EU_demand", demand)
                 meta:set_int(from.."_EU_supply", 0)
                 meta_next_relay:set_int(to.."_EU_demand", 0)
                 meta_next_relay:set_int(to.."_EU_supply", input * remain)
                 meta_next_relay:set_int("relay_eff", remain * 100)
-                meta:set_string("infotext", S("@1 is Bridged \n(@2 @3 -> @4 @5)", machine_name,
+                meta:set_string("infotext", S("@1 is Bridged \n@2 @3 -> @4 @5\n@6 @7%", machine_name,
                     technic.EU_string(input), from,
-                    technic.EU_string(input * remain), to))
+                    technic.EU_string(input * remain), to,
+				 	"EU Losses:", (1 - remain) * 100))
                 if demand > 0 and input > 0 then
                     create_beam(pos, next_relay, from, input)
                 end
@@ -554,7 +557,9 @@ core.register_node("ship_machine:supply_relay", {
         "ctg_power_relay_back.png",
         "ctg_power_relay_back.png".."^[transformFX"..cable_entry
         },
+	paramtype = "light",
     paramtype2 = "facedir",
+	light_source = 2,
     legacy_facedir_simple = true,
     groups = {snappy=2, choppy=2, oddly_breakable_by_hand=2,
         technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay = 1},
