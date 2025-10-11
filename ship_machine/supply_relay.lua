@@ -1,5 +1,5 @@
--- The supply relay is a generic device which can wirelessly
--- send energy to another supply relay, up to 7 nodes away.
+-- The Power Relay is a generic device which can wirelessly
+-- send energy to another Power Relay, up to 7 nodes away.
 -- The machine is configured by the wiring attached to it.
 
 local digilines_path = core.get_modpath("digilines")
@@ -83,30 +83,65 @@ local match_facing = function(pos1, pos2)
 end
 
 local function get_eff_by_dist(dist)
-	-- 100%, 90%, 80%, 60%, 40%, 20%, 10%, 0%
-	if dist <= 0 then
-		return 1.0
-	elseif dist == 1 then
-		return 1.0
-	elseif dist == 2 then
-		return 0.9
-	elseif dist == 3 then
-		return 0.8
-	elseif dist == 4 then
-		return 0.6
-	elseif dist == 5 then
-		return 0.4
-	elseif dist == 6 then
-		return 0.2
-	elseif dist == 7 then
-		return 0.1
-	elseif dist == 8 then
-		return 0.05
-	elseif dist > 8 then
-		return 0
-	end
+    -- 100%, 90%, 80%, 60%, 40%, 20%, 10%, 0%
+    if dist <= 0 then
+        return 1.0
+    elseif dist == 1 then
+        return 0.95
+    elseif dist == 2 then
+        return 0.9
+    elseif dist == 3 then
+        return 0.8
+    elseif dist == 4 then
+        return 0.6
+    elseif dist == 5 then
+        return 0.4
+    elseif dist == 6 then
+        return 0.2
+    elseif dist == 7 then
+        return 0.1
+    elseif dist == 8 then
+        return 0.05
+    elseif dist > 8 then
+        return 0
+    end
 end
 
+local function get_testcoin(items, take, take_amount)
+    if not items then
+        return nil
+    end
+    local take = take ~= nil and take or false
+    local take_amount = take_amount ~= nil and take_amount or 1
+    local new_input = {}
+    local output = nil
+    local c = 0;
+    for i, stack in ipairs(items) do
+        if stack:get_name() == 'testcoin:coin' and stack:get_count() > 0 then
+            new_input[i] = ItemStack(stack)
+            if take and take_amount then
+                local sc = stack:get_count()
+                new_input[i]:take_item(take_amount)
+                if sc - take_amount < 0 then
+                    take_amount = math.abs(sc - take_amount)
+                else
+                    take_amount = 0
+                end
+            end
+            c = c + stack:get_count()
+        end
+    end
+    if (c > 0) then
+        output = ItemStack({name = "testcoin:coin", count = c})
+        return {
+            new_input = new_input,
+            output = output,
+            count = c
+        }
+    else
+        return nil
+    end
+end
 
 local function do_beam_damage(pos, p)
     pos = vector.subtract(pos, {x=0,y=0.65,z=0})
@@ -154,12 +189,13 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
         grav = 0.4;
     end
     dir = vector.multiply(dir, {
-        x = 0.45,
-        y = 0.45,
-        z = 0.45
+        x = 0.75,
+        y = 0.75,
+        z = 0.75
     })
+    dir = vector.multiply(dir, ((size + 1) / 2))
     local i = (dist - (dist - i * 0.1)) * 0.064
-    local t = 1.88 + i + randFloat(0, 0.65)
+    local t = 2 + i + randFloat(0, 0.65)
     local texture = "ctg_" .. tier .. "_energy_particle.png"
     if math.random(0,1) == 0 then
         texture = "ctg_" .. tier .. "_energy_particle.png^[transformR90"
@@ -172,9 +208,9 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
             z = dir.z
         },
         acceleration = {
-            x = -dir.x * 0.1,
+            x = -dir.x * 0.15,
             y = randFloat(-0.02, 0.05) * grav,
-            z = -dir.z * 0.1
+            z = -dir.z * 0.15
         },
 
         expirationtime = t,
@@ -186,11 +222,11 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
 
         texture = {
             name = texture,
-            alpha = 1.0,
-            alpha_tween = {1, 0.1},
+            alpha = 1,
+            alpha_tween = {1, 0.6},
             scale_tween = {{
-                x = 1.0,
-                y = 1.0
+                x = 1.50,
+                y = 1.50
             }, {
                 x = 0.0,
                 y = 0.0
@@ -219,7 +255,7 @@ local function spawn_particles(pos, dir, i, dist, tier, size)
         c = 6
     end
     for n = 1, c do
-        local r = 0.18 * ((size + 0.5) / 2)
+        local r = 0.2 * ((size + 0.5) / 2)
         local p = vector.add(pos, {x=randFloat(-r,r),y=randFloat(-r,r),z=randFloat(-r,r)})
         spawn_particle(p, dir, i, dist, tier, size)
     end
@@ -283,32 +319,141 @@ local function create_beam(pos_start, pos_end, tier, p)
 
     core.after(0, function()
         if math.random(0,1) == 0 then
-            core.sound_play("ctg_zap", {
+            core.sound_play("ctg_energy_pulse", {
                 pos = pos_start,
-                gain = 0.0245,
-                pitch = randFloat(1.67, 1.8),
-                max_hear_distance = 3
+                gain = 0.475,
+                pitch = randFloat(1.0, 1.025),
+                max_hear_distance = 3.05
             })
         end
         if math.random(0,2) == 0 then
-            core.sound_play("ctg_zap", {
+            core.sound_play("ctg_energy_pulse", {
                 pos = pos_end,
-                gain = 0.0167,
-                pitch = randFloat(1.87, 1.95),
-                max_hear_distance = 2.5
+                gain = 0.485,
+                pitch = randFloat(1.0, 1.025),
+                max_hear_distance = 2.75
             })
         end
     end)
 end
 
-local function set_supply_converter_formspec(meta)
-    local formspec = "size[5,3.25]"
+local function set_supply_relay_formspec(meta)
+    local meter_menu = meta:get_int("meter_menu") or 0
+    local name = S("Power Relay");
+
+    if meter_menu == 1 then
+        local formspec = "size[8,5.8]" .. "formspec_version[8]"
+        local ready = (meta:get_int("meter_ready") or 0) == 1
+        local rate = meta:get_int("meter_rate") 
+        local time = meta:get_int("meter_time")
+        local time = meta:get_int("meter_time")
+        local power = meta:get_int("meter_power") or 0
+        local tier = meta:get_string("meter_tier") or "LV"
+        local tdays = math.floor(time / 1440)
+        local trem_days = time % 1440
+        local thrs = math.floor(trem_days / 60)
+        local tmin = trem_days % 60
+        local tmsg = (tdays > 0 and (tdays > 9 and tdays .. ":" or "0" .. tdays .. ":") or "") .. 
+                    (thrs > 9 and thrs or "0" .. thrs) .. ":" .. 
+                    (tmin > 9 and tmin or "0" .. tmin)
+        if time < 3 then
+            tmsg = core.colorize('#ff3021ff', tmsg)
+        elseif time < 10 then
+            tmsg = core.colorize('#ffa621ff', tmsg)
+        else
+            tmsg = core.colorize('#21daff', tmsg)
+        end
+        local rmsg = core.colorize('#ff6021ff', rate)
+        if rate <= 0 then
+            rmsg = core.colorize('#21ff33ff', rate)
+        end
+        local pwr_req_col = '#ffcb21ff'
+        if time > 0 or rate == 0 then
+            pwr_req_col = '#42ff29ff'
+        end
+        local pwr_req = core.colorize(pwr_req_col, technic.EU_string(power).." "..tier)
+        formspec = formspec .. "label[0.0,-0.105;Meter Rate (Cost)]".."label[0.0,0.4;"..rmsg.."  Per 10 Min]"
+        formspec = formspec .. "label[2.25,-0.105;Meter Time (da:hr:mn)]".."label[2.25,0.4;"..tmsg.."  Remains]"
+
+        formspec = formspec .. "label[5,-0.105;Purchase: Insert Testcoin]"
+        formspec = formspec .. "image[7.0,0.5;1,1;testcoin_coin.png]"
+
+        formspec = formspec .. "label[0,1.0;Get: "..pwr_req.."]"
+        formspec = formspec .. "checkbox[2.25,0.8;meter_ready;Procces Coins;"..tostring(ready).."]"
+
+        formspec = formspec .. "list[current_name;src;5,0.5;2,1;]" .. "listring[current_name;src]"
+        formspec = formspec .. "list[current_player;main;0,2.0;8,4;]" .. "listring[current_player;main]"
+
+        meta:set_string("formspec", formspec)
+        return
+    elseif meter_menu == 2 then
+        local formspec = "size[8,7.0]" .. "formspec_version[8]"
+        local rate = meta:get_int("meter_rate")
+        local time = meta:get_int("meter_time")
+        local tdays = math.floor(time / 1440)
+        local trem_days = time % 1440
+        local thrs = math.floor(trem_days / 60)
+        local tmin = trem_days % 60
+        local tmsg = (tdays > 0 and (tdays > 9 and tdays .. ":" or "0" .. tdays .. ":") or "") .. 
+                    (thrs > 9 and thrs or "0" .. thrs) .. ":" .. 
+                    (tmin > 9 and tmin or "0" .. tmin)
+        if time < 3 then
+            tmsg = core.colorize('#ff3021ff', tmsg)
+        elseif time < 10 then
+            tmsg = core.colorize('#ffa621ff', tmsg)
+        else
+            tmsg = core.colorize('#21daff', tmsg)
+        end
+        local rmsg = core.colorize('#ff6021ff', rate)
+        if rate <= 0 then
+            rmsg = core.colorize('#21ff33ff', rate)
+        end
+        formspec = formspec .. "label[0.0,-0.105;Meter Rate]".."label[0.0,0.4;"..rmsg.."  Per 10 Min]"
+        formspec = formspec .. "label[2.3,-0.105;Meter Time (da:hr:mn)]".."label[2.3,0.4;"..tmsg.."  Remains]"
+
+        formspec = formspec .. "field[0.25,2.0;2.4,0.75;meter_rate;"..S("Rate Per 10 Minutes")..";"..rate.."]"
+        formspec = formspec .. "image[2.3,1.65;0.8,0.8;testcoin_coin.png]"
+
+        formspec = formspec .. "label[5,-0.105;Testcoin Received]"
+        formspec = formspec .. "list[current_name;dst;5,0.5;3,2;]" .. "listring[current_name;dst]"
+        formspec = formspec .. "list[current_player;main;0,3.25;8,4;]" .. "listring[current_player;main]"
+
+        meta:set_string("formspec", formspec)
+        return
+    end
+
+    local power = meta:get_int("power")
+    local time = meta:get_int("meter_time")
+    local btnColorMode = ""
+    if time > 0 then
+        btnColorMode = btnColorMode .. "style[mode_emitter;bgcolor=#30333310]"
+        btnColorMode = btnColorMode .. "style[mode_receiver;bgcolor=#30333310]"
+    end
+    local btnColor = ""
+    if meta:get_int("enabled") == 1 then
+        btnColor = btnColor .. "style[enable;bgcolor=#34eb7420]"
+        btnColor = btnColor .. "style[disable;bgcolor=#34eb7420]"
+    else
+        btnColor = btnColor .. "style[enable;bgcolor=#eb403410]"
+        btnColor = btnColor .. "style[disable;bgcolor=#eb403410]"
+    end
+
+    local btnMeter = ""
+    btnMeter = btnMeter .. "style[meter_buy;bgcolor=#50ebe010]"
+    btnMeter = btnMeter .. "style[meter_sell;bgcolor=#50d6eb10]"
+
+    local formspec = "size[5,4.0]" .. "formspec_version[8]"
     if digilines_path then
         formspec = formspec..
             "field[2.3,0.5;3,1;channel;"..S("Digiline Channel")..";${channel}]"
     end
     if meta:get_int("relay_mode") == 1 then
-        formspec = formspec .. "field[0.3,0.5;2,1;power;"..S("Input Power")..";${power}]"
+        local pwr_lck = core.colorize('#aa6245ff', S("(locked)"))
+        if meta:get_int("meter_time") > 0 then
+            formspec = formspec .. "label[0.0,-0.105;"..S("Input Power").."]" .. "label[0.1,0.425;"..tostring(power).."  "..pwr_lck.."]" 
+        else
+            formspec = formspec .. "field[0.3,0.5;2,1;power;"..S("Input Power")..";${power}]"
+        end
     else
         local eff = 100 - (meta:get_int("relay_eff") or 0)
         formspec = formspec .. "label[0.0,-0.105;Output Power]".."label[0.0,0.4;"..eff.."% Loss]"
@@ -319,23 +464,69 @@ local function set_supply_converter_formspec(meta)
         formspec = formspec.."button[0,1;5,1;mesecon_mode_0;"..S("Controlled by Mesecon Signal").."]"
     end
     if meta:get_int("enabled") == 0 then
-        formspec = formspec.."button[0,1.75;5,1;enable;"..S("@1 Disabled", S("Supply Relay")).."]"
+        formspec = formspec..btnColor.."button[0,1.75;5,1;enable;"..S("@1 Disabled", name).."]"
     else
-        formspec = formspec.."button[0,1.75;5,1;disable;"..S("@1 Enabled", S("Supply Relay")).."]"
+        formspec = formspec..btnColor.."button[0,1.75;5,1;disable;"..S("@1 Enabled", name).."]"
     end
     if meta:get_int("relay_mode") == 0 then
-        formspec = formspec.."button[0,2.5;5,1;mode_emitter;"..S("@1 Receiver", S("Supply Relay")).."]"
+        formspec = formspec..btnColorMode.."button[0,2.5;5,1;mode_emitter;"..S("@1 Receiver", name).."]"
     else
-        formspec = formspec.."button[0,2.5;5,1;mode_receiver;"..S("@1 Emitter", S("Supply Relay")).."]"
+        formspec = formspec..btnColorMode.."button[0,2.5;5,1;mode_receiver;"..S("@1 Emitter", name).."]"
+    end
+    if meta:get_int("relay_mode") == 0 then
+        formspec = formspec..btnMeter.."button[0,3.25;5,1;meter_buy;"..S("@1 Meter Usage", name).."]"
+    else
+        formspec = formspec..btnMeter.."button[0,3.25;5,1;meter_sell;"..S("@1 Meter Setup", name).."]"
     end
     meta:set_string("formspec", formspec)
 end
 
-local supply_converter_receive_fields = function(pos, formname, fields, sender)
+local function take_payment(meta, meta_other)
+    if not meta or not meta_other then
+        return
+    end
+    local rate = meta:get_int("meter_rate")
+    if rate <= 0 then
+        -- ignore when rate is zero
+        return
+    end
+    if meta_other:get_int("meter_ready") == 0 then
+        -- ignore if ready checkbox not checked
+        return
+    end
+    local time = meta:get_int("meter_time")
+    local inv = meta:get_inventory()
+    local inv_other = meta_other:get_inventory()
+    local result = get_testcoin(inv_other:get_list("src"), false)
+    -- only run if time is less than 3 days stored
+    if result and result.count >= rate and time < 60 * 24 * 3 then
+        -- inv room check...
+        if inv:room_for_item("dst", result.output) then
+            local mins = 10 -- meter run interval
+            local count = math.min(1000, result.count)
+            local time = math.floor(count / rate)
+            local count = time * rate
+            result = get_testcoin(inv_other:get_list("src"), true, count)
+            inv_other:set_list("src", result.new_input)
+            inv:add_item("dst", result.output)
+            local meter_time = meta:get_int("meter_time") or 0
+            meta:set_int("meter_time", meter_time + time * mins)
+            meta_other:set_int("meter_time", meter_time + time * mins)
+            -- update formspecs..
+            set_supply_relay_formspec(meta)
+            set_supply_relay_formspec(meta_other)
+        end
+    end
+end
+
+local supply_relay_receive_fields = function(pos, formname, fields, sender)
     if not sender or core.is_protected(pos, sender:get_player_name()) then
         return
     end
     local meta = core.get_meta(pos)
+    if fields.quit then
+        meta:set_int("meter_menu", 0)
+    end
     local power = nil
     if fields.power then
         power = tonumber(fields.power) or 0
@@ -344,15 +535,21 @@ local supply_converter_receive_fields = function(pos, formname, fields, sender)
         power = 100 * math.floor(power / 100)
         if power == meta:get_int("power") then power = nil end
     end
-    if power then meta:set_int("power", power) end
+    if power and meta:get_int("meter_time") <= 0 then meta:set_int("power", power) end
     if fields.channel then meta:set_string("channel", fields.channel) end
     if fields.enable  then meta:set_int("enabled", 1) end
     if fields.disable then meta:set_int("enabled", 0) end
     if fields.mesecon_mode_0 then meta:set_int("mesecon_mode", 0) end
     if fields.mesecon_mode_1 then meta:set_int("mesecon_mode", 1) end
-    if fields.mode_receiver then meta:set_int("relay_mode", 0) end
-    if fields.mode_emitter then meta:set_int("relay_mode", 1) end
-    set_supply_converter_formspec(meta)
+    if meta:get_int("meter_time") <= 0 then
+        if fields.mode_receiver then meta:set_int("relay_mode", 0) end
+        if fields.mode_emitter then meta:set_int("relay_mode", 1) end
+    end
+    if fields.meter_buy then meta:set_int("meter_menu", 1) end
+    if fields.meter_sell then meta:set_int("meter_menu", 2) end
+    if fields.meter_ready ~= nil then meta:set_int("meter_ready", fields.meter_ready == 'true' and 1 or 0) end
+    if fields.meter_rate then meta:set_int("meter_rate", tonumber(fields.meter_rate) or 0) end
+    set_supply_relay_formspec(meta)
 end
 
 local mesecons = {
@@ -365,7 +562,6 @@ local mesecons = {
         end
     }
 }
-
 
 local digiline_def = {
     receptor = {
@@ -388,7 +584,31 @@ local digiline_def = {
                     enabled      = meta:get_int("enabled"),
                     power        = meta:get_int("power"),
                     mesecon_mode = meta:get_int("mesecon_mode"),
-                    relay_mode   = meta:get_int("relay_mode")
+                    relay_mode   = meta:get_int("relay_mode"),
+                    meter_time   = meta:get_int("meter_time"),
+                    meter_rate   = meta:get_int("meter_rate"),
+                    meter_tier   = meta:get_int("meter_tier"),
+                })
+                return
+            elseif msg == "get_lv" then                
+                digilines.receptor_send(pos, technic.digilines.rules, channel, {
+                    input        = meta:get_int("LV_EU_input"),
+                    suppply      = meta:get_int("LV_EU_supply"),
+                    demand       = meta:get_int("LV_EU_demand"),
+                })
+                return
+            elseif msg == "get_mv" then                
+                digilines.receptor_send(pos, technic.digilines.rules, channel, {
+                    input        = meta:get_int("MV_EU_input"),
+                    suppply      = meta:get_int("MV_EU_supply"),
+                    demand       = meta:get_int("MV_EU_demand"),
+                })
+                return
+            elseif msg == "get_hv" then                
+                digilines.receptor_send(pos, technic.digilines.rules, channel, {
+                    input        = meta:get_int("HV_EU_input"),
+                    suppply      = meta:get_int("HV_EU_supply"),
+                    demand       = meta:get_int("HV_EU_demand"),
                 })
                 return
             elseif msg == "off" then
@@ -408,8 +628,11 @@ local digiline_def = {
                 if not power then
                     return
                 end
+                if meta:get_int("meter_time") > 0 then
+                    return
+                end
                 power = math.max(power, 0)
-                power = math.min(power, 10000)
+                power = math.min(power, 20000)
                 power = 100 * math.floor(power / 100)
                 meta:set_int("power", power)
             elseif msg:sub(1, 12) == "mesecon_mode" then
@@ -417,15 +640,42 @@ local digiline_def = {
             else
                 return
             end
-            set_supply_converter_formspec(meta)
+            set_supply_relay_formspec(meta)
         end
     },
 }
 
+local run_off = function(pos, node, run_stage)
+    local node          = core.get_node(pos)
+    local machine         = {name = "ship_machine:supply_relay", param2 = node.param2}
+    local meta = core.get_meta(pos)
+    meta:set_int("LV".."_EU_demand", 0)
+    meta:set_int("MV".."_EU_demand", 0)
+    meta:set_int("HV".."_EU_demand", 0)
+    core.swap_node(pos, machine)
+end
+
 local run = function(pos, node, run_stage)
 
+    --- get meter rate and time from meta data
+    ---@param meta table - node metadata
+    local get_rate = function(meta)
+        local rate = meta:get_int("meter_rate")
+        local time = meta:get_int("meter_time")
+        local tdays = math.floor(time / 1440)
+        local trem_days = time % 1440
+        local thrs = math.floor(trem_days / 60)
+        local tmin = trem_days % 60
+        local tmsg = (tdays > 0 and (tdays > 9 and (tdays .. ":") or "0" .. tdays .. ":") or "") .. 
+                    (thrs > 9 and thrs or "0" .. thrs) .. ":" .. 
+                    (tmin > 9 and tmin or "0" .. tmin)
+        return rate, time, tmsg
+    end
+
     -- Machine information
-    local machine_name  = S("Supply Relay")
+    local node          = core.get_node(pos)
+    local machine         = {name = "ship_machine:supply_relay", param2 = node.param2}
+    local machine_name  = S("Power Relay")
     local meta          = core.get_meta(pos)
     local enabled       = meta:get_int("enabled") == 1 and
         (meta:get_int("mesecon_mode") == 0 or meta:get_int("mesecon_effect") ~= 0)
@@ -433,6 +683,7 @@ local run = function(pos, node, run_stage)
     local demand = enabled and meta:get_int("power") or 0
     local emitter = meta:get_int("relay_mode") == 1 or false
 
+    -- facing direction vector
     local dir = get_facing_vector(pos)
 
     local pos_front = vector.subtract(pos, dir)
@@ -441,13 +692,15 @@ local run = function(pos, node, run_stage)
 
     local next_relay = nil
     local next_pos = pos
-
     local dist = 0
+
+    -- get next relay facing
     if enabled then
         for n = 1, 8 do
             next_pos = vector.add(next_pos, dir)
             local s_node = core.get_node(next_pos)
-            if s_node.name == "ship_machine:supply_relay" then
+            local g_node = core.get_item_group(s_node.name, "power_relay")
+            if s_node.name == "ship_machine:supply_relay" or g_node > 0 then
                 next_relay = next_pos
                 dist = n
                 break
@@ -455,67 +708,160 @@ local run = function(pos, node, run_stage)
         end
     end
 
-	local remain = get_eff_by_dist(dist - 1)
+    local machine_other
+    if next_relay then
+        local node = core.get_node(next_relay)
+        -- setup machine other def
+        machine_other = {name = "ship_machine:supply_relay", param2 = node.param2}
+    end
+
+    -- get power effeceincey scaler based on distance between relay nodes
+    local remain = get_eff_by_dist(dist - 1)
+
+    if run_stage ~= technic.receiver and not next_relay then
+        -- run tick if not connected...
+        local time_now = math.floor(core.get_us_time() / 1000)
+        local time_last = tonumber(meta:get_string("meter_tick")) or 0
+        if time_now - time_last > 1 * 60 * 1000 then
+            local meter_time = meta:get_int("meter_time") or 0
+            meter_time = math.max(0, meter_time - 1)
+            meta:set_int("meter_time", meter_time)
+            meta:set_string("meter_tick", tostring(time_now))
+        end
+    end
 
     if not emitter then
+        -- run only on receiver, not emitter.
         if cable and next_relay then
+            -- receiver is receiving!
+            local dir = get_facing_vector(next_relay)
+            local pos_front = vector.subtract(next_relay, dir)
+            local name_front = core.get_node(pos_front).name
+            local to = technic.get_cable_tier(name_front)
             local meta_next_relay = core.get_meta(next_relay)
             local is_enabled = meta_next_relay:get_int("enabled") == 1
+            local is_other_receiver = meta_next_relay:get_int("relay_mode") == 0
             if not is_enabled then
                 meta:set_string("infotext", S("@1 Emitter is Disabled", machine_name))
+                meta:set_int(cable.."_EU_supply", 0)
+                core.swap_node(pos, machine)
+            elseif is_other_receiver then
+                meta:set_string("infotext", S("@1 Has Bad Bridge Setup", machine_name))
+                meta:set_int(cable.."_EU_supply", 0)
+                core.swap_node(pos, machine)
+            elseif not to then
+                meta:set_string("infotext", S("@1 Has Bad Bridge Wiring", machine_name))
+                meta:set_int(cable.."_EU_supply", 0)
+                core.swap_node(pos, machine)
             else
                 local input = meta:get_int(cable.."_EU_supply")
-                meta:set_string("infotext", S("@1 is Bridged \nReceiving: @2 @3\n@4 @5%", machine_name,
-                    technic.EU_string(input), cable, "EU Losses:", (1 - remain) * 100))
+                local rate, time, tmsg = get_rate(meta)
+                meta:set_string("infotext", S("@1 is Bridged \nReceiving: @2 @3\n@4 @5%  @6", machine_name,
+                    technic.EU_string(input), cable, "EU Losses:", (1 - remain) * 100, 
+                    time > 0 and "Time: " .. tmsg or ""))
             end
         elseif cable then
+            -- reset if cable found...
             if not enabled then
                 meta:set_string("infotext", S("@1 is Disabled", machine_name))
             else
                 meta:set_string("infotext", S("@1 Has Bad Bridge", machine_name))
             end
             meta:set_int(cable.."_EU_supply", 0)
+            core.swap_node(pos, machine)
         end
     elseif run_stage ~= technic.receiver then
+        -- only run on producer
         local from = cable
         if from and next_relay then
+            -- has cable and next relay
             local faces_match = match_facing(pos, next_relay)
             local dir = get_facing_vector(next_relay)
             local pos_front = vector.subtract(next_relay, dir)
             local name_front = core.get_node(pos_front).name
             local to = technic.get_cable_tier(name_front)
-
             local meta_next_relay = core.get_meta(next_relay)
             local is_receiver = meta_next_relay:get_int("relay_mode") == 0
             local is_enabled = meta_next_relay:get_int("enabled") == 1
-            
+            -- check if networks match, correct mode, relays are facing each other, and enabled
             if to == from and is_receiver and faces_match and is_enabled then
                 local input = meta:get_int(from.."_EU_input")
                 if (technic.get_timeout(from, pos) <= 0) or (technic.get_timeout(to, next_relay) <= 0) then
-                    -- Supply converter timed out, either RE or PR network is not running anymore
+                    -- Power Relay timed out, either RE or PR network is not running anymore
                     input = 0
                 end
+                -- process payment input
+                take_payment(meta, meta_next_relay)
+                local rate, time, tmsg = get_rate(meta)
+                meta_next_relay:set_int("meter_rate", rate)
+                meta_next_relay:set_int("meter_time", time)
+                meta:set_int("meter_time", time)
+                meta:set_int("meter_power", demand * remain)
+                meta_next_relay:set_int("meter_power", demand * remain)
+                meta_next_relay:set_string("meter_tier", cable)
+                meta:set_string("meter_tier", cable)
+                if rate > 0 and time == 0 then
+                    -- payment required for this
+                    meta:set_string("infotext", S("@1 Payment Required from Receiver", machine_name))
+                    meta_next_relay:set_string("infotext", S("@1 Payment Required to Emitter", machine_name))
+                    core.swap_node(pos, machine)
+                    core.swap_node(next_relay, machine_other)
+                    return
+                elseif input > 0 and rate > 0 and time > 0 then
+                    -- check payment time decrement
+                    local time_now = math.floor(core.get_us_time() / 1000)
+                    local time_last = tonumber(meta:get_string("meter_tick")) or 0
+                    if time_now - time_last > 1 * 60 * 1000 then
+                        -- perform payment time decrement
+                        local meter_time = meta:get_int("meter_time") or 0
+                        meter_time = math.max(0, meter_time - 1)
+                        meta:set_int("meter_time", meter_time)
+                        meta_next_relay:set_int("meter_time", meter_time)
+                        meta:set_string("meter_tick", tostring(time_now))
+                        meta_next_relay:set_string("meter_tick", tostring(time_now))
+                    end
+                end
+                -- set power network fields
                 meta:set_int(from.."_EU_demand", demand)
                 meta:set_int(from.."_EU_supply", 0)
                 meta_next_relay:set_int(to.."_EU_demand", 0)
                 meta_next_relay:set_int(to.."_EU_supply", input * remain)
                 meta_next_relay:set_int("relay_eff", remain * 100)
-                meta:set_string("infotext", S("@1 is Bridged \n@2 @3 -> @4 @5\n@6 @7%", machine_name,
+                meta:set_string("infotext", S("@1 is Bridged \n@2 @3 -> @4 @5\n@6 @7%  @8", machine_name,
                     technic.EU_string(input), from,
                     technic.EU_string(input * remain), to,
-				 	"EU Losses:", (1 - remain) * 100))
+                    "EU Losses:", (1 - remain) * 100,
+                    time > 0 and "Time: " .. tmsg or ""))
                 if demand > 0 and input > 0 then
-                    create_beam(pos, next_relay, from, input)
+                    -- create beam particle effect if functioning
+                    create_beam(pos, next_relay, from, input * remain)
+                    local r_node = core.get_node(next_relay)
+                    local active_relay = "ship_machine:" .. cable:lower() .. "_supply_relay"
+                    core.swap_node(pos, {name = active_relay, param2 = node.param2})
+                    core.swap_node(next_relay, { name = active_relay, param2 = r_node.param2})
+                else
+                    core.swap_node(pos, machine)
+                    core.swap_node(next_relay, machine_other)
                 end
             elseif not faces_match then
                 meta:set_string("infotext", S("@1 Has Bad Bridge Direction", machine_name))
                 if from then
                     meta:set_int(from.."_EU_demand", 0)
+                    core.swap_node(pos, machine)
+                end
+                if to then
+                    meta_next_relay:set_int(to.."_EU_supply", 0)
+                    core.swap_node(next_relay, machine_other)
                 end
             elseif not is_enabled then
                 meta:set_string("infotext", S("@1 Receiver is Disabled", machine_name))
                 if from then
                     meta:set_int(from.."_EU_demand", 0)
+                    core.swap_node(pos, machine)
+                end
+                if to then
+                    meta_next_relay:set_int(to.."_EU_supply", 0)
+                    core.swap_node(next_relay, machine_other)
                 end
             else
                 if not is_receiver then
@@ -524,9 +870,11 @@ local run = function(pos, node, run_stage)
                     meta:set_string("infotext", S("@1 Has Mismatched Bridge Voltage", machine_name))
                 end
                 if to then
-                    meta:set_int(to.."_EU_supply", 0)
+                    meta_next_relay:set_int(to.."_EU_supply", 0)
+                    core.swap_node(next_relay, machine_other)
                 end
                 meta:set_int(from.."_EU_demand", 0)
+                core.swap_node(pos, machine)
             end
         else
             if not enabled then
@@ -536,25 +884,146 @@ local run = function(pos, node, run_stage)
             end
             if from then
                 meta:set_int(from.."_EU_demand", 0)
+            else
+                meta:set_int("LV".."_EU_demand", 0)
+                meta:set_int("MV".."_EU_demand", 0)
+                meta:set_int("HV".."_EU_demand", 0)
+            end
+            core.swap_node(pos, machine)
+            if next_relay then
+                local meta_next_relay = core.get_meta(next_relay)
+                meta_next_relay:set_int("LV".."_EU_demand", 0)
+                meta_next_relay:set_int("MV".."_EU_demand", 0)
+                meta_next_relay:set_int("HV".."_EU_demand", 0)
+                core.swap_node(next_relay, machine_other)
             end
         end
     end
 
 end
 
+local on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
+    local meta = core.get_meta(pos)
+    meta:set_int("meter_menu", 0)
+    set_supply_relay_formspec(meta)
+    return nil
+end
+
+local on_dig = function(pos, node, digger)
+    if core.is_protected(pos, digger:get_player_name()) then
+        return 0
+    end
+    local drop = "ship_machine:supply_relay"
+    if node.name == core.get_node(pos).name then
+        local meta = core.get_meta(pos)
+        if meta:get_int("meter_time") > 0 then
+            core.chat_send_player(digger:get_player_name(),
+                S("This Power Relay has unspent time! You must connect with an adjacent Relay and spend first."))
+            return 0
+        end
+        --[[if meta:get_int("enabled") > 0 then
+            core.chat_send_player(digger:get_player_name(),
+                S("The Power Relay must be disabled to pickup!"))
+            return 0
+        end]]--
+        local leftover = digger:get_inventory():add_item("main", ItemStack(drop))
+        if not leftover:is_empty() then
+            local drop_pos = {
+                x=math.random(pos.x - 0.5, pos.x + 0.5),
+                y=math.random(pos.y - 0.0, pos.x + 0.75),
+                z=math.random(pos.z - 0.5, pos.z + 0.5)}
+            core.add_item(drop_pos, leftover)
+        end
+        local list = meta:get_inventory():get_list("src")
+        if list then
+            for _,item in pairs(list) do
+                local drop_pos = {
+                    x=math.random(pos.x - 0.5, pos.x + 0.5),
+                    y=math.random(pos.y - 0.0, pos.x + 0.5),
+                    z=math.random(pos.z - 0.5, pos.z + 0.5)}
+                core.add_item(pos, item:to_string())
+            end
+        end
+        local list = meta:get_inventory():get_list("dst")
+        if list then
+            for _,item in pairs(list) do
+                local drop_pos = {
+                    x=math.random(pos.x - 0.5, pos.x + 0.5),
+                    y=math.random(pos.y - 0.0, pos.x + 0.5),
+                    z=math.random(pos.z - 0.5, pos.z + 0.5)}
+                core.add_item(pos, item:to_string())
+            end
+        end
+        -- Remove node
+        core.remove_node(pos)
+    end
+end
+
+local on_blast = function(pos)
+    local drop = "ship_machine:supply_relay"
+    core.add_item(pos, drop)
+    local meta = core.get_meta(pos)
+    local list = meta:get_inventory():get_list("src")
+    if list then
+        for _,item in pairs(list) do
+            local drop_pos = {x=math.random(pos.x - 0.5, pos.x + 0.5), y=pos.y, z=math.random(pos.z - 0.5, pos.z + 0.5)}
+            core.add_item(pos, item:to_string())
+        end
+    end
+    local list = meta:get_inventory():get_list("dst")
+    if list then
+        for _,item in pairs(list) do
+            local drop_pos = {x=math.random(pos.x - 0.5, pos.x + 0.5), y=pos.y, z=math.random(pos.z - 0.5, pos.z + 0.5)}
+            core.add_item(pos, item:to_string())
+        end
+    end
+    core.remove_node(pos)
+    return nil
+end
+
+local allow_metadata_inventory_move = function(pos, from_list, from_index,
+        to_list, to_index, count, player)
+    local meta = core.get_meta(pos)
+    if core.is_protected(pos, player:get_player_name()) then
+        return 0
+    end
+    return count
+end
+
+local allow_metadata_inventory_put = function(pos, listname, index, stack, player)
+    local meta = core.get_meta(pos)
+    if core.is_protected(pos, player:get_player_name()) then
+        return 0
+    end
+    local stackname = stack:get_name()
+    local is_coin = stackname == "testcoin:coin"
+    if not is_coin then
+        return 0
+    end
+    return stack:get_count()
+end
+
+local allow_metadata_inventory_take = function(pos, listname, index, stack, player)
+    local meta = core.get_meta(pos)
+    if core.is_protected(pos, player:get_player_name()) then
+        return 0
+    end
+    return stack:get_count()
+end
+
 core.register_node("ship_machine:supply_relay", {
-    description = S("Supply Relay"),
+    description = S("Power Relay"),
     tiles  = {
         "ctg_power_relay_side.png".."^[transformFXR90",
         "ctg_power_relay_side.png".."^[transformR90",
         "ctg_power_relay_side.png".."^[transformFX",
         "ctg_power_relay_side.png",
-        "ctg_power_relay_back.png",
-        "ctg_power_relay_back.png".."^[transformFX"..cable_entry
+        "ctg_power_relay_back_offline.png",
+        "ctg_power_relay_back_offline.png".."^[transformFX"..cable_entry
         },
-	paramtype = "light",
+    paramtype = "light",
     paramtype2 = "facedir",
-	light_source = 2,
+    light_source = 1,
     legacy_facedir_simple = true,
     groups = {snappy=2, choppy=2, oddly_breakable_by_hand=2,
         technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay = 1},
@@ -563,21 +1032,141 @@ core.register_node("ship_machine:supply_relay", {
     _mcl_hardness = 0.8,
     connect_sides = {"front", "top", "bottom"},
     sounds = technic.sounds.node_sound_metal_defaults(),
-    on_receive_fields = supply_converter_receive_fields,
+    on_receive_fields = supply_relay_receive_fields,
     on_construct = function(pos)
         local meta = core.get_meta(pos)
-        meta:set_string("infotext", S("Supply Relay"))
+        meta:set_string("infotext", S("Power Relay"))
         meta:set_int("power", 2000)
         meta:set_int("enabled", 1)
         meta:set_int("mesecon_mode", 0)
         meta:set_int("mesecon_effect", 0)
         meta:set_int("relay_mode", 0)
-        set_supply_converter_formspec(meta)
+        meta:set_int("meter_menu", 0)
+        meta:set_int("meter_rate", 0)
+        meta:set_int("meter_time", 0)
+        meta:set_int("meter_ready", 0)
+        meta:set_int("meter_power", 0)
+        local inv = meta:get_inventory()
+        inv:set_size("src", 2)
+        inv:set_size("dst", 6)
+        set_supply_relay_formspec(meta)
     end,
     mesecons = mesecons,
     digiline = digiline_def,
     technic_run = run,
-    technic_on_disable = run,
+    technic_on_disable = run_off,
+    drop = "ship_machine:supply_relay",
+    on_rightclick = on_rightclick,
+    on_dig =  on_dig,
+    on_blast = on_blast,
+    allow_metadata_inventory_move = allow_metadata_inventory_move,
+    allow_metadata_inventory_put = allow_metadata_inventory_put,
+    allow_metadata_inventory_take = allow_metadata_inventory_take,
+})
+
+core.register_node("ship_machine:lv_supply_relay", {
+    description = S("Power Relay"),
+    tiles  = {
+        "ctg_power_relay_side.png".."^[transformFXR90",
+        "ctg_power_relay_side.png".."^[transformR90",
+        "ctg_power_relay_side.png".."^[transformFX",
+        "ctg_power_relay_side.png",
+        "ctg_lv_power_relay_back.png",
+        "ctg_lv_power_relay_back.png".."^[transformFX"..cable_entry
+        },
+    paramtype = "light",
+    paramtype2 = "facedir",
+    light_source = 5,
+    legacy_facedir_simple = true,
+    groups = {snappy=2, choppy=2, oddly_breakable_by_hand=2, not_in_creative_inventory=1,
+        technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay = 1},
+    is_ground_content = false,
+    _mcl_blast_resistance = 1,
+    _mcl_hardness = 0.8,
+    connect_sides = {"front", "top", "bottom"},
+    sounds = technic.sounds.node_sound_metal_defaults(),
+    on_receive_fields = supply_relay_receive_fields,
+    mesecons = mesecons,
+    digiline = digiline_def,
+    technic_run = run,
+    technic_on_disable = run_off,
+    drop = "ship_machine:supply_relay",
+    on_rightclick = on_rightclick,
+    on_dig =  on_dig,
+    on_blast = on_blast,
+    allow_metadata_inventory_move = allow_metadata_inventory_move,
+    allow_metadata_inventory_put = allow_metadata_inventory_put,
+    allow_metadata_inventory_take = allow_metadata_inventory_take,
+})
+
+core.register_node("ship_machine:mv_supply_relay", {
+    description = S("Power Relay"),
+    tiles  = {
+        "ctg_power_relay_side.png".."^[transformFXR90",
+        "ctg_power_relay_side.png".."^[transformR90",
+        "ctg_power_relay_side.png".."^[transformFX",
+        "ctg_power_relay_side.png",
+        "ctg_mv_power_relay_back.png",
+        "ctg_mv_power_relay_back.png".."^[transformFX"..cable_entry
+        },
+    paramtype = "light",
+    paramtype2 = "facedir",
+    light_source = 5,
+    legacy_facedir_simple = true,
+    groups = {snappy=2, choppy=2, oddly_breakable_by_hand=2, not_in_creative_inventory=1,
+        technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay = 1},
+    is_ground_content = false,
+    _mcl_blast_resistance = 1,
+    _mcl_hardness = 0.8,
+    connect_sides = {"front", "top", "bottom"},
+    sounds = technic.sounds.node_sound_metal_defaults(),
+    on_receive_fields = supply_relay_receive_fields,
+    mesecons = mesecons,
+    digiline = digiline_def,
+    technic_run = run,
+    technic_on_disable = run_off,
+    drop = "ship_machine:supply_relay",
+    on_rightclick = on_rightclick,
+    on_dig =  on_dig,
+    on_blast = on_blast,
+    allow_metadata_inventory_move = allow_metadata_inventory_move,
+    allow_metadata_inventory_put = allow_metadata_inventory_put,
+    allow_metadata_inventory_take = allow_metadata_inventory_take,
+})
+
+core.register_node("ship_machine:hv_supply_relay", {
+    description = S("Power Relay"),
+    tiles  = {
+        "ctg_power_relay_side.png".."^[transformFXR90",
+        "ctg_power_relay_side.png".."^[transformR90",
+        "ctg_power_relay_side.png".."^[transformFX",
+        "ctg_power_relay_side.png",
+        "ctg_hv_power_relay_back.png",
+        "ctg_hv_power_relay_back.png".."^[transformFX"..cable_entry
+        },
+    paramtype = "light",
+    paramtype2 = "facedir",
+    light_source = 5,
+    legacy_facedir_simple = true,
+    groups = {snappy=2, choppy=2, oddly_breakable_by_hand=2, not_in_creative_inventory=1,
+        technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay = 1},
+    is_ground_content = false,
+    _mcl_blast_resistance = 1,
+    _mcl_hardness = 0.8,
+    connect_sides = {"front", "top", "bottom"},
+    sounds = technic.sounds.node_sound_metal_defaults(),
+    on_receive_fields = supply_relay_receive_fields,
+    mesecons = mesecons,
+    digiline = digiline_def,
+    technic_run = run,
+    technic_on_disable = run_off,
+    drop = "ship_machine:supply_relay",
+    on_rightclick = on_rightclick,
+    on_dig =  on_dig,
+    on_blast = on_blast,
+    allow_metadata_inventory_move = allow_metadata_inventory_move,
+    allow_metadata_inventory_put = allow_metadata_inventory_put,
+    allow_metadata_inventory_take = allow_metadata_inventory_take,
 })
 
 core.register_craft({
@@ -592,5 +1181,6 @@ core.register_craft({
 
 for tier, machines in pairs(technic.machines) do
     technic.register_machine(tier, "ship_machine:supply_relay", technic.producer_receiver)
+    technic.register_machine(tier, "ship_machine:"..tier:lower().."_supply_relay", technic.producer_receiver)
 end
 
