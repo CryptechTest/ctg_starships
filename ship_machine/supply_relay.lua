@@ -1,11 +1,6 @@
--- The supply converter is a generic device which can convert from
--- LV to MV and back, and HV to MV and back.
--- The machine is configured by the wiring below and above it.
---
--- It works like this:
---   The top side is setup as the receiver side, the bottom as the producer side.
---   Once the receiver side is powered it will deliver power to the other side.
---   Unused power is wasted just like any other producer!
+-- The supply relay is a generic device which can wirelessly
+-- send energy to another supply relay, up to 7 nodes away.
+-- The machine is configured by the wiring attached to it.
 
 local digilines_path = core.get_modpath("digilines")
 
