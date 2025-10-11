@@ -464,7 +464,7 @@ local function set_supply_relay_formspec(meta)
         formspec = formspec.."button[0,1;5,1;mesecon_mode_0;"..S("Controlled by Mesecon Signal").."]"
     end
     if meta:get_int("enabled") == 0 then
-        formspec = formspec..btnColor.."button[0,1.75;5,1;enable;"..S("@1 Disabled", name).."]"
+        formspec = formspec..btnColor.."button[0,1.75;5,1;enable;"..S("@1 disabled", name).."]"
     else
         formspec = formspec..btnColor.."button[0,1.75;5,1;disable;"..S("@1 Enabled", name).."]"
     end
@@ -742,18 +742,22 @@ local run = function(pos, node, run_stage)
             local is_enabled = meta_next_relay:get_int("enabled") == 1
             local is_other_receiver = meta_next_relay:get_int("relay_mode") == 0
             if not is_enabled then
-                meta:set_string("infotext", S("@1 Emitter is Disabled", machine_name))
+                meta:set_string("infotext", S("@1 Emitter is disabled", machine_name))
                 meta:set_int(cable.."_EU_supply", 0)
                 core.swap_node(pos, machine)
             elseif is_other_receiver then
-                meta:set_string("infotext", S("@1 Has Bad Bridge Setup", machine_name))
+                meta:set_string("infotext", S("@1 has bad Bridge setup", machine_name))
                 meta:set_int(cable.."_EU_supply", 0)
                 core.swap_node(pos, machine)
             elseif not to then
-                meta:set_string("infotext", S("@1 Has Bad Bridge Wiring", machine_name))
+                meta:set_string("infotext", S("@1 has bad Bridge wiring", machine_name))
                 meta:set_int(cable.."_EU_supply", 0)
                 core.swap_node(pos, machine)
-            else
+			elseif to ~= cable then
+                meta:set_string("infotext", S("@1 has mismatched Bridge wiring", machine_name))
+                meta:set_int(cable.."_EU_supply", 0)
+                core.swap_node(pos, machine)
+			else
                 local input = meta:get_int(cable.."_EU_supply")
                 local rate, time, tmsg = get_rate(meta)
                 meta:set_string("infotext", S("@1 is Bridged \nReceiving: @2 @3\n@4 @5%  @6", machine_name,
@@ -763,9 +767,9 @@ local run = function(pos, node, run_stage)
         elseif cable then
             -- reset if cable found...
             if not enabled then
-                meta:set_string("infotext", S("@1 is Disabled", machine_name))
+                meta:set_string("infotext", S("@1 is disabled", machine_name))
             else
-                meta:set_string("infotext", S("@1 Has Bad Bridge", machine_name))
+                meta:set_string("infotext", S("@1 has bad Bridge", machine_name))
             end
             meta:set_int(cable.."_EU_supply", 0)
             core.swap_node(pos, machine)
@@ -844,7 +848,7 @@ local run = function(pos, node, run_stage)
                     core.swap_node(next_relay, machine_other)
                 end
             elseif not faces_match then
-                meta:set_string("infotext", S("@1 Has Bad Bridge Direction", machine_name))
+                meta:set_string("infotext", S("@1 has bad Bridge direction", machine_name))
                 if from then
                     meta:set_int(from.."_EU_demand", 0)
                     core.swap_node(pos, machine)
@@ -854,7 +858,7 @@ local run = function(pos, node, run_stage)
                     core.swap_node(next_relay, machine_other)
                 end
             elseif not is_enabled then
-                meta:set_string("infotext", S("@1 Receiver is Disabled", machine_name))
+                meta:set_string("infotext", S("@1 Receiver is disabled", machine_name))
                 if from then
                     meta:set_int(from.."_EU_demand", 0)
                     core.swap_node(pos, machine)
@@ -866,8 +870,10 @@ local run = function(pos, node, run_stage)
             else
                 if not is_receiver then
                     meta:set_string("infotext", S("@1 Failed to find Receiver", machine_name))
-                else
-                    meta:set_string("infotext", S("@1 Has Mismatched Bridge Voltage", machine_name))
+				elseif to == nil then
+                	meta:set_string("infotext", S("@1 Receiver has bad wiring", machine_name))
+				else
+                    meta:set_string("infotext", S("@1 has mismatched Bridge voltage", machine_name))
                 end
                 if to then
                     meta_next_relay:set_int(to.."_EU_supply", 0)
@@ -876,11 +882,22 @@ local run = function(pos, node, run_stage)
                 meta:set_int(from.."_EU_demand", 0)
                 core.swap_node(pos, machine)
             end
+			if to ~= from and is_receiver and faces_match and is_enabled then
+				-- run tick if wire not valid...
+				local time_now = math.floor(core.get_us_time() / 1000)
+				local time_last = tonumber(meta:get_string("meter_tick")) or 0
+				if time_now - time_last > 1 * 60 * 1000 then
+					local meter_time = meta:get_int("meter_time") or 0
+					meter_time = math.max(0, meter_time - 1)
+					meta:set_int("meter_time", meter_time)
+					meta:set_string("meter_tick", tostring(time_now))
+				end
+			end
         else
             if not enabled then
-                meta:set_string("infotext", S("@1 is Disabled", machine_name))
+                meta:set_string("infotext", S("@1 is disabled", machine_name))
             else
-                meta:set_string("infotext", S("@1 Has Bad Bridge Wiring", machine_name))
+                meta:set_string("infotext", S("@1 has bad Bridge wiring", machine_name))
             end
             if from then
                 meta:set_int(from.."_EU_demand", 0)
