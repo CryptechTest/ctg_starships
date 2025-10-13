@@ -108,7 +108,7 @@ local function get_eff_by_dist(dist)
 end
 
 local is_player_near = function(pos)
-    local objs = core.get_objects_inside_radius(pos, 48)
+    local objs = core.get_objects_inside_radius(pos, 32)
     for _, obj in pairs(objs) do
         if obj:is_player() then
             return true;
@@ -166,7 +166,7 @@ end
 
 local function do_beam_damage(pos, p)
     pos = vector.subtract(pos, {x=0,y=0.65,z=0})
-    local range = 0.88
+    local range = 0.805
     local damage = randFloat(1, 3, 1) * p
     local objs = core.get_objects_inside_radius(pos, range + 0.251)
     for _, obj in pairs(objs) do
@@ -271,7 +271,7 @@ local function spawner_particle(pos, dir, i, dist, tier, size, count, r)
         z = 0.75
     })
     dir = vector.multiply(dir, ((size + 1) / 2))
-    local i = (dist - (dist - i * 0.1)) * 0.172
+    local i = (dist - (dist - i * 0.1)) * 0.0272
     local t = 2 + i + randFloat(0, 0.65)
     local texture = "ctg_" .. tier .. "_energy_particle.png"
     if math.random(0,1) == 0 then
@@ -350,10 +350,13 @@ local function spawn_particles(pos, dir, i, dist, tier, size)
     elseif size <= 0.8 then
         c = 7
     end
-    local r = 0.25 * ((size + size + 0.2) / 2)
-    spawner_particle(pos, dir, i, dist, tier, size, c*15, r)
-    r = 0.025 * size
-    spawner_particle(pos, dir, i, dist, tier, size, c*15, r)
+    if math.random(0,2) > 0 then
+        local r = 0.2 * ((size + size + 0.2) / 2)
+        spawner_particle(pos, dir, i, dist, tier, size, c*25, r)
+    end
+    
+    local r = 0.02 * size
+    spawner_particle(pos, dir, i, dist, tier, size, c*25, r)
 
     --[[for n = 0, c do
         core.after(n * 0.25, function()
@@ -409,7 +412,9 @@ local function create_beam(pos_start, pos_end, tier_from, tier_to, p)
     local dir = vector.direction(pos_start, target)
     local dist = vector.distance(pos_start, target)
     local step_min = 0.25
-    if size >= 0.6 then
+    if size >= 0.8 then
+        step_min = 0.50
+    elseif size >= 0.6 then
         step_min = 0.40
     elseif size >= 0.4 then
         step_min = 0.30
@@ -430,16 +435,18 @@ local function create_beam(pos_start, pos_end, tier_from, tier_to, p)
         local i = 1
         local cur_pos = pos_start
         while (vector.distance(cur_pos, target) > step_min * 2) do
-            local d = vector.distance(cur_pos, target)
-            if d <= dist * 0.8 and d > dist * 0.4 and i % 2 == 0 and math.random(0,3) == 0 then
-                spawn_particles(cur_pos, dir, i, d, tier_from, size)
-            else
-                spawn_particles(cur_pos, dir, i, d, tier_to, size)
-            end
-            cur_pos = vector.add(cur_pos, step)
-            i = i + 1
-            if i > 128 then
-                break
+            if math.random(0,1) == 0 then
+                local d = vector.distance(cur_pos, target)
+                if d <= dist * 0.8 and d > dist * 0.4 and i % 2 == 0 and math.random(0,3) == 0 then
+                    spawn_particles(cur_pos, dir, i, d, tier_from, size)
+                else
+                    spawn_particles(cur_pos, dir, i, d, tier_to, size)
+                end
+                cur_pos = vector.add(cur_pos, step)
+                i = i + 1
+                if i > 32 then
+                    break
+                end
             end
         end
     end)
