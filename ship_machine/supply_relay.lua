@@ -107,6 +107,17 @@ local function get_eff_by_dist(dist)
     end
 end
 
+local function is_atmos_node(pos)
+    local node = minetest.get_node(pos)
+    if node.name == "air" then
+        return true
+    end
+    if minetest.get_item_group(node.name, "vacuum") == 1 or minetest.get_item_group(node.name, "atmosphere") > 0 then
+        return true
+    end
+    return false
+end
+
 local function get_testcoin(items, take, take_amount)
     if not items then
         return nil
@@ -261,6 +272,30 @@ local function spawn_particles(pos, dir, i, dist, tier, size)
     end
 end
 
+local function toggle_beam_light(pos_start, pos_end, enable)
+	local dir = vector.direction(pos_start, pos_end)
+	local pos_start_next = vector.add(pos_start, dir)
+	local pos_end_before = vector.subtract(pos_end, dir)
+	-- FIXME: dummy_light_source is too bright!
+	if enable then
+		if is_atmos_node(pos_start_next) then
+			core.set_node(pos_start_next, {name = "technic:dummy_light_source"})
+		end
+		if is_atmos_node(pos_end_before) then
+			core.set_node(pos_end_before, {name = "technic:dummy_light_source"})
+		end
+	else
+		local node_next = core.get_node(pos_start_next)
+		local node_before = core.get_node(pos_end_before)
+		if node_next.name == "technic:dummy_light_source" then
+			core.set_node(pos_start_next, {name = "vacuum:vacuum"})
+		end
+		if node_before.name == "technic:dummy_light_source" then
+			core.set_node(pos_end_before, {name = "vacuum:vacuum"})
+		end
+	end
+end
+
 local function create_beam(pos_start, pos_end, tier, p)
     
     local target = vector.add(pos_end, {
@@ -342,12 +377,12 @@ local function set_supply_relay_formspec(meta)
     local name = S("Power Relay");
 
     if meter_menu == 1 then
-        local formspec = "size[8,5.8]" .. "formspec_version[8]"
+        local formspec = "size[8,6]" .. "formspec_version[8]"
         local ready = (meta:get_int("meter_ready") or 0) == 1
         local rate = meta:get_int("meter_rate") 
         local time = meta:get_int("meter_time")
-        local time = meta:get_int("meter_time")
         local power = meta:get_int("meter_power") or 0
+		local usage = meta:get_int("meter_usage") or 0
         local tier = meta:get_string("meter_tier") or "LV"
         local tdays = math.floor(time / 1440)
         local trem_days = time % 1440
@@ -372,17 +407,21 @@ local function set_supply_relay_formspec(meta)
             pwr_req_col = '#42ff29ff'
         end
         local pwr_req = core.colorize(pwr_req_col, technic.EU_string(power).." "..tier)
+		local pwr_use = core.colorize('#c2c2c2ff', technic.EU_string(usage).." "..tier)
         formspec = formspec .. "label[0.0,-0.105;Meter Rate (Cost)]".."label[0.0,0.4;"..rmsg.."  Per 10 Min]"
-        formspec = formspec .. "label[2.25,-0.105;Meter Time (da:hr:mn)]".."label[2.25,0.4;"..tmsg.."  Remains]"
+        formspec = formspec .. "label[2.25,-0.105;Meter Time (d:h:m)]".."label[2.25,0.4;"..tmsg.."  Remains]"
 
         formspec = formspec .. "label[5,-0.105;Purchase: Insert Testcoin]"
         formspec = formspec .. "image[7.0,0.5;1,1;testcoin_coin.png]"
 
         formspec = formspec .. "label[0,1.0;Get: "..pwr_req.."]"
+		if time > 0 then
+			formspec = formspec .. "label[0,1.4;Got: "..pwr_use.."]"
+		end
         formspec = formspec .. "checkbox[2.25,0.8;meter_ready;Procces Coins;"..tostring(ready).."]"
 
         formspec = formspec .. "list[current_name;src;5,0.5;2,1;]" .. "listring[current_name;src]"
-        formspec = formspec .. "list[current_player;main;0,2.0;8,4;]" .. "listring[current_player;main]"
+        formspec = formspec .. "list[current_player;main;0,2.25;8,4;]" .. "listring[current_player;main]"
 
         meta:set_string("formspec", formspec)
         return
@@ -409,7 +448,7 @@ local function set_supply_relay_formspec(meta)
             rmsg = core.colorize('#21ff33ff', rate)
         end
         formspec = formspec .. "label[0.0,-0.105;Meter Rate]".."label[0.0,0.4;"..rmsg.."  Per 10 Min]"
-        formspec = formspec .. "label[2.3,-0.105;Meter Time (da:hr:mn)]".."label[2.3,0.4;"..tmsg.."  Remains]"
+        formspec = formspec .. "label[2.3,-0.105;Meter Time (d:h:m)]".."label[2.3,0.4;"..tmsg.."  Remains]"
 
         formspec = formspec .. "field[0.25,2.0;2.4,0.75;meter_rate;"..S("Rate Per 10 Minutes")..";"..rate.."]"
         formspec = formspec .. "image[2.3,1.65;0.8,0.8;testcoin_coin.png]"
@@ -449,7 +488,7 @@ local function set_supply_relay_formspec(meta)
     end
     if meta:get_int("relay_mode") == 1 then
         local pwr_lck = core.colorize('#aa6245ff', S("(locked)"))
-        if meta:get_int("meter_time") > 0 then
+        if time > 0 then
             formspec = formspec .. "label[0.0,-0.105;"..S("Input Power").."]" .. "label[0.1,0.425;"..tostring(power).."  "..pwr_lck.."]" 
         else
             formspec = formspec .. "field[0.3,0.5;2,1;power;"..S("Input Power")..";${power}]"
@@ -646,8 +685,8 @@ local digiline_def = {
 }
 
 local run_off = function(pos, node, run_stage)
-    local node          = core.get_node(pos)
-    local machine         = {name = "ship_machine:supply_relay", param2 = node.param2}
+    local node = core.get_node(pos)
+    local machine = {name = "ship_machine:supply_relay", param2 = node.param2}
     local meta = core.get_meta(pos)
     meta:set_int("LV".."_EU_demand", 0)
     meta:set_int("MV".."_EU_demand", 0)
@@ -810,6 +849,7 @@ local run = function(pos, node, run_stage)
                     meta_next_relay:set_string("infotext", S("@1 Payment Required to Emitter", machine_name))
                     core.swap_node(pos, machine)
                     core.swap_node(next_relay, machine_other)
+					meta_next_relay:set_int("meter_usage", 0)
                     return
                 elseif input > 0 and rate > 0 and time > 0 then
                     -- check payment time decrement
@@ -823,7 +863,11 @@ local run = function(pos, node, run_stage)
                         meta_next_relay:set_int("meter_time", meter_time)
                         meta:set_string("meter_tick", tostring(time_now))
                         meta_next_relay:set_string("meter_tick", tostring(time_now))
+    					set_supply_relay_formspec(meta)
+    					set_supply_relay_formspec(meta_next_relay)
                     end
+					local usage = meta_next_relay:get_int("meter_usage") or 0
+					meta_next_relay:set_int("meter_usage", usage + input * remain)
                 end
                 -- set power network fields
                 meta:set_int(from.."_EU_demand", demand)
@@ -843,9 +887,11 @@ local run = function(pos, node, run_stage)
                     local active_relay = "ship_machine:" .. cable:lower() .. "_supply_relay"
                     core.swap_node(pos, {name = active_relay, param2 = node.param2})
                     core.swap_node(next_relay, { name = active_relay, param2 = r_node.param2})
+					--toggle_beam_light(pos, next_relay, true)
                 else
                     core.swap_node(pos, machine)
                     core.swap_node(next_relay, machine_other)
+					--toggle_beam_light(pos, next_relay, false)
                 end
             elseif not faces_match then
                 meta:set_string("infotext", S("@1 has bad Bridge direction", machine_name))
@@ -1042,8 +1088,7 @@ core.register_node("ship_machine:supply_relay", {
     paramtype2 = "facedir",
     light_source = 1,
     legacy_facedir_simple = true,
-    groups = {snappy=2, choppy=2, oddly_breakable_by_hand=2,
-        technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay = 1},
+    groups = {snappy=2, choppy=2, cracky=2, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
     is_ground_content = false,
     _mcl_blast_resistance = 1,
     _mcl_hardness = 0.8,
@@ -1088,15 +1133,14 @@ core.register_node("ship_machine:lv_supply_relay", {
         "ctg_power_relay_side.png".."^[transformR90",
         "ctg_power_relay_side.png".."^[transformFX",
         "ctg_power_relay_side.png",
-        "ctg_lv_power_relay_back.png",
+        "ctg_lv_power_relay_back.png".."^[contrast:20:10",
         "ctg_lv_power_relay_back.png".."^[transformFX"..cable_entry
         },
     paramtype = "light",
     paramtype2 = "facedir",
-    light_source = 5,
+    light_source = 6,
     legacy_facedir_simple = true,
-    groups = {snappy=2, choppy=2, oddly_breakable_by_hand=2, not_in_creative_inventory=1,
-        technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay = 1},
+    groups = {snappy=2, choppy=2, cracky=2, not_in_creative_inventory=1, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
     is_ground_content = false,
     _mcl_blast_resistance = 1,
     _mcl_hardness = 0.8,
@@ -1123,15 +1167,14 @@ core.register_node("ship_machine:mv_supply_relay", {
         "ctg_power_relay_side.png".."^[transformR90",
         "ctg_power_relay_side.png".."^[transformFX",
         "ctg_power_relay_side.png",
-        "ctg_mv_power_relay_back.png",
+        "ctg_mv_power_relay_back.png".."^[contrast:20:10",
         "ctg_mv_power_relay_back.png".."^[transformFX"..cable_entry
         },
     paramtype = "light",
     paramtype2 = "facedir",
-    light_source = 5,
+    light_source = 6,
     legacy_facedir_simple = true,
-    groups = {snappy=2, choppy=2, oddly_breakable_by_hand=2, not_in_creative_inventory=1,
-        technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay = 1},
+    groups = {snappy=2, choppy=2, cracky=2, not_in_creative_inventory=1, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
     is_ground_content = false,
     _mcl_blast_resistance = 1,
     _mcl_hardness = 0.8,
@@ -1158,15 +1201,14 @@ core.register_node("ship_machine:hv_supply_relay", {
         "ctg_power_relay_side.png".."^[transformR90",
         "ctg_power_relay_side.png".."^[transformFX",
         "ctg_power_relay_side.png",
-        "ctg_hv_power_relay_back.png",
+        "ctg_hv_power_relay_back.png".."^[contrast:20:10",
         "ctg_hv_power_relay_back.png".."^[transformFX"..cable_entry
         },
     paramtype = "light",
     paramtype2 = "facedir",
-    light_source = 5,
+    light_source = 6,
     legacy_facedir_simple = true,
-    groups = {snappy=2, choppy=2, oddly_breakable_by_hand=2, not_in_creative_inventory=1,
-        technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay = 1},
+    groups = {snappy=2, choppy=2, cracky=2, not_in_creative_inventory=1, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
     is_ground_content = false,
     _mcl_blast_resistance = 1,
     _mcl_hardness = 0.8,
