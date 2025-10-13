@@ -225,7 +225,7 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
         },
 
         expirationtime = t,
-        size = randFloat(1.02, 1.42) * ((size + 0.75) / 2),
+        size = randFloat(1.02, 1.42) * ((size + 0.5) / 2),
         collisiondetection = false,
         collision_removal = false,
         object_collision = false,
@@ -251,24 +251,31 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
 end
 
 local function spawn_particles(pos, dir, i, dist, tier, size)
-    local c = 7
-    if size <= 0.25 then
+    local c = 8
+    if size <= 0.2 then
         c = 1
-    elseif size <= 0.4 then
+    elseif size <= 0.3 then
         c = 2
-    elseif size <= 0.55 then
+    elseif size <= 0.4 then
         c = 3
-    elseif size <= 0.67 then
+    elseif size <= 0.5 then
         c = 4
-    elseif size <= 0.8 then
+    elseif size <= 0.6 then
         c = 5
-    elseif size <= 0.9 then
+    elseif size <= 0.7 then
         c = 6
+    elseif size <= 0.8 then
+        c = 7
     end
-    for n = 1, c do
-        local r = 0.2 * ((size + 0.5) / 2)
-        local p = vector.add(pos, {x=randFloat(-r,r),y=randFloat(-r,r),z=randFloat(-r,r)})
-        spawn_particle(p, dir, i, dist, tier, size)
+    for n = 0, c do
+        core.after(n * 0.25, function()
+            local r = 0.25 * ((size + size + 0.25) / 2)
+            if n >= 2 then
+                r = 0.05 * size
+            end
+            local p = vector.add(pos, {x=randFloat(-r,r),y=randFloat(-r,r),z=randFloat(-r,r)})
+            spawn_particle(p, dir, i, dist, tier, size)
+        end)
     end
 end
 
@@ -296,7 +303,7 @@ local function toggle_beam_light(pos_start, pos_end, enable)
 	end
 end
 
-local function create_beam(pos_start, pos_end, tier, p)
+local function create_beam(pos_start, pos_end, tier_from, tier_to, p)
     
     local target = vector.add(pos_end, {
         x = randFloat(-0.025, 0.025),
@@ -304,7 +311,8 @@ local function create_beam(pos_start, pos_end, tier, p)
         z = randFloat(-0.025, 0.025)
     })
 
-    local tier = (tier and tier or "LV"):lower()
+    local tier_from = (tier_from and tier_from or "LV"):lower()
+    local tier_to = (tier_to and tier_to or "LV"):lower()
     local size = math.max(0.1, p / 20000)
     local dir = vector.direction(pos_start, target)
     local dist = vector.distance(pos_start, target)
@@ -329,8 +337,13 @@ local function create_beam(pos_start, pos_end, tier, p)
     core.after(0, function()
         local i = 1
         local cur_pos = pos_start
-        while (vector.distance(cur_pos, target) > step_min * 3) do
-            spawn_particles(cur_pos, dir, i, vector.distance(cur_pos, target), tier, size)
+        while (vector.distance(cur_pos, target) > step_min * 2) do
+            local d = vector.distance(cur_pos, target)
+            if d <= dist * 0.8 and d > dist * 0.4 and i % 2 == 0 and math.random(0,3) == 0 then
+                spawn_particles(cur_pos, dir, i, d, tier_from, size)
+            else
+                spawn_particles(cur_pos, dir, i, d, tier_to, size)
+            end
             cur_pos = vector.add(cur_pos, step)
             i = i + 1
             if i > 128 then
@@ -356,15 +369,15 @@ local function create_beam(pos_start, pos_end, tier, p)
         if math.random(0,1) == 0 then
             core.sound_play("ctg_energy_pulse", {
                 pos = pos_start,
-                gain = 0.475,
+                gain = 0.675,
                 pitch = randFloat(1.0, 1.025),
                 max_hear_distance = 3.05
             })
         end
-        if math.random(0,2) == 0 then
+        if math.random(0,1) == 0 then
             core.sound_play("ctg_energy_pulse", {
                 pos = pos_end,
-                gain = 0.485,
+                gain = 0.685,
                 pitch = randFloat(1.0, 1.025),
                 max_hear_distance = 2.75
             })
@@ -716,8 +729,7 @@ local run = function(pos, node, run_stage)
     local machine         = {name = "ship_machine:supply_relay", param2 = node.param2}
     local machine_name  = S("Power Relay")
     local meta          = core.get_meta(pos)
-    local enabled       = meta:get_int("enabled") == 1 and
-        (meta:get_int("mesecon_mode") == 0 or meta:get_int("mesecon_effect") ~= 0)
+    local enabled       = meta:get_int("enabled") == 1 and (meta:get_int("mesecon_mode") == 0 or meta:get_int("mesecon_effect") ~= 0)
 
     local demand = enabled and meta:get_int("power") or 0
     local emitter = meta:get_int("relay_mode") == 1 or false
@@ -772,15 +784,19 @@ local run = function(pos, node, run_stage)
     if not emitter then
         -- run only on receiver, not emitter.
         if cable and next_relay then
+            local self_to = cable
             -- receiver is receiving!
             local dir = get_facing_vector(next_relay)
             local pos_front = vector.subtract(next_relay, dir)
             local name_front = core.get_node(pos_front).name
-            local to = technic.get_cable_tier(name_front)
+            local from = technic.get_cable_tier(name_front)
             local meta_next_relay = core.get_meta(next_relay)
-            local is_enabled = meta_next_relay:get_int("enabled") == 1
+            local is_other_enabled = meta_next_relay:get_int("enabled") == 1
             local is_other_receiver = meta_next_relay:get_int("relay_mode") == 0
-            if not is_enabled then
+            if self_to ~= from then
+                remain = remain - 0.1
+            end
+            if not is_other_enabled then
                 meta:set_string("infotext", S("@1 Emitter is disabled", machine_name))
                 meta:set_int(cable.."_EU_supply", 0)
                 core.swap_node(pos, machine)
@@ -788,12 +804,8 @@ local run = function(pos, node, run_stage)
                 meta:set_string("infotext", S("@1 has bad Bridge setup", machine_name))
                 meta:set_int(cable.."_EU_supply", 0)
                 core.swap_node(pos, machine)
-            elseif not to then
+            elseif not from then
                 meta:set_string("infotext", S("@1 has bad Bridge wiring", machine_name))
-                meta:set_int(cable.."_EU_supply", 0)
-                core.swap_node(pos, machine)
-			elseif to ~= cable then
-                meta:set_string("infotext", S("@1 has mismatched Bridge wiring", machine_name))
                 meta:set_int(cable.."_EU_supply", 0)
                 core.swap_node(pos, machine)
 			else
@@ -824,14 +836,23 @@ local run = function(pos, node, run_stage)
             local name_front = core.get_node(pos_front).name
             local to = technic.get_cable_tier(name_front)
             local meta_next_relay = core.get_meta(next_relay)
-            local is_receiver = meta_next_relay:get_int("relay_mode") == 0
-            local is_enabled = meta_next_relay:get_int("enabled") == 1
+            local is_other_receiver = meta_next_relay:get_int("relay_mode") == 0
+            local is_other_enabled = meta_next_relay:get_int("enabled") == 1
             -- check if networks match, correct mode, relays are facing each other, and enabled
-            if to == from and is_receiver and faces_match and is_enabled then
+            if to ~= nil and from ~= nil and is_other_receiver and faces_match and is_other_enabled then
                 local input = meta:get_int(from.."_EU_input")
-                if (technic.get_timeout(from, pos) <= 0) or (technic.get_timeout(to, next_relay) <= 0) then
+                if (technic.get_timeout(from, pos) <= 0) then
                     -- Power Relay timed out, either RE or PR network is not running anymore
                     input = 0
+                    --core.log("FROM network timeout! " .. from)
+                end
+                if (technic.get_timeout(to, next_relay) <= 0) then
+                    -- Power Relay timed out, either RE or PR network is not running anymore
+                    input = 0
+                    --core.log("TO network timeout! " .. to)
+                end
+                if to ~= from then
+                    remain = remain - 0.1
                 end
                 -- process payment input
                 take_payment(meta, meta_next_relay)
@@ -841,7 +862,7 @@ local run = function(pos, node, run_stage)
                 meta:set_int("meter_time", time)
                 meta:set_int("meter_power", demand * remain)
                 meta_next_relay:set_int("meter_power", demand * remain)
-                meta_next_relay:set_string("meter_tier", cable)
+                meta_next_relay:set_string("meter_tier", to)
                 meta:set_string("meter_tier", cable)
                 if rate > 0 and time == 0 then
                     -- payment required for this
@@ -882,9 +903,9 @@ local run = function(pos, node, run_stage)
                     time > 0 and "Time: " .. tmsg or ""))
                 if demand > 0 and input > 0 then
                     -- create beam particle effect if functioning
-                    create_beam(pos, next_relay, from, input * remain)
+                    create_beam(pos, next_relay, from, to, input * remain)
                     local r_node = core.get_node(next_relay)
-                    local active_relay = "ship_machine:" .. cable:lower() .. "_supply_relay"
+                    local active_relay = "ship_machine:" .. to:lower() .. "_supply_relay"
                     core.swap_node(pos, {name = active_relay, param2 = node.param2})
                     core.swap_node(next_relay, { name = active_relay, param2 = r_node.param2})
 					--toggle_beam_light(pos, next_relay, true)
@@ -903,7 +924,7 @@ local run = function(pos, node, run_stage)
                     meta_next_relay:set_int(to.."_EU_supply", 0)
                     core.swap_node(next_relay, machine_other)
                 end
-            elseif not is_enabled then
+            elseif not is_other_enabled then
                 meta:set_string("infotext", S("@1 Receiver is disabled", machine_name))
                 if from then
                     meta:set_int(from.."_EU_demand", 0)
@@ -914,7 +935,8 @@ local run = function(pos, node, run_stage)
                     core.swap_node(next_relay, machine_other)
                 end
             else
-                if not is_receiver then
+                --core.log("Bridge Failed!" .. from)
+                if not is_other_receiver then
                     meta:set_string("infotext", S("@1 Failed to find Receiver", machine_name))
 				elseif to == nil then
                 	meta:set_string("infotext", S("@1 Receiver has bad wiring", machine_name))
@@ -928,7 +950,7 @@ local run = function(pos, node, run_stage)
                 meta:set_int(from.."_EU_demand", 0)
                 core.swap_node(pos, machine)
             end
-			if to ~= from and is_receiver and faces_match and is_enabled then
+			if to == nil and from ~= nil and is_other_receiver and faces_match and is_other_enabled then
 				-- run tick if wire not valid...
 				local time_now = math.floor(core.get_us_time() / 1000)
 				local time_last = tonumber(meta:get_string("meter_tick")) or 0
@@ -1077,18 +1099,19 @@ end
 core.register_node("ship_machine:supply_relay", {
     description = S("Power Relay"),
     tiles  = {
-        "ctg_power_relay_side.png".."^[transformFXR90",
-        "ctg_power_relay_side.png".."^[transformR90",
-        "ctg_power_relay_side.png".."^[transformFX",
-        "ctg_power_relay_side.png",
-        "ctg_power_relay_back_offline.png",
-        "ctg_power_relay_back_offline.png".."^[transformFX"..cable_entry
+        "ctg_power_relay_side_s2.png".."^[transformFXR90",
+        "ctg_power_relay_side_s2.png".."^[transformR90",
+        "ctg_power_relay_side_s2.png".."^[transformFX",
+        "ctg_power_relay_side_s2.png",
+        "ctg_power_relay_back_offline_s.png",
+        "ctg_power_relay_back_offline_s.png".."^[transformFX"..cable_entry
         },
     paramtype = "light",
     paramtype2 = "facedir",
     light_source = 1,
+    sunlight_propagates = true,
     legacy_facedir_simple = true,
-    groups = {snappy=2, choppy=2, cracky=2, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
+    groups = {snappy=2, choppy=2, cracky=2, level=1, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
     is_ground_content = false,
     _mcl_blast_resistance = 1,
     _mcl_hardness = 0.8,
@@ -1129,18 +1152,19 @@ core.register_node("ship_machine:supply_relay", {
 core.register_node("ship_machine:lv_supply_relay", {
     description = S("Power Relay"),
     tiles  = {
-        "ctg_power_relay_side.png".."^[transformFXR90",
-        "ctg_power_relay_side.png".."^[transformR90",
-        "ctg_power_relay_side.png".."^[transformFX",
-        "ctg_power_relay_side.png",
-        "ctg_lv_power_relay_back.png".."^[contrast:20:10",
-        "ctg_lv_power_relay_back.png".."^[transformFX"..cable_entry
+        "ctg_power_relay_side_s2.png".."^[transformFXR90",
+        "ctg_power_relay_side_s2.png".."^[transformR90",
+        "ctg_power_relay_side_s2.png".."^[transformFX",
+        "ctg_power_relay_side_s2.png",
+        "ctg_lv_power_relay_back_s.png",
+        "ctg_lv_power_relay_back_s.png".."^[transformFX"..cable_entry
         },
     paramtype = "light",
     paramtype2 = "facedir",
     light_source = 6,
+    sunlight_propagates = true,
     legacy_facedir_simple = true,
-    groups = {snappy=2, choppy=2, cracky=2, not_in_creative_inventory=1, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
+    groups = {snappy=2, choppy=2, cracky=2, level=1, not_in_creative_inventory=1, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
     is_ground_content = false,
     _mcl_blast_resistance = 1,
     _mcl_hardness = 0.8,
@@ -1163,18 +1187,19 @@ core.register_node("ship_machine:lv_supply_relay", {
 core.register_node("ship_machine:mv_supply_relay", {
     description = S("Power Relay"),
     tiles  = {
-        "ctg_power_relay_side.png".."^[transformFXR90",
-        "ctg_power_relay_side.png".."^[transformR90",
-        "ctg_power_relay_side.png".."^[transformFX",
-        "ctg_power_relay_side.png",
-        "ctg_mv_power_relay_back.png".."^[contrast:20:10",
-        "ctg_mv_power_relay_back.png".."^[transformFX"..cable_entry
+        "ctg_power_relay_side_s2.png".."^[transformFXR90",
+        "ctg_power_relay_side_s2.png".."^[transformR90",
+        "ctg_power_relay_side_s2.png".."^[transformFX",
+        "ctg_power_relay_side_s2.png",
+        "ctg_mv_power_relay_back_s.png",
+        "ctg_mv_power_relay_back_s.png".."^[transformFX"..cable_entry
         },
     paramtype = "light",
     paramtype2 = "facedir",
     light_source = 6,
+    sunlight_propagates = true,
     legacy_facedir_simple = true,
-    groups = {snappy=2, choppy=2, cracky=2, not_in_creative_inventory=1, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
+    groups = {snappy=2, choppy=2, cracky=2, level=1, not_in_creative_inventory=1, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
     is_ground_content = false,
     _mcl_blast_resistance = 1,
     _mcl_hardness = 0.8,
@@ -1197,18 +1222,19 @@ core.register_node("ship_machine:mv_supply_relay", {
 core.register_node("ship_machine:hv_supply_relay", {
     description = S("Power Relay"),
     tiles  = {
-        "ctg_power_relay_side.png".."^[transformFXR90",
-        "ctg_power_relay_side.png".."^[transformR90",
-        "ctg_power_relay_side.png".."^[transformFX",
-        "ctg_power_relay_side.png",
-        "ctg_hv_power_relay_back.png".."^[contrast:20:10",
-        "ctg_hv_power_relay_back.png".."^[transformFX"..cable_entry
+        "ctg_power_relay_side_s2.png".."^[transformFXR90",
+        "ctg_power_relay_side_s2.png".."^[transformR90",
+        "ctg_power_relay_side_s2.png".."^[transformFX",
+        "ctg_power_relay_side_s2.png",
+        "ctg_hv_power_relay_back_s.png",
+        "ctg_hv_power_relay_back_s.png".."^[transformFX"..cable_entry
         },
     paramtype = "light",
     paramtype2 = "facedir",
     light_source = 6,
+    sunlight_propagates = true,
     legacy_facedir_simple = true,
-    groups = {snappy=2, choppy=2, cracky=2, not_in_creative_inventory=1, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
+    groups = {snappy=2, choppy=2, cracky=2, level=1, not_in_creative_inventory=1, technic_machine=1, technic_all_tiers=1, axey=2, handy=1, power_relay=1},
     is_ground_content = false,
     _mcl_blast_resistance = 1,
     _mcl_hardness = 0.8,
@@ -1240,6 +1266,8 @@ core.register_craft({
 
 for tier, machines in pairs(technic.machines) do
     technic.register_machine(tier, "ship_machine:supply_relay", technic.producer_receiver)
-    technic.register_machine(tier, "ship_machine:"..tier:lower().."_supply_relay", technic.producer_receiver)
+    technic.register_machine(tier, "ship_machine:".."lv".."_supply_relay", technic.producer_receiver)
+    technic.register_machine(tier, "ship_machine:".."mv".."_supply_relay", technic.producer_receiver)
+    technic.register_machine(tier, "ship_machine:".."hv".."_supply_relay", technic.producer_receiver)
 end
 
