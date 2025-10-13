@@ -107,6 +107,16 @@ local function get_eff_by_dist(dist)
     end
 end
 
+local is_player_near = function(pos)
+    local objs = core.get_objects_inside_radius(pos, 48)
+    for _, obj in pairs(objs) do
+        if obj:is_player() then
+            return true;
+        end
+    end
+    return false;
+end
+
 local function is_atmos_node(pos)
     local node = minetest.get_node(pos)
     if node.name == "air" then
@@ -250,6 +260,79 @@ local function spawn_particle(pos, dir, i, dist, tier, size)
     core.add_particle(def);
 end
 
+local function spawner_particle(pos, dir, i, dist, tier, size, count, r)
+    local grav = 1;
+    if (pos.y > 4000) then
+        grav = 0.4;
+    end
+    dir = vector.multiply(dir, {
+        x = 0.75,
+        y = 0.75,
+        z = 0.75
+    })
+    dir = vector.multiply(dir, ((size + 1) / 2))
+    local i = (dist - (dist - i * 0.1)) * 0.172
+    local t = 2 + i + randFloat(0, 0.65)
+    local texture = "ctg_" .. tier .. "_energy_particle.png"
+    if math.random(0,1) == 0 then
+        texture = "ctg_" .. tier .. "_energy_particle.png^[transformR90"
+    end
+    local def = {
+        count = count,
+        --pos = pos,
+        minpos = {x=pos.x-r, y=pos.y-r, z=pos.z-r},
+        maxpos = {x=pos.x+r, y=pos.y+r, z=pos.z+r},
+        minvel = {
+            x = dir.x,
+            y = dir.y,
+            z = dir.z
+        },
+        maxvel = {
+            x = dir.x,
+            y = dir.y,
+            z = dir.z
+        },
+        minacc = {
+            x = -dir.x * 0.15,
+            y = randFloat(-0.02, 0.01) * grav,
+            z = -dir.z * 0.15
+        },
+        maxacc = {
+            x = dir.x * 0.15,
+            y = randFloat(0.02, 0.05) * grav,
+            z = dir.z * 0.15
+        },
+        time = t * 0.4,
+        --expirationtime = t + 0.7,
+        minexptime = t - 0.3,
+        maxexptime = t,
+        --size = randFloat(1.02, 1.42) * ((size + 0.5) / 2),
+        minsize = randFloat(1.02, 1.42) * ((size + 0.5) / 2),
+        maxsize = randFloat(1.02, 1.42) * ((size + 1) / 2),
+        collisiondetection = false,
+        collision_removal = false,
+        object_collision = false,
+        vertical = false,
+
+        texture = {
+            name = texture,
+            alpha = 1,
+            alpha_tween = {1, 0.6},
+            scale_tween = {{
+                x = 1.50,
+                y = 1.50
+            }, {
+                x = 0.0,
+                y = 0.0
+            }},
+            blend = "alpha"
+        },
+        glow = 13
+    }
+
+    core.add_particlespawner(def);
+end
+
 local function spawn_particles(pos, dir, i, dist, tier, size)
     local c = 8
     if size <= 0.2 then
@@ -267,7 +350,12 @@ local function spawn_particles(pos, dir, i, dist, tier, size)
     elseif size <= 0.8 then
         c = 7
     end
-    for n = 0, c do
+    local r = 0.25 * ((size + size + 0.2) / 2)
+    spawner_particle(pos, dir, i, dist, tier, size, c*15, r)
+    r = 0.025 * size
+    spawner_particle(pos, dir, i, dist, tier, size, c*15, r)
+
+    --[[for n = 0, c do
         core.after(n * 0.25, function()
             local r = 0.25 * ((size + size + 0.25) / 2)
             if n >= 2 then
@@ -276,7 +364,7 @@ local function spawn_particles(pos, dir, i, dist, tier, size)
             local p = vector.add(pos, {x=randFloat(-r,r),y=randFloat(-r,r),z=randFloat(-r,r)})
             spawn_particle(p, dir, i, dist, tier, size)
         end)
-    end
+    end]]
 end
 
 local function toggle_beam_light(pos_start, pos_end, enable)
@@ -304,6 +392,10 @@ local function toggle_beam_light(pos_start, pos_end, enable)
 end
 
 local function create_beam(pos_start, pos_end, tier_from, tier_to, p)
+
+    if not is_player_near(pos_start) then
+        return
+    end
     
     local target = vector.add(pos_end, {
         x = randFloat(-0.025, 0.025),
@@ -316,11 +408,11 @@ local function create_beam(pos_start, pos_end, tier_from, tier_to, p)
     local size = math.max(0.1, p / 20000)
     local dir = vector.direction(pos_start, target)
     local dist = vector.distance(pos_start, target)
-    local step_min = 0.10
+    local step_min = 0.25
     if size >= 0.6 then
-        step_min = 0.30
+        step_min = 0.40
     elseif size >= 0.4 then
-        step_min = 0.20
+        step_min = 0.30
     end
     local step = vector.multiply(dir, {
         x = step_min,
