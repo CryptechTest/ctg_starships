@@ -29,8 +29,9 @@ register_lv_drive({
     machine_desc = "Gravity Generator Lite",
     demand = {4600},
     charge_max = 10,
-    gravity = 0.713,
+    gravity = 0.731,
     speed = 4,
+    distance = 42,
     digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
 })
 
@@ -40,8 +41,9 @@ register_mv_drive({
     machine_desc = S("Gravity Generator"),
     demand = {6000, 5600, 5000},
     charge_max = 8,
-    gravity = 0.876,
+    gravity = 0.881,
     speed = 5,
+    distance = 45,
     digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
 })
 
@@ -51,8 +53,9 @@ register_hv_drive({
     machine_desc = S("Gravity Generator"),
     demand = {8000, 7400, 7000},
     charge_max = 7,
-    gravity = 0.957,
+    gravity = 0.958,
     speed = 6,
+    distance = 50,
     digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
 })
 
@@ -64,6 +67,7 @@ register_lv_drive({
     charge_max = 8,
     gravity = 0.792,
     speed = 5,
+    distance = 40,
     digiline_effector = ship_machine.gravity_drive_lite_digiline_effector
 })
 
