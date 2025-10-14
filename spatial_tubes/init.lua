@@ -503,7 +503,7 @@ function spatial_tubes.register_machine(data)
         local exit = nil
         -- get destination pos
         if meta:get_string("sta_exit") ~= nil then
-            local r = (data.iter == "MV" and 72) or 50
+            local r = (ltier == "mv" and 75) or 50
             local teles = minetest.find_nodes_in_area({
                 x = pos.x - r,
                 y = pos.y - r,
