@@ -2,6 +2,8 @@
 -- send energy to another Power Relay, up to 7 nodes away.
 -- The machine is configured by the wiring attached to it.
 
+local MAX_BEAM_DIST = 13
+
 local digilines_path = core.get_modpath("digilines")
 
 local S = technic.getter
@@ -82,8 +84,11 @@ local match_facing = function(pos1, pos2)
     return dir1.x == -dir2.x and dir1.y == -dir2.y and dir1.z == -dir2.z
 end
 
+--- get efficiency by distance
+---@deprecated use calc_eff_by_dist()
+---@param dist number
 local function get_eff_by_dist(dist)
-    -- 100%, 90%, 80%, 60%, 40%, 20%, 10%, 0%
+    -- 100%, 95, 90%, 80%, 60%, 40%, 20%, 10%, 5%, 0%
     if dist <= 0 then
         return 1.0
     elseif dist == 1 then
@@ -107,8 +112,20 @@ local function get_eff_by_dist(dist)
     end
 end
 
+--- calculate efficiency by distance
+---@param dist number
+---@return number efficiency
+local function calc_eff_by_dist(dist)
+    local scaler = 0.131
+    local exp = scaler - (dist * 0.137)
+    local base = dist + 1 - (0.55 * dist)
+    local res = 1 * base ^ exp
+    local result = math.floor(res * 100) / 100
+    return math.max(0, result)
+end
+
 local is_player_near = function(pos)
-    local objs = core.get_objects_inside_radius(pos, 32)
+    local objs = core.get_objects_inside_radius(pos, 28)
     for _, obj in pairs(objs) do
         if obj:is_player() then
             return true;
@@ -333,6 +350,84 @@ local function spawner_particle(pos, dir, i, dist, tier, size, count, r)
     core.add_particlespawner(def);
 end
 
+local function spawner_particle2(pos, _dir, dist, tier, size, count, r, center)
+    local grav = 1;
+    if (pos.y > 4000) then
+        grav = 0.4;
+    end
+    local dir = vector.multiply(_dir, {
+        x = 0.8,
+        y = 0.8,
+        z = 0.8
+    })
+    local dir = vector.multiply(dir, ((size + 1) / 2))
+    local t = 1 + (dist * 0.2) - randFloat(0.2, 0.4)
+    local texture = "ctg_" .. tier .. "_energy_particle.png"
+    if math.random(0,1) == 0 then
+        texture = "ctg_" .. tier .. "_energy_particle.png^[transformR90"
+    end
+    local minpos = {x=pos.x-r, y=pos.y-r, z=pos.z-r}
+    local maxpos = {x=pos.x+r+(_dir.x*dist)-(dir.x*r*2), y=pos.y+r+(_dir.y*dist)-(dir.y*r*2), z=pos.z+r+(_dir.z*dist)-(dir.z*r*2)}
+    if center then
+        minpos = {x=pos.x-r+(_dir.x*dist*0.3), y=pos.y-r+(_dir.y*dist*0.3), z=pos.z-r+(_dir.z*dist*0.3)}
+        maxpos = {x=pos.x+r+(_dir.x*dist*0.55), y=pos.y+r+(_dir.y*dist*0.55), z=pos.z+r+(_dir.z*dist*0.55)}
+        count = math.min(32, count)
+    else
+        count = math.min(40, count)
+    end
+    local def = {
+        amount = count,
+        minpos = minpos,
+        maxpos = maxpos,
+        minvel = {
+            x = dir.x,
+            y = dir.y,
+            z = dir.z
+        },
+        maxvel = {
+            x = dir.x,
+            y = dir.y,
+            z = dir.z
+        },
+        minacc = {
+            x = -dir.x * 0.15,
+            y = randFloat(-0.02, -0.01) * grav,
+            z = -dir.z * 0.15
+        },
+        maxacc = {
+            x = dir.x * 0.15,
+            y = randFloat(0.01, 0.02) * grav,
+            z = dir.z * 0.15
+        },
+        time = t * 0.88,
+        minexptime = t - 0.28,
+        maxexptime = t,
+        minsize = randFloat(1.02, 1.42) * ((size + 0.5) / 2),
+        maxsize = randFloat(1.05, 1.44) * ((size + 0.81) / 2),
+        collisiondetection = false,
+        collision_removal = false,
+        object_collision = false,
+        vertical = false,
+
+        texture = {
+            name = texture,
+            alpha = 1,
+            alpha_tween = {1, 0.88},
+            scale_tween = {{
+                x = 1.5,
+                y = 1.5
+            }, {
+                x = 0.0,
+                y = 0.0
+            }},
+            blend = "alpha"
+        },
+        glow = 13
+    }
+
+    core.add_particlespawner(def);
+end
+
 local function spawn_particles(pos, dir, i, dist, tier, size)
     local c = 8
     if size <= 0.2 then
@@ -370,6 +465,42 @@ local function spawn_particles(pos, dir, i, dist, tier, size)
     end]]
 end
 
+local function spawner_particles(pos, dir, dist, tier_from, tier_to, size)
+    local c = 9
+    if size <= 0.1 then
+        c = 2
+    elseif size <= 0.2 then
+        c = 3
+    elseif size <= 0.3 then
+        c = 4
+    elseif size <= 0.4 then
+        c = 5
+    elseif size <= 0.5 then
+        c = 6
+    elseif size <= 0.6 then
+        c = 7
+    elseif size <= 0.7 then
+        c = 7
+    elseif size <= 0.8 then
+        c = 8
+    elseif size <= 0.9 then
+        c = 8
+    end
+    local r1 = 0.25 * ((size + size + 0.225) / 2)
+    if math.random(0,2) > 0 then
+        spawner_particle2(pos, dir, dist, tier_to, size, c*4, r1, false)
+    else
+        spawner_particle2(pos, dir, dist, tier_from, size, c*1, r1, true)
+    end
+    local r2 = 0.022 * size
+    if math.random(0,4) > 0 then
+        spawner_particle2(pos, dir, dist, tier_to, size, c*6, r2, false)
+    else
+        spawner_particle2(pos, dir, dist, tier_from, size, c*1, r2, true)
+    end
+
+end
+
 local function toggle_beam_light(pos_start, pos_end, enable)
 	local dir = vector.direction(pos_start, pos_end)
 	local pos_start_next = vector.add(pos_start, dir)
@@ -392,6 +523,44 @@ local function toggle_beam_light(pos_start, pos_end, enable)
 			core.set_node(pos_end_before, {name = "vacuum:vacuum"})
 		end
 	end
+end
+
+local function get_beam_path_loss(pos_start, dir)
+    local score = 0
+    local pos_next = pos_start
+    for n = 1, MAX_BEAM_DIST do
+        pos_next = vector.add(pos_next, dir)
+        local s_node = core.get_node(pos_next)
+        local g_node = core.get_item_group(s_node.name, "power_relay")
+        if g_node > 0 then
+            break
+        end
+        if not is_atmos_node(pos_next) then
+            -- not atmos/air
+            local ndef = core.registered_nodes[s_node.name]
+            if core.get_item_group(s_node.name, "metal") > 0 then
+                score = score + 0.015
+            elseif core.get_item_group(s_node.name, "soil") > 0 then
+                score = score + 0.006
+            elseif core.get_item_group(s_node.name, "sand") > 0 then
+                score = score + 0.005
+            elseif not ndef.sunlight_propagates then
+                score = score + 0.01
+            end
+            local names = {}
+            for name in s_node.name:gmatch("([^ :]+)") do table.insert(names, name) end
+            if #names >= 2 then
+                local words = {}
+                for word in names[2]:gmatch("([^ _]+)") do table.insert(words, word) end
+                for _, w in ipairs(words) do
+                    if w:lower() == "ice" or w:lower():find("^" .. "ice") then
+                        core.set_node(pos_next, {name = "ctg_airs:atmos_hot"})
+                    end
+                end
+            end
+        end
+    end
+    return score
 end
 
 local function create_beam(pos_start, pos_end, tier_from, tier_to, p)
@@ -432,9 +601,12 @@ local function create_beam(pos_start, pos_end, tier_from, tier_to, p)
     })
 
     core.after(0, function()
-        local i = 1
+        --local i = 1
         local cur_pos = pos_start
-        while (vector.distance(cur_pos, target) > step_min * 2) do
+        local d = vector.distance(cur_pos, target)
+        spawner_particles(cur_pos, dir, d, tier_from, tier_to, size)
+
+        --[[while (vector.distance(cur_pos, target) > step_min * 2) do
             if math.random(0,1) == 0 then
                 local d = vector.distance(cur_pos, target)
                 if d <= dist * 0.8 and d > dist * 0.4 and i % 2 == 0 and math.random(0,3) == 0 then
@@ -448,7 +620,7 @@ local function create_beam(pos_start, pos_end, tier_from, tier_to, p)
                     break
                 end
             end
-        end
+        end]]
     end)
 
     core.after(0, function()
@@ -606,7 +778,7 @@ local function set_supply_relay_formspec(meta)
             formspec = formspec .. "field[0.3,0.5;2,1;power;"..S("Input Power")..";${power}]"
         end
     else
-        local eff = 100 - (meta:get_int("relay_eff") or 0)
+        local eff = 100 - ((meta:get_int("relay_eff") or 0) * 0.1)
         formspec = formspec .. "label[0.0,-0.105;Output Power]".."label[0.0,0.4;"..eff.."% Loss]"
     end
     if meta:get_int("mesecon_mode") == 0 then
@@ -823,6 +995,24 @@ local run = function(pos, node, run_stage)
         return rate, time, tmsg
     end
 
+    local calc_remain_tier = function(from, to, p)
+        if from == "LV" and to == "MV" then
+            return p - 0.11
+        elseif from == "LV" and to == "HV" then
+            return p - 0.12
+        elseif from == "MV" and to == "LV" then
+            return p - 0.09
+        elseif from == "MV" and to == "HV" then
+            return p - 0.10
+        elseif from == "HV" and to == "LV" then
+            return p - 0.10
+        elseif from == "HV" and to == "MV" then
+            return p - 0.08
+        else
+            return p
+        end
+    end
+
     -- Machine information
     local node          = core.get_node(pos)
     local machine         = {name = "ship_machine:supply_relay", param2 = node.param2}
@@ -846,7 +1036,7 @@ local run = function(pos, node, run_stage)
 
     -- get next relay facing
     if enabled then
-        for n = 1, 8 do
+        for n = 1, MAX_BEAM_DIST do
             next_pos = vector.add(next_pos, dir)
             local s_node = core.get_node(next_pos)
             local g_node = core.get_item_group(s_node.name, "power_relay")
@@ -865,8 +1055,8 @@ local run = function(pos, node, run_stage)
         machine_other = {name = "ship_machine:supply_relay", param2 = node.param2}
     end
 
-    -- get power effeceincey scaler based on distance between relay nodes
-    local remain = get_eff_by_dist(dist - 1)
+    -- get power efficiency scaler based on distance between relay nodes
+    local remain = calc_eff_by_dist(dist - 1)
 
     if run_stage ~= technic.receiver and not next_relay then
         -- run tick if not connected...
@@ -892,9 +1082,7 @@ local run = function(pos, node, run_stage)
             local meta_next_relay = core.get_meta(next_relay)
             local is_other_enabled = meta_next_relay:get_int("enabled") == 1
             local is_other_receiver = meta_next_relay:get_int("relay_mode") == 0
-            if self_to ~= from then
-                remain = remain - 0.1
-            end
+            local relay_eff = meta:get_int("relay_eff") or 0
             if not is_other_enabled then
                 meta:set_string("infotext", S("@1 Emitter is disabled", machine_name))
                 meta:set_int(cable.."_EU_supply", 0)
@@ -911,7 +1099,7 @@ local run = function(pos, node, run_stage)
                 local input = meta:get_int(cable.."_EU_supply")
                 local rate, time, tmsg = get_rate(meta)
                 meta:set_string("infotext", S("@1 is Bridged \nReceiving: @2 @3\n@4 @5%  @6", machine_name,
-                    technic.EU_string(input), cable, "EU Losses:", (1 - remain) * 100, 
+                    technic.EU_string(input), cable, "EU Losses:", (100 - (relay_eff * 0.1)) , 
                     time > 0 and "Time: " .. tmsg or ""))
             end
         elseif cable then
@@ -930,8 +1118,8 @@ local run = function(pos, node, run_stage)
         if from and next_relay then
             -- has cable and next relay
             local faces_match = match_facing(pos, next_relay)
-            local dir = get_facing_vector(next_relay)
-            local pos_front = vector.subtract(next_relay, dir)
+            local dir2 = get_facing_vector(next_relay)
+            local pos_front = vector.subtract(next_relay, dir2)
             local name_front = core.get_node(pos_front).name
             local to = technic.get_cable_tier(name_front)
             local meta_next_relay = core.get_meta(next_relay)
@@ -950,8 +1138,9 @@ local run = function(pos, node, run_stage)
                     input = 0
                     --core.log("TO network timeout! " .. to)
                 end
+                remain = remain - get_beam_path_loss(pos, dir)
                 if to ~= from then
-                    remain = remain - 0.1
+                    remain = calc_remain_tier(from, to, remain)
                 end
                 -- process payment input
                 take_payment(meta, meta_next_relay)
@@ -994,7 +1183,7 @@ local run = function(pos, node, run_stage)
                 meta:set_int(from.."_EU_supply", 0)
                 meta_next_relay:set_int(to.."_EU_demand", 0)
                 meta_next_relay:set_int(to.."_EU_supply", input * remain)
-                meta_next_relay:set_int("relay_eff", remain * 100)
+                meta_next_relay:set_int("relay_eff", (remain * 100) * 10)
                 meta:set_string("infotext", S("@1 is Bridged \n@2 @3 -> @4 @5\n@6 @7%  @8", machine_name,
                     technic.EU_string(input), from,
                     technic.EU_string(input * remain), to,
