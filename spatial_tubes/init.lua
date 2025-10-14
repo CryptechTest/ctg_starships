@@ -441,15 +441,18 @@ function spatial_tubes.register_machine(data)
             else
                 if (dest_y > -11000 and dest_y < 22000) then
                     local tfound = false
-                    local dest = minetest.find_nodes_in_area({
+                    local pos1 = {
                         x = pos.x - 1,
-                        y = pos.y - 1,
+                        y = pos.y - 2,
                         z = pos.z - 1
-                    }, {
+                    }
+                    local pos2 = {
                         x = pos.x + 1,
                         y = pos.y + 2,
                         z = pos.z + 1
-                    }, {node_name})
+                    }
+                    schem_lib.common.keep_loaded(pos1, pos2)
+                    local dest = minetest.find_nodes_in_area(pos1, pos2, {node_name})
                     if #dest > 0 then
                         local dmeta = minetest.get_meta(dest[1])
                         if minetest.is_protected(dest[1], sender:get_player_name()) and
@@ -500,7 +503,7 @@ function spatial_tubes.register_machine(data)
         local exit = nil
         -- get destination pos
         if meta:get_string("sta_exit") ~= nil then
-            local r = (data.iter == "MV" and 48) or 32
+            local r = (data.iter == "MV" and 72) or 50
             local teles = minetest.find_nodes_in_area({
                 x = pos.x - r,
                 y = pos.y - r,
