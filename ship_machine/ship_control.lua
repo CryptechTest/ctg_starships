@@ -51,7 +51,8 @@ local function update_formspec_nav(pos, data, message)
         local ship_meta = minetest.get_meta(shipp)
 
         -- ship details
-        local det_txt1 = minetest.colorize("#a4d0e0", "Jump Range:  " .. data.min_dist .. " - " .. data.jump_dist .. " Meters")
+        local min_dist = math.min(data.size.h, math.min(data.size.w, data.size.l)) * 2
+        local det_txt1 = minetest.colorize("#a4d0e0", "Jump Range:  " .. min_dist .. " - " .. data.jump_dist .. " Meters")
         local det_txt2 = minetest.colorize("#9bd1c4", "Hull Rating: " .. data.hp)
         local detail = "image[0.7,0.6;9.2,0.6;bg2.png]" .. "label[0.8,0.625;".. det_txt1 .."]" .. "label[5.1,0.625;".. det_txt2 .."]"
 
@@ -120,7 +121,7 @@ local function update_formspec_nav(pos, data, message)
         -- docking button
         local btn_doc = ""
         if near_shipyard and ship_hp_prcnt >= 10 then
-            btn_doc = "button[5,5.7;2.5,1;submit_dock;Station Dock]"
+            btn_doc = "button[5,5.7;3.25,1;submit_dock;Station Dock]"
         elseif near_docks and #near_docks > 0 and combat_migration_done and ship_hp_prcnt >= 10 then
             local items = {}
             local index = 1
@@ -131,8 +132,8 @@ local function update_formspec_nav(pos, data, message)
                     index = i
                 end
             end
-            local ddrop = "dropdown[5,5;2.5,1;dock_name;"..table.concat(items, ",")..";"..index..";]"
-            btn_doc = ddrop .. "button[5,5.7;2.5,1;submit_dock2;Dock]"
+            local ddrop = "dropdown[5,5;3.25,1;dock_name;"..table.concat(items, ",")..";"..index..";]"
+            btn_doc = ddrop .. "button[5,5.7;3.25,1;submit_dock2;Dock]"
         end
 
         -- deepspace
@@ -515,6 +516,7 @@ function ship_machine.register_control_console(custom_data)
             z = move_z
         }
 
+        local min_dist = math.min(data.size.h, math.min(data.size.w, data.size.l)) * 2
         local ship, ships_other = ship_machine.get_local_ships(pos, def.size)
         local dest = ship_machine.get_jump_dest_from_drive(ship.ship_pos, offset)
         local panel_dest = vector.add(pos, offset)
@@ -530,7 +532,7 @@ function ship_machine.register_control_console(custom_data)
         elseif isNumError then
             meta:set_int("travel_ready", 0)
             message = "Must input a valid number..."
-        elseif fields.submit_nav and not is_deepspace and vector.distance(ship.ship_pos, dest) < def.min_dist and not fields.submit_dock then
+        elseif fields.submit_nav and not is_deepspace and vector.distance(ship.ship_pos, dest) < min_dist and not fields.submit_dock then
             meta:set_int("travel_ready", 0)
             message = "Jump distance below engine range..."
         elseif fields.submit_nav and not is_deepspace and docked and fields.submit_dock then
