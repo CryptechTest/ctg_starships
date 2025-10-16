@@ -1504,7 +1504,7 @@ function ship_weapons.register_rail_cannon(data)
 
         on_step = function(self, dtime)
             self._timer = self._timer + 1
-            if self._timer <= 4 then
+            if self._timer <= 3 then
                 return
             end
             self._timer = 0
@@ -1551,8 +1551,8 @@ function ship_weapons.register_rail_cannon(data)
                 local new_roll_deg = 0
                 if mount_dir == "ceiling" then
                     new_roll_deg = 180
-                    if new_pitch_deg > 60 then
-                        new_pitch_deg = 60
+                    if new_pitch_deg > 80 then
+                        new_pitch_deg = 80
                     elseif new_pitch_deg < -10 then
                         new_pitch_deg = -10
                     end
@@ -1584,16 +1584,16 @@ function ship_weapons.register_rail_cannon(data)
                             t_update = true
                         end
                     end
-                    if new_pitch_deg > 60 then
-                        new_pitch_deg = 60
-                    elseif new_pitch_deg < -40 then
-                        new_pitch_deg = -40
+                    if new_pitch_deg > 70 then
+                        new_pitch_deg = 70
+                    elseif new_pitch_deg < -70 then
+                        new_pitch_deg = -70
                     end
                 else
-                    if new_pitch_deg > 25 then
-                        new_pitch_deg = 25
-                    elseif new_pitch_deg < -50 then
-                        new_pitch_deg = -50
+                    if new_pitch_deg > 30 then
+                        new_pitch_deg = 30
+                    elseif new_pitch_deg < -60 then
+                        new_pitch_deg = -60
                     end
                 end
                 --core.log(new_pitch_deg)
@@ -1669,7 +1669,7 @@ function ship_weapons.register_rail_cannon(data)
             end
 
             if self._rotation_set == nil then
-                local new_rot = { x = math.rad(-(math.random(0, 40))), y = math.rad((math.random(0, 360))), z = 0}
+                local new_rot = { x = math.rad(-(math.random(-25, 30))), y = math.rad((math.random(0, 360))), z = 0}
                 self._rotation_set = new_rot
                 self._rotation_done = false
             end
@@ -1681,7 +1681,7 @@ function ship_weapons.register_rail_cannon(data)
                 self._target_found = false
                 local new_rot = { x = 0, y = 0, z = 0}
                 meta:set_string("target_dir", core.serialize(new_rot))
-                local new_rot = { x = math.rad(-(math.random(-5, 35))), y = math.rad((math.random(0, 360))), z = 0}
+                local new_rot = { x = math.rad(-(math.random(-25, 30))), y = math.rad((math.random(0, 360))), z = 0}
                 self._rotation_set = new_rot
             end
 
@@ -1696,10 +1696,10 @@ function ship_weapons.register_rail_cannon(data)
                     self._rotation_done = false
                     self._reset_tick = 0
                     if mount_dir == "ceiling" then
-                        local new_rot = { x = math.rad(-(math.random(-40, 0))), y = math.rad((math.random(0, 360))), z = 0}
+                        local new_rot = { x = math.rad(-(math.random(-60, 10))), y = math.rad((math.random(0, 360))), z = 0}
                         self._rotation_set = new_rot
                     else
-                        local new_rot = { x = math.rad(-(math.random(-5, 35))), y = math.rad((math.random(0, 360))), z = 0}
+                        local new_rot = { x = math.rad(-(math.random(-25, 30))), y = math.rad((math.random(0, 360))), z = 0}
                         self._rotation_set = new_rot
                     end
                 end

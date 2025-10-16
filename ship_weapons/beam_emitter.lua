@@ -6,27 +6,6 @@ local function round(v)
     return math.floor(v + 0.5)
 end
 
-local function randFloat(min, max, precision)
-    -- Generate a random floating point number between min and max
-    local range = max - min
-    local offset = range * math.random()
-    local unrounded = min + offset
-
-    -- Return unrounded number if precision isn't given
-    if not precision then
-        return unrounded
-    end
-
-    -- Round number to precision and return
-    local powerOfTen = 10 ^ precision
-    local n
-    n = unrounded * powerOfTen
-    n = n + 0.5
-    n = math.floor(n)
-    n = n / powerOfTen
-    return n
-end
-
 local function needs_charge(pos)
     local meta = minetest.get_meta(pos)
     local charge = meta:get_int("charge")
@@ -61,12 +40,12 @@ local function spawn_particle(pos, dir, i, dist, tier)
         },
         acceleration = {
             x = 0,
-            y = randFloat(-0.02, 0.05) * grav,
+            y = ship_machine.randFloat(-0.02, 0.05) * grav,
             z = 0
         },
 
         expirationtime = t,
-        size = randFloat(1.32, 1.6),
+        size = ship_machine.randFloat(1.32, 1.6),
         collisiondetection = false,
         collision_removal = false,
         object_collision = false,
@@ -310,7 +289,7 @@ local function spawn_particle_area(pos, tier)
     local amount = hp + math.random(1, hp + 1)
     local def = {
         amount = amount,
-        time = randFloat(2.6, 5.2),
+        time = ship_machine.randFloat(2.6, 5.2),
         collisiondetection = true,
         collision_removal = false,
         object_collision = false,
@@ -393,9 +372,9 @@ function ship_weapons.strike_effect(pos1, pos2, tier, doSound)
     end
 
     local target = vector.add(pos2, {
-        x = randFloat(-0.2, 0.2),
-        y = randFloat(-0.15, 0.21),
-        z = randFloat(-0.2, 0.2)
+        x = ship_machine.randFloat(-0.2, 0.2),
+        y = ship_machine.randFloat(-0.15, 0.21),
+        z = ship_machine.randFloat(-0.2, 0.2)
     })
 
     local dir = vector.direction(pos1, target)
@@ -412,7 +391,7 @@ function ship_weapons.strike_effect(pos1, pos2, tier, doSound)
             minetest.sound_play("ctg_zap", {
                 pos = pos1,
                 gain = 0.27,
-                pitch = randFloat(1.33, 1.85),
+                pitch = ship_machine.randFloat(1.33, 1.85),
                 max_hear_distance = 16
             })
         end)
@@ -442,14 +421,14 @@ function ship_weapons.strike_effect(pos1, pos2, tier, doSound)
             minetest.sound_play("ctg_zap", {
                 pos = target,
                 gain = 0.121,
-                pitch = randFloat(1.4, 1.6),
+                pitch = ship_machine.randFloat(1.4, 1.6),
                 max_hear_distance = 25
             })
         end
         minetest.sound_play("ctg_hit3", {
             pos = target,
             gain = 0.23,
-            pitch = randFloat(1.15, 1.3),
+            pitch = ship_machine.randFloat(1.15, 1.3),
             max_hear_distance = 21
         })
     end)
@@ -775,7 +754,7 @@ function ship_weapons.register_beam_tower(data)
                                     break
                                 end
                                 if ship_weapons.strike_effect(pos, obj_pos, ltier) then
-                                    ent.health = ent.health - (randFloat(1, 2.7, 1) * data.damage)
+                                    ent.health = ent.health - (ship_machine.randFloat(1, 2.7, 1) * data.damage)
                                     obj:move_to({ x = obj_pos.x, y = obj_pos.y + 0.25, z = obj_pos.z })
                                     bFoundTarget = true;
                                     nTargetCount = nTargetCount + 1
@@ -815,7 +794,7 @@ function ship_weapons.register_beam_tower(data)
                                 obj:punch(obj, time_since_last_punch, tool_capabilities)
 
                                 local hp = obj:get_hp()
-                                obj:set_hp(hp - (randFloat(1, 2.5, 1) * data.damage))
+                                obj:set_hp(hp - (ship_machine.randFloat(1, 2.5, 1) * data.damage))
                                 obj:move_to({ x = obj_pos.x, y = obj_pos.y + 0.3, z = obj_pos.z })
 
                                 bFoundTarget = true;
@@ -1207,7 +1186,7 @@ function ship_weapons.register_beam_tower(data)
                         minetest.sound_play("ctg_zap", {
                             pos = target,
                             gain = 0.48,
-                            pitch = randFloat(2.2, 2.25)
+                            pitch = ship_machine.randFloat(2.2, 2.25)
                         })
                     end
 

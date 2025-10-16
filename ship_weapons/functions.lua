@@ -2,6 +2,28 @@ local function round(v)
     return math.floor(v + 0.5)
 end
 
+local function randFloat(min, max, precision)
+    -- Generate a random floating point number between min and max
+    local range = max - min
+    local offset = range * math.random()
+    local unrounded = min + offset
+
+    -- Return unrounded number if precision isn't given
+    if not precision then
+        return unrounded
+    end
+
+    -- Round number to precision and return
+    local powerOfTen = 10 ^ precision
+    local n
+    n = unrounded * powerOfTen
+    n = n + 0.5
+    n = math.floor(n)
+    n = n / powerOfTen
+    return n
+end
+ship_weapons.randFloat = randFloat
+
 local function calculatePitch(vector1, vector2)
     -- Calculate the difference vector
     local dx = vector2.x - vector1.x

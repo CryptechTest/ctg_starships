@@ -1082,7 +1082,7 @@ function ship_weapons.register_plasma_cannon(data)
                  ltier .. "_" .. tmachine_name .. "_base.png"},
         param = "light",
         paramtype2 = "facedir",
-        light_source = 4,
+        light_source = 3,
         drawtype = "nodebox",
         node_box = {
             type = "fixed",
@@ -1328,7 +1328,7 @@ function ship_weapons.register_plasma_cannon(data)
 
         on_step = function(self, dtime)
             self._timer = self._timer + 1
-            if self._timer <= 7 then
+            if self._timer <= 5 then
                 return
             end
             self._timer = 0
@@ -1349,14 +1349,18 @@ function ship_weapons.register_plasma_cannon(data)
                 if rot_from == nil then
                     return false
                 end
+                local pitch_offset = 15
+                if pos.y > 4000 then
+                    pitch_offset = 10
+                end
                 local cur_pitch_deg = math.deg(rot_from.x)
                 local cur_yaw_deg = math.deg(rot_from.y)
-                local new_pitch_deg = math.deg(rot_to.x) - 15
+                local new_pitch_deg = math.deg(rot_to.x) - pitch_offset
                 local new_yaw_deg = math.deg(rot_to.y)
-                if new_pitch_deg > 15 then
-                    new_pitch_deg = 15
-                elseif new_pitch_deg < -40 then
-                    new_pitch_deg = -40
+                if new_pitch_deg > 25 then
+                    new_pitch_deg = 25
+                elseif new_pitch_deg < -50 then
+                    new_pitch_deg = -50
                 end
                 --core.log(new_pitch_deg)
                 local n_pitchDegrees = ((cur_pitch_deg * 15) + new_pitch_deg) / 16
@@ -1424,12 +1428,12 @@ function ship_weapons.register_plasma_cannon(data)
             end
 
             if self._rotation_set == nil then
-                local new_rot = { x = math.rad(-(math.random(0, 40))), y = math.rad((math.random(0, 360))), z = 0}
+                local new_rot = { x = math.rad(-(math.random(-20, 40))), y = math.rad((math.random(0, 360))), z = 0}
                 self._rotation_set = new_rot
                 self._rotation_done = false
             end
 
-            if self._reset_tick < 100 then
+            if self._reset_tick < 300 then
                 self._reset_tick = self._reset_tick + 1
             else                
                 self._reset_tick = 0
@@ -1443,12 +1447,12 @@ function ship_weapons.register_plasma_cannon(data)
                 self._time_idler = self._time_idler + 1
             end
             
-            if self._time_idler > 50 and self._rotation_done then
+            if self._time_idler > 100 and self._rotation_done then
                 self._time_idler = 0
                 if not self._target_found then
                     self._rotation_done = false
                     self._reset_tick = 0
-                    local new_rot = { x = math.rad(-(math.random(-5, 35))), y = math.rad((math.random(0, 360))), z = 0}
+                    local new_rot = { x = math.rad(-(math.random(-20, 40))), y = math.rad((math.random(0, 360))), z = 0}
                     self._rotation_set = new_rot
                 end
             end

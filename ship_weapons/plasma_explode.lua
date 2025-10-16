@@ -718,7 +718,7 @@ local function plasma_explode(pos, radius, ignore_protection, ignore_on_blast, o
 		queued_data.fn(queued_data.pos)
 	end
 
-	minetest.log("action", "MISSILE owned by " .. owner .. " detonated at " ..
+	minetest.log("action", "PLASMA owned by " .. owner .. " detonated at " ..
 		minetest.pos_to_string(pos) .. " with radius " .. radius)
 
 	return drops, radius, 0
@@ -928,7 +928,7 @@ local function plasma_safe_explode(pos, radius, damage, ignore_protection, ignor
 		end
 	end
 
-	minetest.log("action", "MISSILE owned by " .. owner .. " detonated at " ..
+	minetest.log("action", "PLASMA owned by " .. owner .. " detonated at " ..
 		minetest.pos_to_string(pos) .. " with radius " .. radius)
 
 	return drops, radius, ship_shield_prcnt
@@ -939,17 +939,16 @@ function ship_weapons.safe_plasma_boom(pos, def)
 	def.radius = def.radius or 1
 	def.damage_radius = (def.damage_radius or def.radius) * 2
 	def.damage = (def.damage or 1)
-	local meta = minetest.get_meta(pos)
-	local owner = meta:get_string("owner")
+	def.owner = def.owner or ""
 	
 	-- do plasma explode
 	local drops, radius, shield = plasma_safe_explode(pos, def.radius, def.damage, def.ignore_protection,
-			def.ignore_on_blast, owner, true)
+			def.ignore_on_blast, def.owner, true)
 
 	local pitch = 1.1
 	if shield > 0 then
 		pitch = 1.0 + (shield * 0.01)
-		minetest.sound_play("ctg_shield_hit", {pos = pos, gain = 1.5, pitch = math.random(0.25,0.30),
+		minetest.sound_play("ctg_shield_hit", {pos = pos, gain = 1.5, pitch = ship_weapons.randFloat(0.25,0.30),
 				max_hear_distance = math.min(def.radius * 20, 128)}, true)
 	end
 	local sound = def.sound or "tnt_explode"
@@ -974,12 +973,11 @@ function ship_weapons.plasma_boom(pos, def)
 	def.radius = def.radius or 1
 	def.damage_radius = (def.damage_radius or def.radius) * 2
 	def.damage = (def.damage or 1)
-	local meta = minetest.get_meta(pos)
-	local owner = meta:get_string("owner")
+	def.owner = def.owner or ""
 
 	-- do plasma explode
 	local drops, radius, shield = plasma_explode(pos, def.radius, def.ignore_protection,
-			def.ignore_on_blast, owner, true)
+			def.ignore_on_blast, def.owner, true)
 
 	local pitch = 1.1
 	local sound = def.sound or "tnt_explode"
