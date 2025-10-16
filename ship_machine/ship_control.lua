@@ -516,7 +516,7 @@ function ship_machine.register_control_console(custom_data)
             z = move_z
         }
 
-        local min_dist = math.min(data.size.h, math.min(data.size.w, data.size.l)) * 2
+        local min_dist = math.min(def.size.h, math.min(def.size.w, def.size.l)) * 2
         local ship, ships_other = ship_machine.get_local_ships(pos, def.size)
         local dest = ship_machine.get_jump_dest_from_drive(ship.ship_pos, offset)
         local panel_dest = vector.add(pos, offset)
