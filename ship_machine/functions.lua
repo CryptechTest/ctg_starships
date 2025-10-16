@@ -662,10 +662,12 @@ local function check_engines_charged(pos, size, dist, use_charge)
             return true
         end
     elseif #nodes > 2 then
+        --core.log("found " .. tostring(#nodes) .. " engines")
 
         local max = 2500
         local c_max = 160
         local req_charge = math.max(3, ((c_max / max) * dist) / #nodes)
+        --core.log("required charge: " .. tostring(req_charge))
 
         local charged = 0
 
@@ -681,10 +683,97 @@ local function check_engines_charged(pos, size, dist, use_charge)
                 charged = charged + 1;
             end
         end
+        --core.log("engines charged: " .. tostring(charged))
         return charged >= 2
     end
     return false
 end
+
+local function get_engines_charge(pos, size)
+
+    local pos1 = vector.subtract(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local pos2 = vector.add(pos, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+
+    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
+
+    local drive = nil
+    for _, p in pairs(nodes) do
+        local prot = vector.add(p, vector.new(0, 2, 0))
+        local ship_meta = minetest.get_meta(prot)
+        local _size = {
+            w = ship_meta and ship_meta:get_int("p_width") or size.w,
+            l = ship_meta and ship_meta:get_int("p_length") or size.l,
+            h = ship_meta and ship_meta:get_int("p_height") or size.h
+        }
+        if pos.x <= p.x + _size.w and pos.x >= p.x - _size.w then
+            if pos.z <= p.z + _size.l and pos.z >= p.z - _size.l then
+                if pos.y <= p.y + _size.h and pos.y >= p.y - _size.h then
+                    drive = p
+                end
+            end
+        end
+        if drive ~= nil then
+            break
+        end
+    end
+
+    if drive == nil then
+        return 0, 0, 0
+    end
+
+    local c_pos1 = vector.subtract(drive, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+    local c_pos2 = vector.add(drive, {
+        x = size.w,
+        y = size.h,
+        z = size.l
+    })
+
+    local nodes = minetest.find_nodes_in_area(c_pos1, c_pos2, "group:ship_engine")
+    local charge = 0
+
+    if #nodes == 2 then
+
+        local eng1 = minetest.get_meta(nodes[1])
+        local eng2 = minetest.get_meta(nodes[2])
+
+        local charge1 = eng1:get_int('charge')
+        local charge2 = eng2:get_int('charge')
+
+        charge = math.min(charge1, charge2)
+
+    elseif #nodes > 2 then
+
+        for _, node in pairs(nodes) do
+            local eng = minetest.get_meta(node)
+            local _charge = eng:get_int('charge')
+            charge = charge + _charge
+        end
+
+        charge = charge / #nodes
+
+    end
+
+    local count = #nodes
+    local max = 2500
+    local c_max = 160
+    local distance = math.max(3, (charge * max) / c_max)
+
+    return charge, distance, count
+end
+
+ship_machine.get_engines_charge = get_engines_charge
 
 local function engines_charged_spend(pos, dist, size)
 

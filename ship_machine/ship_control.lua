@@ -36,11 +36,11 @@ local function update_formspec_nav(pos, data, message)
     if typename ~= '' then
 
         -- formspec defintion 
-        local fspec = "formspec_version[3]" .. "size[8,7;]" .. "real_coordinates[false]"
+        local fspec = "formspec_version[3]" .. "size[8.92,7;]" .. "real_coordinates[false]"
 
         -- background
-        local bg_main = "image[0,0.5;9.78,7.5;starfield_2.png]"
-        local bg_coord = "image[5,3.25;2.2,0.88;bg2.png]"
+        local bg_main = "image[0,0.5;10.92,7.60;starfield_2.png]"
+        local bg_coord = "image[5,3.25;3.8,0.88;bg2.png]"
         local bg_form = bg_main  .. bg_coord
 
         -- get ship protector
@@ -53,7 +53,7 @@ local function update_formspec_nav(pos, data, message)
         -- ship details
         local det_txt1 = minetest.colorize("#a4d0e0", "Jump Range:  " .. data.min_dist .. " - " .. data.jump_dist .. " Meters")
         local det_txt2 = minetest.colorize("#9bd1c4", "Hull Rating: " .. data.hp)
-        local detail = "image[0.7,0.6;8.25,0.6;bg2.png]" .. "label[0.8,0.625;".. det_txt1 .."]" .. "label[5,0.625;".. det_txt2 .."]"
+        local detail = "image[0.7,0.6;9.2,0.6;bg2.png]" .. "label[0.8,0.625;".. det_txt1 .."]" .. "label[5.1,0.625;".. det_txt2 .."]"
 
         -- combat migrations
         local combat_migration_done = meta:get_int("combat_ready") and meta:get_int("combat_ready") > 1 or false
@@ -63,23 +63,25 @@ local function update_formspec_nav(pos, data, message)
         local ship_hp_max = ship_meta:get_int("hp_max") or 1
         local ship_hp = ship_meta:get_int("hp") or 1
         local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
-        local hp_tag = "image[5.0,1.2;2.2,0.9;bg2.png]" .. "label[5.1,1.2;Hull Integrity]"
+        local hp_tag = "image[5.0,1.2;3.8,0.9;bg2.png]" .. "label[5.1,1.2;Hull Integrity:]"
         local hp_col = ship_machine.colorize_text_hp(ship_hp, ship_hp_max)
         local hp_prcnt_col = minetest.colorize(hp_col, string.format("%.1f", ship_hp_prcnt) .. "%")
-        local hit_points = hp_tag .. "label[5.45,1.55;" .. hp_prcnt_col .. "]"
+        local hp_bar = "image[4.9,0.325;4.025,3.25;ctg_gui_charge_bar_bg.png^[lowpart:" .. tostring(ship_hp_prcnt) .. ":ctg_gui_charge_bar_fg_hp.png^[transformR270]]"
+        local hit_points = hp_tag .. "label[7.05,1.2;" .. hp_prcnt_col .. "]" .. hp_bar
         -- shield
         local ship_shield_max = ship_meta:get_int("shield_max") or 1
         local ship_shield = ship_meta:get_int("shield") or 1
         local ship_shield_prcnt = (ship_shield / ship_shield_max) * 100
-        local shield_tag = "image[5.0,2.0;2.2,0.9;bg2.png]" .. "label[5.1,2.0;Shield Charge]"
+        local shield_tag = "image[5.0,2.0;3.8,0.9;bg2.png]" .. "label[5.1,2.0;Shield Charge:]"
         local shield_col = ship_machine.colorize_text_hp(ship_shield, ship_shield_max)
         local shield_prcnt_col = minetest.colorize(shield_col, string.format("%.1f", ship_shield_prcnt) .. "%")
-        local shield_points = shield_tag .. "label[5.45,2.35;" .. shield_prcnt_col .. "]"
+        local shield_bar = "image[4.9,1.125;4.025,3.25;ctg_gui_charge_bar_bg.png^[lowpart:" .. tostring(ship_shield_prcnt) .. ":ctg_gui_charge_bar_fg_shield.png^[transformR270]]"
+        local shield_points = shield_tag .. "label[7.05,2.0;" .. shield_prcnt_col .. "]" .. shield_bar
 
         -- holo toggle button
-        local btn_holo = "image_button[6.05,-0.225;0.8,0.8;ctg_radar_on.png;holo;;true;false]"
+        local btn_holo = "image_button[7.05,-0.225;0.8,0.8;ctg_radar_on.png;holo;;true;false]"
         -- refresh button
-        local btn_ref = "image_button[6.85,-0.225;0.8,0.8;ctg_ship_refresh_btn.png;refresh;;true;false;ctg_ship_refresh_btn_press.png]"
+        local btn_ref = "image_button[7.85,-0.225;0.8,0.8;ctg_ship_refresh_btn.png;refresh;;true;false;ctg_ship_refresh_btn_press.png]"
         -- members protect button
         local btn_prot = "button[0.7,5.7;2.0,1;prot_crew;Crew Members]"
         local btn_ally = "button[2.55,5.7;1.5,1;prot_ally;Allies]"
@@ -102,6 +104,18 @@ local function update_formspec_nav(pos, data, message)
         if ship_hp_prcnt < 10 then
             ship_owner = "button[5,5.0;2.5,1;submit_ctl;Seize Control]"
         end
+
+        -- engine charge distance
+        local eng_charge, eng_dist, eng_count = ship_machine.get_engines_charge(pos, data.size)
+        local _eng_dist = math.floor(eng_dist)
+        local prcnt_chrg = math.floor((eng_charge / 160) * 100)
+
+        local eng_extr = eng_count > 2 and "+" or ""
+        --local eng_det = "image[6.9,3.25;1.5,0.9;bg2.png]" .. "label[7.0,3.2;".. "Distance" .."]" .. "label[7.0,3.5;".. tostring(_eng_dist) .."]"
+        local eng_det = "label[5.1,2.77;".. "Engine Distance:" .."]" .. "label[7.05,2.77;".. tostring(_eng_dist) .. eng_extr .."]"
+        local eng_prog = "image[4.855,1.525;4.15,3.35;ctg_gui_charge_bar_bg.png^[lowpart:" .. tostring(prcnt_chrg) .. ":ctg_gui_charge_bar_fg.png^[transformR270]]"
+        eng_prog = eng_prog .. "image[5.06,2.867;3.67,0.34;bg2.png]"
+        local eng_chrg = eng_prog .. eng_det
         
         -- docking button
         local btn_doc = ""
@@ -149,9 +163,9 @@ local function update_formspec_nav(pos, data, message)
         local input_field = "field[1,3.5;1.4,1;inp_x;Move X;0]field[2.3,3.5;1.4,1;inp_y;Move Y;0]field[3.6,3.5;1.4,1;inp_z;Move Z;0]"
 
         local busy_label = ""
-        local bg_msg = "image[0.45,4.15;5.0,0.7;bg2.png]"
+        local bg_msg = "image[0.45,4.2;5.06,0.75;bg2.png]"
         -- nav submit button
-        local btn_nav = "button[5,4;2,1;submit_nav;Make it so]"
+        local btn_nav = "button[5,4;3.25,1;submit_nav;Make it so]"
         -- ready jump message
         if ready and ready > 0 then
             img_hole_1 = ""
@@ -166,7 +180,7 @@ local function update_formspec_nav(pos, data, message)
             btn_doc = ""
         end
         -- dest nav label
-        local nav_label = "label[5.07,3.2;Destination:]" .. "label[5.07,3.5;" .. dest_dir .. "]"
+        local nav_label = "label[5.07,3.2;Destination:]" .. "label[5.07,3.55;" .. dest_dir .. "]"
 
         -- messages
         if message ~= nil and message and string.len(message) > 0 then
@@ -179,12 +193,12 @@ local function update_formspec_nav(pos, data, message)
         if is_deepspace then
             local dspace_input = img_hole_1 .. img_hole_2 .. img_hole_3 .. img_hole_4
             formspec = form_basic .. btn_prot .. btn_ally .. img_ship .. dspace_input .. btn_nav ..
-                        damage_warn .. ship_owner .. nav_label .. btn_holo .. btn_doc ..
+                        damage_warn .. ship_owner .. nav_label .. btn_holo .. btn_doc .. eng_chrg ..
                         hit_points .. shield_points .. busy_label .. combat_migration .. btn_ref .. message
         else
             local coords_input = coords_label .. input_field
             formspec = form_basic .. btn_prot .. btn_ally .. img_ship .. coords_input .. btn_nav ..
-                        damage_warn .. ship_owner .. nav_label .. btn_holo .. btn_doc ..
+                        damage_warn .. ship_owner .. nav_label .. btn_holo .. btn_doc .. eng_chrg ..
                         hit_points .. shield_points .. busy_label .. combat_migration .. btn_ref .. message
         end
     end
