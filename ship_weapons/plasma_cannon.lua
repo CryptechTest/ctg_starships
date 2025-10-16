@@ -237,6 +237,10 @@ function ship_weapons.cannon_volley(def, op, origin, pos_target, object_target)
         end
     end
 
+    if not turret_obj then
+        
+    end
+
     if rotation_done and not target_found then
         local _rot = {x = 0, y = 0, z = 0}
         meta:set_string("target_dir", core.serialize(_rot))
@@ -252,7 +256,7 @@ function ship_weapons.cannon_volley(def, op, origin, pos_target, object_target)
         return 1
     end
     --minetest.log("launching volley!")
-    ship_weapons.launch_plasma_projectile(def, turret_obj, origin, target, object_target)
+    ship_weapons.launch_plasma_projectile(def, op, origin, target, object_target)
     return 3
 end
 

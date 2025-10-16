@@ -259,7 +259,7 @@ function ship_weapons.cannon_fire(def, op, origin, pos_target, object_target)
     if turret_obj then
         turret_obj:get_luaentity()._barrel:get_luaentity():fire_anim()
     end
-    ship_weapons.launch_plasma_projectile(def, turret_obj, origin, target, object_target)
+    ship_weapons.launch_plasma_projectile(def, op, origin, target, object_target)
     return 3
 end
 
