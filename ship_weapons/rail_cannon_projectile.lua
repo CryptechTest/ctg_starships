@@ -268,7 +268,7 @@ local function register_projectile(def)
                 if (dist_delta < 0.5751) then
                     self.node_hit = true 
                     if def.aoe then
-                        damage_aoe(def.damage, self.object, self.previous_pos, def.aoe_radius)
+                        damage_aoe(def.damage, self.object, pos, def.aoe_radius)
                     end
                     if def.on_timeout then
                         def.on_timeout(self, self.target_pos)
@@ -348,7 +348,7 @@ local function register_projectile(def)
                     end
                     for i = 0, 3 do
                         minetest.add_particle({
-                            pos = vector.add(self.previous_pos, {x=math.random(-0.1,0.1), y=math.random(-0.1,0.1), z=math.random(-0.1,0.1)}),
+                            pos = vector.add(pos, {x=math.random(-0.1,0.1), y=math.random(-0.1,0.1), z=math.random(-0.1,0.1)}),
                             expirationtime = 0.1 + math.random(0, 0.25),
                             size = def.hit_flare_size * (i * 1.08),
                             collisiondetection = false,
@@ -358,7 +358,7 @@ local function register_projectile(def)
                         })
                     end
                     minetest.add_particle({
-                        pos = self.previous_pos,
+                        pos = pos,
                         expirationtime = 0.175,
                         size = 37,
                         collisiondetection = false,
@@ -372,8 +372,8 @@ local function register_projectile(def)
                     minetest.add_particlespawner({
                         amount = def.hit_particle_amount,
                         time = 0.075,
-                        minpos = self.previous_pos,
-                        maxpos = self.previous_pos,
+                        minpos = pos,
+                        maxpos = pos,
                         minvel = {x=-def.hit_particle_velocity, y=-def.hit_particle_velocity, z=-def.hit_particle_velocity},
                         maxvel = {x=def.hit_particle_velocity, y=def.hit_particle_velocity+2, z=def.hit_particle_velocity},
                         minacc = {x=0, y=def.hit_particle_gravity, z=0},
@@ -455,7 +455,7 @@ local function register_projectile(def)
             if self.timer > def.timeout then
                 if def.flare then
                     minetest.add_particle({
-                        pos = self.previous_pos,
+                        pos = pos,
                         expirationtime = 0.25,
                         size = math.floor(def.flare_size/2),
                         collisiondetection = false,
