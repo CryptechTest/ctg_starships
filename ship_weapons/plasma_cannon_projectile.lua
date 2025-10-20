@@ -12,11 +12,11 @@ local function damage_aoe(damage, puncher, pos, radius)
     if puncher == nil then
         return
     end
-    local turret_obj = puncher.owner
-    if turret_obj == nil then
+    local turret_owner = puncher.owner
+    if turret_owner == nil then
         return
     end
-    local attacker = minetest.get_player_by_name(self.owner)
+    local attacker = minetest.get_player_by_name(turret_owner)
     if not attacker then
         return
     end
@@ -32,10 +32,12 @@ local function damage_aoe(damage, puncher, pos, radius)
         elseif t:get_luaentity() then
             local ent = t:get_luaentity()
             if ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
-                t:punch(attacker, 1.0, {    
-                    full_punch_interval=1.0,
-                    damage_groups={fleshy=DistDamage},
-                }, nil)
+                if puncher ~= nil then
+                    t:punch(attacker, 1.0, {    
+                        full_punch_interval=1.0,
+                        damage_groups={fleshy=DistDamage},
+                    }, nil)
+                end
             elseif ent.name == "__builtin:item" then
                 t:remove()
             end

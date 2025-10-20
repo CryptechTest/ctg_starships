@@ -12,7 +12,11 @@ local function damage_aoe(damage, puncher, pos, radius)
     if puncher == nil then
         return
     end
-    local attacker = minetest.get_player_by_name(self.owner)
+    local turret_owner = puncher.owner
+    if turret_owner == nil then
+        return
+    end
+    local attacker = minetest.get_player_by_name(turret_owner)
     if not attacker then
         return
     end
