@@ -619,6 +619,8 @@ local function plasma_explode(pos, radius, ignore_protection, ignore_on_blast, o
 	local c_vac = minetest.get_content_id("vacuum:vacuum")
 	local c_air = minetest.get_content_id("air")
 	local c_ignore = minetest.CONTENT_IGNORE
+	local c_bott_air = minetest.get_content_id("vacuum:air_bottle")
+	local c_bott_hyd = minetest.get_content_id("ctg_machines:hydrogen_bottle")
 	-- make sure we still have explosion even when centre node isnt tnt related
 	if explode_center then
 		count = 1
@@ -633,7 +635,7 @@ local function plasma_explode(pos, radius, ignore_protection, ignore_on_blast, o
 			local vi = a:index(pos.x - 2, y, z)
 			for x = pos.x - 2, pos.x + 2 do
 				local cid = data[vi]
-				if cid == c_tnt or cid == c_tnt_boom or cid == c_tnt_burning then
+				if cid == c_tnt or cid == c_tnt_boom or cid == c_tnt_burning or cid == c_bott_air or cid == c_bott_hyd then
 					count = count + 1
 					data[vi] = c_air
 				end
@@ -746,6 +748,8 @@ local function plasma_safe_explode(pos, radius, damage, ignore_protection, ignor
 	local c_vac = minetest.get_content_id("vacuum:vacuum")
 	local c_air = minetest.get_content_id("air")
 	local c_ignore = minetest.CONTENT_IGNORE
+	local c_bott_air = minetest.get_content_id("vacuum:air_bottle")
+	local c_bott_hyd = minetest.get_content_id("ctg_machines:hydrogen_bottle")
 
 	-- make sure we still have explosion even when centre node isnt tnt related
 	if explode_center then
@@ -761,7 +765,7 @@ local function plasma_safe_explode(pos, radius, damage, ignore_protection, ignor
 			local vi = a:index(pos.x - 2, y, z)
 			for x = pos.x - 2, pos.x + 2 do
 				local cid = data[vi]
-				if cid == c_tnt or cid == c_tnt_boom or cid == c_tnt_burning then
+				if cid == c_tnt or cid == c_tnt_boom or cid == c_tnt_burning or cid == c_bott_air or cid == c_bott_hyd then
 					count = count + 1
 					data[vi] = c_air
 				end
