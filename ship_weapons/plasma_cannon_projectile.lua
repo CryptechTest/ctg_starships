@@ -16,20 +16,23 @@ local function damage_aoe(damage, puncher, pos, radius)
     if turret_obj == nil then
         return
     end
+    local attacker = minetest.get_player_by_name(self.owner)
+    if not attacker then
+        return
+    end
     local targs = minetest.get_objects_inside_radius({x=pos.x,y=pos.y,z=pos.z}, radius)
     for _,t in pairs(targs) do
         local dist=math.sqrt(((t:get_pos().x-pos.x)^2)+((t:get_pos().y-pos.y)^2)+((t:get_pos().z-pos.z)^2))
         local DistDamage=damage/math.max(dist, 1)
-        --local player = minetest.get_player_by_name(puncher.owner)
         if t:is_player() then
-            t:punch(turret_obj, 1.0, {
+            t:punch(attacker, 1.0, {
                 full_punch_interval=1.0,
                 damage_groups={fleshy=DistDamage},
             }, nil)
         elseif t:get_luaentity() then
             local ent = t:get_luaentity()
             if ent.type and (ent.type == "npc" or ent.type == "animal" or ent.type == "monster") then
-                t:punch(turret_obj, 1.0, {
+                t:punch(attacker, 1.0, {    
                     full_punch_interval=1.0,
                     damage_groups={fleshy=DistDamage},
                 }, nil)
