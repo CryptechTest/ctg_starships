@@ -400,7 +400,7 @@ shipyard.protector.can_dig = function(s, dig_pos, digger, onlyowner, infolevel)
         -- check if found bays
         if #bays > 0 then
             for c = 1, #bays do
-                core.log("found bay!")
+                --core.log("found bay!")
                 local bay = bays[c]
                 local offset = {
                     x = 0,
@@ -413,10 +413,10 @@ shipyard.protector.can_dig = function(s, dig_pos, digger, onlyowner, infolevel)
                 local pnode = core.get_node(vector.add(bay_center, {x=0,y=2,z=0}))
                 local g = core.get_item_group(pnode.name, "protector");
                 if g == 2 then
-                    core.log("found bay occupant!")
+                    --core.log("found bay occupant!")
                     -- check bay contents for dig pos
                     if check_area(bay_center, bay_size, dig_pos) then
-                        core.log("in bay!!!")
+                        --core.log("in bay!!!")
                         bFound = true
                     end
                 end
@@ -694,6 +694,10 @@ minetest.register_node("shipyard:shield_protect", {
 
         local meta = minetest.get_meta(pos)
         local name = clicker:get_player_name()
+
+        if minetest.is_protected(pos, name) then
+            return
+        end
 
         local s = {
             l = 1,
