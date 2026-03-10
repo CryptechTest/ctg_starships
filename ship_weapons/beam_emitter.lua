@@ -878,7 +878,7 @@ function ship_weapons.register_beam_tower(data)
         paramtype2 = "facedir",
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = groups,
-        tube = data.tube and tube or nil,
+        tube = data.tube and data.tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_metal_defaults(),
         after_place_node = function(pos, placer, itemstack, pointed_thing)
@@ -951,7 +951,7 @@ function ship_weapons.register_beam_tower(data)
         light_source = 10,
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = active_groups,
-        tube = data.tube and tube or nil,
+        tube = data.tube and data.tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_metal_defaults(),
         after_place_node = function(pos, placer, itemstack, pointed_thing)
@@ -988,7 +988,7 @@ function ship_weapons.register_beam_tower(data)
         light_source = 10,
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = active_groups,
-        tube = data.tube and tube or nil,
+        tube = data.tube and data.tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_metal_defaults(),
         after_place_node = function(pos, placer, itemstack, pointed_thing)
@@ -1027,7 +1027,7 @@ function ship_weapons.register_beam_tower(data)
         -- light_source = 10,
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name .. "_broken",
         groups = active_groups,
-        tube = data.tube and tube or nil,
+        tube = data.tube and data.tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_metal_defaults(),
         after_place_node = function(pos, placer, itemstack, pointed_thing)

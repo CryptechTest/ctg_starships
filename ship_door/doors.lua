@@ -287,7 +287,6 @@ for _, current_door in ipairs(doors) do
     end
 
     local function open_door(pos, node)
-        local node = core.get_node(pos)
         if node.name == opened then
             return false
         end
@@ -303,7 +302,7 @@ for _, current_door in ipairs(doors) do
         core.swap_node({x=pos.x,y=pos.y+1,z=pos.z}, {name=opened_top, param2=node.param2})
 
         change_adjacent(opened, pos, node)
-        return true  
+        return true
     end
 
     local function open_door_mese(pos, node)
@@ -312,7 +311,7 @@ for _, current_door in ipairs(doors) do
         local close_mese = meta:get_int("close_mese") > 0
         local close_delay = meta:get_int("close_delay")
         local timer = core.get_node_timer(pos)
-        local res = fasle
+        local res = false
         if not locked_mese then
             res = open_door(pos, node)
         end

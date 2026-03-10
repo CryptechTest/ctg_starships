@@ -74,7 +74,7 @@ minetest.register_entity("ship_weapons:tower_display", {
                     minetest.sound_play("ctg_zap", {
                         pos = target,
                         gain = 0.8,
-                        pitch = randFloat(2.2, 2.25)
+                        pitch = ship_weapons.randFloat(2.2, 2.25)
                     })
                 end
 
