@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local box_slope_col = {
 	type = "fixed",
@@ -10,7 +10,7 @@ local box_slope_col = {
 	}
 }
 
-minetest.register_node("ship_parts:metal_support", {
+core.register_node("ship_parts:metal_support", {
     description = S("Stainless Steel Support"),
     tiles = {{
         name = "steel_support.png",
@@ -35,7 +35,7 @@ local metal_tile = {
 	backface_culling = true
 }
 
-minetest.register_node("ship_parts:metal_support_slant", {
+core.register_node("ship_parts:metal_support_slant", {
     description = S("Stainless Steel Support Slanted"),
     tiles = {{
         name = "steel_support.png",
@@ -61,7 +61,7 @@ minetest.register_node("ship_parts:metal_support_slant", {
     paramtype = "light"
 })
 
-minetest.register_node("ship_parts:aluminum_support", {
+core.register_node("ship_parts:aluminum_support", {
     description = S("Aluminum Support"),
     tiles = {{
         name = "aluminum_support.png",
@@ -86,7 +86,7 @@ local alum_tile = {
 	backface_culling = true
 }
 
-minetest.register_node("ship_parts:aluminum_support_slant", {
+core.register_node("ship_parts:aluminum_support_slant", {
     description = S("Aluminum Support Slanted"),
     tiles = {{
         name = "aluminum_support.png",
@@ -112,7 +112,7 @@ minetest.register_node("ship_parts:aluminum_support_slant", {
     paramtype = "light"
 })
 
-minetest.register_node("ship_parts:lightbar_white", {
+core.register_node("ship_parts:lightbar_white", {
 	description = "Node Light White",
 	tiles = {
 		"ctg_light_white.png",
@@ -121,7 +121,7 @@ minetest.register_node("ship_parts:lightbar_white", {
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
-	light_source = minetest.LIGHT_MAX - 1,
+	light_source = core.LIGHT_MAX - 1,
 	node_box = {
 		type = "fixed",
 		fixed = {
@@ -142,7 +142,7 @@ minetest.register_node("ship_parts:lightbar_white", {
 	sounds = scifi_nodes.node_sound_glass_defaults()
 })
 
-minetest.register_node("ship_parts:lightbar_blue", {
+core.register_node("ship_parts:lightbar_blue", {
 	description = "Node Light Blue",
 	tiles = {
 		"ctg_light_blue.png",
@@ -151,7 +151,7 @@ minetest.register_node("ship_parts:lightbar_blue", {
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
-	light_source = minetest.LIGHT_MAX - 1,
+	light_source = core.LIGHT_MAX - 1,
 	node_box = {
 		type = "fixed",
 		fixed = {
@@ -172,7 +172,7 @@ minetest.register_node("ship_parts:lightbar_blue", {
 	sounds = scifi_nodes.node_sound_glass_defaults()
 })
 
-minetest.register_node("ship_parts:light_dot_white", {
+core.register_node("ship_parts:light_dot_white", {
 	description = "Node Light Dot White",
 	tiles = {
 		"ctg_light_white.png",
@@ -181,7 +181,7 @@ minetest.register_node("ship_parts:light_dot_white", {
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
-	light_source = minetest.LIGHT_MAX - 2,
+	light_source = core.LIGHT_MAX - 2,
 	node_box = {
 		type = "fixed",
 		fixed = {
@@ -202,7 +202,7 @@ minetest.register_node("ship_parts:light_dot_white", {
 	sounds = scifi_nodes.node_sound_glass_defaults()
 })
 
-minetest.register_node("ship_parts:light_dot_blue", {
+core.register_node("ship_parts:light_dot_blue", {
 	description = "Node Light Dot Blue",
 	tiles = {
 		"ctg_light2_blue.png",
@@ -211,7 +211,7 @@ minetest.register_node("ship_parts:light_dot_blue", {
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
-	light_source = minetest.LIGHT_MAX - 2,
+	light_source = core.LIGHT_MAX - 2,
 	node_box = {
 		type = "fixed",
 		fixed = {
@@ -232,7 +232,7 @@ minetest.register_node("ship_parts:light_dot_blue", {
 	sounds = scifi_nodes.node_sound_glass_defaults()
 })
 
-minetest.register_node("ship_parts:light_dot_red", {
+core.register_node("ship_parts:light_dot_red", {
 	description = "Node Light Dot Red",
 	tiles = {
 		"ctg_light2_red.png",
@@ -241,7 +241,7 @@ minetest.register_node("ship_parts:light_dot_red", {
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
-	light_source = minetest.LIGHT_MAX - 2,
+	light_source = core.LIGHT_MAX - 2,
 	node_box = {
 		type = "fixed",
 		fixed = {
@@ -262,7 +262,7 @@ minetest.register_node("ship_parts:light_dot_red", {
 	sounds = scifi_nodes.node_sound_glass_defaults()
 })
 
-minetest.register_node("ship_parts:light_dot_yellow", {
+core.register_node("ship_parts:light_dot_yellow", {
 	description = "Node Light Dot Yellow",
 	tiles = {
 		"ctg_light2_yellow.png",
@@ -271,7 +271,7 @@ minetest.register_node("ship_parts:light_dot_yellow", {
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
-	light_source = minetest.LIGHT_MAX - 2,
+	light_source = core.LIGHT_MAX - 2,
 	node_box = {
 		type = "fixed",
 		fixed = {
@@ -292,7 +292,7 @@ minetest.register_node("ship_parts:light_dot_yellow", {
 	sounds = scifi_nodes.node_sound_glass_defaults()
 })
 
-minetest.register_node("ship_parts:light_dot_green", {
+core.register_node("ship_parts:light_dot_green", {
 	description = "Node Light Dot Green",
 	tiles = {
 		"ctg_light2_green.png",
@@ -301,7 +301,7 @@ minetest.register_node("ship_parts:light_dot_green", {
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
-	light_source = minetest.LIGHT_MAX - 2,
+	light_source = core.LIGHT_MAX - 2,
 	node_box = {
 		type = "fixed",
 		fixed = {
@@ -322,7 +322,7 @@ minetest.register_node("ship_parts:light_dot_green", {
 	sounds = scifi_nodes.node_sound_glass_defaults()
 })
 
-minetest.register_node("ship_parts:light_dot_orange", {
+core.register_node("ship_parts:light_dot_orange", {
 	description = "Node Light Dot Orange",
 	tiles = {
 		"ctg_light2_orange.png",
@@ -331,7 +331,7 @@ minetest.register_node("ship_parts:light_dot_orange", {
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
-	light_source = minetest.LIGHT_MAX - 2,
+	light_source = core.LIGHT_MAX - 2,
 	node_box = {
 		type = "fixed",
 		fixed = {
@@ -352,7 +352,7 @@ minetest.register_node("ship_parts:light_dot_orange", {
 	sounds = scifi_nodes.node_sound_glass_defaults()
 })
 
-minetest.register_node("ship_parts:light_dot_purple", {
+core.register_node("ship_parts:light_dot_purple", {
 	description = "Node Light Dot Purple",
 	tiles = {
 		"ctg_light2_purple.png",
@@ -361,7 +361,7 @@ minetest.register_node("ship_parts:light_dot_purple", {
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
-	light_source = minetest.LIGHT_MAX - 2,
+	light_source = core.LIGHT_MAX - 2,
 	node_box = {
 		type = "fixed",
 		fixed = {
@@ -382,7 +382,7 @@ minetest.register_node("ship_parts:light_dot_purple", {
 	sounds = scifi_nodes.node_sound_glass_defaults()
 })
 
-minetest.register_node("ship_parts:light_dot_magenta", {
+core.register_node("ship_parts:light_dot_magenta", {
 	description = "Node Light Dot Magenta",
 	tiles = {
 		"ctg_light2_magenta.png",
@@ -391,7 +391,7 @@ minetest.register_node("ship_parts:light_dot_magenta", {
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
-	light_source = minetest.LIGHT_MAX - 2,
+	light_source = core.LIGHT_MAX - 2,
 	node_box = {
 		type = "fixed",
 		fixed = {
@@ -412,7 +412,7 @@ minetest.register_node("ship_parts:light_dot_magenta", {
 	sounds = scifi_nodes.node_sound_glass_defaults()
 })
 
-minetest.register_node("ship_parts:light_dot_navy", {
+core.register_node("ship_parts:light_dot_navy", {
 	description = "Node Light Dot Dark Blue",
 	tiles = {
 		"ctg_light2_navy.png",
@@ -421,7 +421,7 @@ minetest.register_node("ship_parts:light_dot_navy", {
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
-	light_source = minetest.LIGHT_MAX - 2,
+	light_source = core.LIGHT_MAX - 2,
 	node_box = {
 		type = "fixed",
 		fixed = {

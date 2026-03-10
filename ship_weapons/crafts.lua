@@ -13,18 +13,26 @@ local cir = "ship_parts:circuit_standard"
 local adv = "ship_parts:circuit_advanced"
 local lvbt = "ship_weapons:lv_beam_tower"
 local mvbt = "ship_weapons:mv_beam_tower"
+local amt = "amethyst_new:amethyst"
 
-minetest.register_craft({
-    output = "ship_weapons:lv_beam_tower",
-    recipe = {{glw, ml1, glw}, {orb, flx, orb}, {det, cor, sc}}
-})
+if core.get_modpath("amethyst_new") then
+    core.register_craft({
+        output = "ship_weapons:lv_beam_tower",
+        recipe = {{glw, ml1, glw}, {amt, flx, amt}, {det, orb, sc}}
+    })
+else
+    core.register_craft({
+        output = "ship_weapons:lv_beam_tower",
+        recipe = {{glw, ml1, glw}, {orb, flx, orb}, {det, cor, sc}}
+    })
+end
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_weapons:mv_beam_tower",
     recipe = {{glw, ml2, glw}, {dia, orb, dia}, {cir, lvbt, cir}}
 })
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_weapons:hv_beam_tower",
     recipe = {{glw, ml3, glw}, {mes, orb, mes}, {adv, mvbt, adv}}
 })
@@ -34,12 +42,12 @@ local alm = "ctg_world:aluminum_ingot"
 local nck = "ctg_world:nickel_ingot"
 local lvd = "ship_weapons:lv_targeting_dish_antenna"
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_weapons:lv_targeting_dish_antenna",
     recipe = {{pls, dia, pls}, {cir, det, cir}, {"", alm, ""}}
 })
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_weapons:mv_targeting_dish_antenna",
     recipe = {{pls, mes, pls}, {adv, lvd, adv}, {"", nck, ""}}
 })
@@ -54,12 +62,12 @@ local tch = "digistuff:touchscreen"
 local tch = "digistuff:touchscreen"
 local gls = "default:glass"
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_weapons:target_computer",
     recipe = {{gls, cul, nck}, {tch, tel, cir}, {pls, com, alm}}
 })
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_weapons:target_computer_adv",
     recipe = {{gls, glw, hid}, {dia, tgt, adv}, {pls, mca, hid}}
 })
@@ -73,17 +81,17 @@ local atb = "pipeworks:accelerator_tube_1"
 local lmt = "ship_weapons:lv_missile_tower"
 local mmt = "ship_weapons:mv_missile_tower"
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_weapons:lv_missile_tower",
     recipe = {{tub, mis, tub}, {sst, mis, sst}, {tub, mis, tub}}
 })
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_weapons:mv_missile_tower",
     recipe = {{dtb, mis, tub}, {ltb, lmt, ltb}, {tub, mis, dtb}}
 })
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_weapons:hv_missile_tower",
     recipe = {{dtb, mis, dtb}, {atb, mmt, atb}, {dtb, mis, dtb}}
 })

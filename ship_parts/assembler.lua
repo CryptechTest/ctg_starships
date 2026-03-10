@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 
 
@@ -75,7 +75,7 @@ local recipe_def_shuttle = {
 }
 
 local function machine_can_dig(pos, player)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local inv = meta:get_inventory()
     if not inv:is_empty("hull1") or not inv:is_empty("hull2")
             or not inv:is_empty("ship1") or not inv:is_empty("ship2")
@@ -83,7 +83,7 @@ local function machine_can_dig(pos, player)
             or not inv:is_empty("env") or not inv:is_empty("enabled") 
             or not inv:is_empty("eng1") or not inv:is_empty("eng2") then
         if player then
-            minetest.chat_send_player(player:get_player_name(),
+            core.chat_send_player(player:get_player_name(),
                 S("Assembler cannot be removed because it is not empty"))
         end
         return false
@@ -106,7 +106,7 @@ local function get_count(inv, name, itm)
 end
 
 local function assembler_is_full(pos, def)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local inv = meta:get_inventory()
     if not inv:is_empty("hull1") and not inv:is_empty("hull2")
             and not inv:is_empty("ship1") and not inv:is_empty("ship2")
@@ -141,7 +141,7 @@ end
 
 
 local function clear_assembler(pos, def)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local inv = meta:get_inventory()
     inv:set_list("hull1", {})
     inv:set_list("hull2", {})
@@ -393,8 +393,8 @@ local function register_assembler(data)
         if fields.quit or fields.exit then
             return
         end
-        local node = minetest.get_node(pos)
-        local meta = minetest.get_meta(pos)
+        local node = core.get_node(pos)
+        local meta = core.get_meta(pos)
         local enabled = false
         if fields.toggle then
             if meta:get_int("enabled") == 1 then
@@ -407,29 +407,29 @@ local function register_assembler(data)
 
         if fields.crew then
             if sender then
-                minetest.chat_send_player(sender:get_player_name(),
+                core.chat_send_player(sender:get_player_name(),
                     S("Crew Control not implemented yet.."))
             end
         end
         if fields.launch then
             local rdy = assembler_is_full(pos, recipe_def)
             if sender and not rdy then
-                minetest.chat_send_player(sender:get_player_name(),
+                core.chat_send_player(sender:get_player_name(),
                     S("Launch is not yet ready. You require additional materials.."))
             elseif sender then
-                minetest.chat_send_player(sender:get_player_name(),
+                core.chat_send_player(sender:get_player_name(),
                     S("Launch is ready."))
                 if not check_full(sender, ship_key) then
                     if clear_assembler(pos, recipe_def) then
                         sender:get_inventory():add_item("main", ship_key)
-                        minetest.chat_send_player(sender:get_player_name(),
+                        core.chat_send_player(sender:get_player_name(),
                             S("Blueprint Key Granted!"))
                     else
-                        minetest.chat_send_player(sender:get_player_name(),
+                        core.chat_send_player(sender:get_player_name(),
                             S("Error on Key Create!"))
                     end
                 else
-                    minetest.chat_send_player(sender:get_player_name(),
+                    core.chat_send_player(sender:get_player_name(),
                         S("there is no room in your inventory..."))
                 end
             end
@@ -439,7 +439,7 @@ local function register_assembler(data)
         meta:set_string("formspec", formspec)
     end
 
-    minetest.register_node(data.node_name, {
+    core.register_node(data.node_name, {
         description = S("Starship Assembler"),
         tiles = {{
             name = "ship_deployer.png" .. data.overlay
@@ -458,7 +458,7 @@ local function register_assembler(data)
 
         on_receive_fields = on_receive_fields,
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Starship Assembler " .. "-" .. " " .. machine_desc)
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
@@ -467,8 +467,8 @@ local function register_assembler(data)
         on_rotate = screwdriver.disallow,
         can_dig = machine_can_dig,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             local inv = meta:get_inventory()
             inv:set_size("hull1", 4)
             inv:set_size("hull2", 4)

@@ -1,24 +1,24 @@
-minetest.register_craft({
+core.register_craft({
     output = "ship_parts:metal_support 3",
     recipe = {{"technic:stainless_steel_ingot", "", "technic:stainless_steel_ingot"},
               {"", "technic:stainless_steel_ingot", ""},
               {"technic:stainless_steel_ingot", "", "technic:stainless_steel_ingot"}}
 })
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_parts:metal_support_slant 3",
     recipe = {{"", "", "technic:stainless_steel_ingot"},
               {"", "technic:stainless_steel_ingot", ""},
               {"technic:stainless_steel_ingot", "", "technic:stainless_steel_ingot"}}
 })
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_parts:aluminum_support 3",
     recipe = {{"ctg_world:aluminum_ingot", "", "ctg_world:aluminum_ingot"}, {"", "ctg_world:aluminum_ingot", ""},
               {"ctg_world:aluminum_ingot", "", "ctg_world:aluminum_ingot"}}
 })
 
-minetest.register_craft({
+core.register_craft({
     output = "ship_parts:aluminum_support_slant 3",
     recipe = {{"", "", "ctg_world:aluminum_ingot"}, {"", "ctg_world:aluminum_ingot", ""},
               {"ctg_world:aluminum_ingot", "", "ctg_world:aluminum_ingot"}}
@@ -78,6 +78,9 @@ if true then
     local fn = "scifi_nodes:fan"
     local mt = "pipeworks:mesecon_and_digiline_conductor_tube_off_1"
     local ab = "basic_materials:aluminum_bar"
+    local cq = "ctg_quartz:crystalline_glass"
+    local qs = "ctg_quartz:quartz_shard"
+    local qz = "ctg_quartz:quartz"
 
     local cs = "ship_parts:circuit_standard"
     local ca = "ship_parts:circuit_advanced"
@@ -110,150 +113,172 @@ if true then
     local dye_org = "dye:orange"
     local dye_mag = "dye:magenta"
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:assembler",
         recipe = {{al, hy, al}, {ni, jtp, ni}, {al, hy, al}}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:assembler_shuttle",
         recipe = {{al, me, al}, {ni, jti, ni}, {al, me, al}}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:circuit_standard",
         recipe = {{ic, ps, ""}, {cw, dw, nw}, {cl, ps, fb}},
         replacements = {{ cw, es }, { nw, es }}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:circuit_advanced",
         recipe = {{ic, ps, gw}, {cw, cs, nw}, {cl, ps, fb}},
         replacements = {{ cw, es }, { gw, es }, { nw, es }}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:solar_array",
         recipe = {{so, nw, so}, {so, sp, so}, {so, ps, so}},
         replacements = {{ nw, es }}
     })
 
-    minetest.register_craft({
-        output = "ship_parts:solar_collimator",
-        recipe = {{so, gl, so}, {ni, cs, sp}, {"", gw, ""}},
-        replacements = {{ gw, es }}
-    })
+    if core.get_modpath("ctg_quartz") then
+        core.register_craft({
+            output = "ship_parts:solar_collimator",
+            recipe = {{so, cq, so}, {ni, cs, sp}, {"", gw, ""}},
+            replacements = {{ gw, es }}
+        })
+    else
+        core.register_craft({
+            output = "ship_parts:solar_collimator",
+            recipe = {{so, gl, so}, {ni, cs, sp}, {"", gw, ""}},
+            replacements = {{ gw, es }}
+        })
+    end
     
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:hull_plating 2",
         recipe = {{alb, zib, alb}, {nib, cp, nib}, {alb, ms, alb}}
     })
     
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:eviromental_sys",
         recipe = {{fb, mt, ti}, {cm, mo, gdb}, {fn, bm, fn}}
     })
     
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:command_capsule",
         recipe = {{ca, ca, ca}, {cm, me, cm}, {"", "", ""}}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:system_capsule",
         recipe = {{"", "", ""}, {cs, mc, cs}, {cl, cm, cl}}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:telemetry_capsule",
         recipe = {{"", "", ""}, {rc, rc, rc}, {cm, gl, cl}}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:mass_aggregator",
         recipe = {{col, sym, col}, {flx, cs, flx}, {gw, enc, gw}},
         replacements = {{ gw, es .. " 2" }}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:engine_part4",
         recipe = {{cs, cs, cs}, {mo, cam, mo}, {mes, col, mes}}
     })
 
-    minetest.register_craft({
-        output = "ship_parts:flux_tube",
-        recipe = {{dgt, auc, met}, {dgt, ca, met}, {dgt, ab, met}}
-    })
+    if core.get_modpath("ctg_quartz") then
+        core.register_craft({
+            output = "ship_parts:flux_tube",
+            recipe = {{dgt, auc, met}, {qs, ca, qs}, {dgt, ab, met}}
+        })
+    else
+        core.register_craft({
+            output = "ship_parts:flux_tube",
+            recipe = {{dgt, auc, met}, {dgt, ca, met}, {dgt, ab, met}}
+        })
+    end
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:reactor_cell",
         recipe = {{tub, ic, tub}, {li, urb, li}, {tub, mi, tub}}
     })
 
-    minetest.register_craft({
-        output = "ship_parts:engine_part5",
-        recipe = {{lcd, ps, lcd}, {ps, dw, ps}, {"", pm, ""}}
-    })
+    if core.get_modpath("ctg_quartz") then
+        core.register_craft({
+            output = "ship_parts:engine_part5",
+            recipe = {{lcd, qz, lcd}, {ps, dw, ps}, {"", pm, ""}}
+        })
+    else
+        core.register_craft({
+            output = "ship_parts:engine_part5",
+            recipe = {{lcd, ps, lcd}, {ps, dw, ps}, {"", pm, ""}}
+        })
+    end
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:lightbar_white 6",
         recipe = {{"", gl, gl}, {"", mc, mc}, {"", plst, glu}}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         type = "shapeless",
         output = "ship_parts:lightbar_blue",
         recipe = {dye_blu, "ship_parts:lightbar_white"}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_parts:light_dot_white 8",
         recipe = {{"", gl, ""}, {mc, glu, mc}, {"", plst, ""}}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         type = "shapeless",
         output = "ship_parts:light_dot_blue",
         recipe = {dye_cyn, dye_cyn, dot1}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         type = "shapeless",
         output = "ship_parts:light_dot_red",
         recipe = {dye_red, dye_red, dot1}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         type = "shapeless",
         output = "ship_parts:light_dot_yellow",
         recipe = {dye_yel, dye_yel, dot1}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         type = "shapeless",
         output = "ship_parts:light_dot_green",
         recipe = {dye_grn, dye_grn, dot1}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         type = "shapeless",
         output = "ship_parts:light_dot_orange",
         recipe = {dye_org, dye_org, dot1}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         type = "shapeless",
         output = "ship_parts:light_dot_purple",
         recipe = {dye_vol, dye_vol, dot1}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         type = "shapeless",
         output = "ship_parts:light_dot_magenta",
         recipe = {dye_mag, dye_mag, dot1}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         type = "shapeless",
         output = "ship_parts:light_dot_navy",
         recipe = {dye_blu, dye_blu, dot1}
