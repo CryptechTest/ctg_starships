@@ -9,27 +9,14 @@ local function round(v)
     return math.floor(v + 0.5)
 end
 
-local function push_item(pos)
-	local tube_dir = M(pos):get_int("tube_dir")
-	local dest_pos, dest_dir = Tube:get_connected_node_pos(pos, tube_dir)
-	local dest_node = minetest.get_node(dest_pos)
-	local on_push_item = minetest.registered_nodes[dest_node.name].on_push_item
-	--print("on_timer: dest_pos="..S(dest_pos).."  dest_dir="..dest_dir)
-	local inv = minetest.get_inventory({type="node", pos=dest_pos})
-	local stack = ItemStack("default:dirt")
-
-	if on_push_item then
-		return on_push_item(dest_pos, dest_dir, stack)
-	elseif inv then
-		local leftover = inv:add_item("main", stack)
-		if leftover:get_count() == 0 then
-			return true
+local function push_item(pos, inv, param2)
+	local taken = minecart.inv_take_items(inv, "main", 1)
+	if taken then
+		local leftover = minecart.put_items(pos, param2, taken)
+		if leftover then
+			inv:add_item("main", leftover)
 		end
-	elseif dest_node.name == "air" then
-		minetest.add_item(dest_pos, stack)
-		return true
 	end
-	return false
 end
 
 local function out_result(pos, ninput, machine_node, machine_desc_tier, tier)
@@ -591,7 +578,7 @@ function ship_engine.register_engine_core(data)
                     meta:set_string("infotext", machine_desc_tier .. S(" Idle - Missing Engines"))
                     meta:set_int(tier .. "_EU_demand", 0)
                     meta:set_int("src_time", 0)
-                    local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_ma,
+                    local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max,
                         meta:get_int("src_tick"), tick_scl)
                     meta:set_string("formspec", formspec)
                     return
@@ -649,7 +636,7 @@ function ship_engine.register_engine_core(data)
         paramtype2 = "facedir",
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = groups,
-        tube = data.tube and tube or nil,
+        tube = data.tube and data.tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_glass_defaults(),
         after_place_node = function(pos, placer, itemstack, pointed_thing)
@@ -737,7 +724,7 @@ function ship_engine.register_engine_core(data)
         light_source = 6,
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = active_groups,
-        tube = data.tube and tube or nil,
+        tube = data.tube and data.tube or nil,
         legacy_facedir_simple = true,
         sounds = default.node_sound_glass_defaults(),
         after_place_node = function(pos, placer, itemstack, pointed_thing)
