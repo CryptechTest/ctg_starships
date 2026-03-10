@@ -65,10 +65,10 @@ if true then
     local dw = "technic:doped_silicon_wafer"
     local fb = "mesecons_materials:fiber"
     local si = "basic_materials:silicon"
+    local mf =  "default:mese_crystal_fragment"
     local mc = "default:mese_crystal"
     local me = "default:mese"
     local glu = "mesecons_materials:glue"
-    local fb = "mesecons_materials:fiber"
     local so = "mesecons_solarpanel:solar_panel_off"
     local sp = "technic:solar_panel"
     local mo = "basic_materials:motor"
@@ -123,11 +123,19 @@ if true then
         recipe = {{al, me, al}, {ni, jti, ni}, {al, me, al}}
     })
 
-    core.register_craft({
-        output = "ship_parts:circuit_standard",
-        recipe = {{ic, ps, ""}, {cw, dw, nw}, {cl, ps, fb}},
-        replacements = {{ cw, es }, { nw, es }}
-    })
+    if core.get_modpath("ctg_quartz") then
+        core.register_craft({
+            output = "ship_parts:circuit_standard",
+            recipe = {{ic, ps, qs}, {cw, dw, nw}, {cl, ps, fb}},
+            replacements = {{ cw, es }, { nw, es }}
+        })
+    else
+        core.register_craft({
+            output = "ship_parts:circuit_standard",
+            recipe = {{ic, ps, mf}, {cw, dw, nw}, {cl, ps, fb}},
+            replacements = {{ cw, es }, { nw, es }}
+        })
+    end
 
     core.register_craft({
         output = "ship_parts:circuit_advanced",
