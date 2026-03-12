@@ -51,15 +51,23 @@ if true then
     local lg = "technic:control_logic_unit"
     local cr = "technic:green_energy_crystal"
     local gcr = "group:crystal"
+    local rbb = "ctg_ruby:ruby_block"
 
     local lcm = "ship_machine:lv_chemical_lab"
     local mcm = "ship_machine:mv_chemical_lab"
 
     -- lv
-    minetest.register_craft({
-        output = "ship_machine:lv_chemical_lab",
-        recipe = {{bt, lg, tb}, {nst, bo, nst}, {cc, vp, cc}}
-    })
+    if core.get_modpath("ctg_ruby") then        
+        minetest.register_craft({
+            output = "ship_machine:lv_chemical_lab",
+            recipe = {{bt, lg, tb}, {rbb, bo, nst}, {cc, vp, cc}}
+        })
+    else
+        minetest.register_craft({
+            output = "ship_machine:lv_chemical_lab",
+            recipe = {{bt, lg, tb}, {nst, bo, nst}, {cc, vp, cc}}
+        })
+    end
     -- mv
     minetest.register_craft({
         output = "ship_machine:mv_chemical_lab",

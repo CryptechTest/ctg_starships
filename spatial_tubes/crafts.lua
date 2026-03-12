@@ -4,13 +4,15 @@ if true then
     local sym = "ship_parts:engine_part4"
     local am = "ship_parts:engine_part5"
     local flx = "ship_parts:flux_tube"
+    local scs = "ship_parts:spatial_stabilizer"
+    local rec = "ship_parts:reactor_cell"
     local es = "basic_materials:empty_spool"
     local ltp = "spatial_tubes:lv_telepad_machine"
     local mtp = "spatial_tubes:mv_telepad_machine"
 
     minetest.register_craft({
         output = "spatial_tubes:lv_telepad_machine",
-        recipe = {{gw, flx, gw}, {"", sym, ""}, {"", ms, ""}},
+        recipe = {{gw, rec, gw}, {"", sym, ""}, {"", ms, ""}},
         replacements = {{ gw, es .. " 2" }}
     })
 
@@ -22,7 +24,7 @@ if true then
 
     minetest.register_craft({
         output = "spatial_tubes:hv_telepad_machine",
-        recipe = {{gw, flx, gw}, {"", mtp, ""}, {"", am, ""}},
+        recipe = {{gw, scs, gw}, {"", mtp, ""}, {"", am, ""}},
         replacements = {{ gw, es .. " 3" }}
     })
 end

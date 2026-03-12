@@ -14,6 +14,7 @@ local adv = "ship_parts:circuit_advanced"
 local lvbt = "ship_weapons:lv_beam_tower"
 local mvbt = "ship_weapons:mv_beam_tower"
 local amt = "amethyst_new:amethyst"
+local sap = "ctg_emerald:emerald"
 
 if core.get_modpath("amethyst_new") then
     core.register_craft({
@@ -27,10 +28,17 @@ else
     })
 end
 
-core.register_craft({
-    output = "ship_weapons:mv_beam_tower",
-    recipe = {{glw, ml2, glw}, {dia, orb, dia}, {cir, lvbt, cir}}
-})
+if core.get_modpath("ctg_emerald") then
+    core.register_craft({
+        output = "ship_weapons:mv_beam_tower",
+        recipe = {{glw, ml2, glw}, {sap, orb, sap}, {cir, lvbt, cir}}
+    })
+else
+    core.register_craft({
+        output = "ship_weapons:mv_beam_tower",
+        recipe = {{glw, ml2, glw}, {dia, orb, dia}, {cir, lvbt, cir}}
+    })
+end
 
 core.register_craft({
     output = "ship_weapons:hv_beam_tower",

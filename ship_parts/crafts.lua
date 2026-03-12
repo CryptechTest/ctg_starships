@@ -38,6 +38,7 @@ if true then
     local gdb = "default:goldblock"
     local mes = "default:mese"
     local urb = "lumpblocks:uranium_block"
+    local uri = "technic:uranium_ingot"
 
     local al = "ctg_world:aluminum_ingot"
     local ni = "ctg_world:nickel_ingot"
@@ -51,7 +52,6 @@ if true then
     local cp = "technic:composite_plate"
     local ms = "ship_parts:metal_support"
     local mi = "moreores:mithril_ingot"
-    local sul = "technic:sulfur_lump"
 
     local es = "basic_materials:empty_spool"
     local ic = "basic_materials:ic"
@@ -81,10 +81,16 @@ if true then
     local cq = "ctg_quartz:crystalline_glass"
     local qs = "ctg_quartz:quartz_shard"
     local qz = "ctg_quartz:quartz"
+    local qzb = "ctg_quartz:quartz_block"
+    local rbs = "ctg_ruby:ruby_shard"
+    local rbb = "ctg_ruby:ruby_block"
+    local spb = "ctg_sapphire:sapphire_block"
+    local ems = "ctg_emerald:emerald_shard"
+    local hid = "ctg_world:hiduminium_stock"
 
+    local dm = "digistuff:digimese"
     local cs = "ship_parts:circuit_standard"
     local ca = "ship_parts:circuit_advanced"
-    local rc = "ship_parts:reactor_cell"
     local sym = "ship_parts:engine_part4"
     local cam = "ship_parts:engine_part5"
     local flx = "ship_parts:flux_tube"
@@ -92,10 +98,12 @@ if true then
     local jti = "ctg_jetpack:jetpack_iron"
     local jtp = "ctg_jetpack:jetpack_titanium"
     local hy = "ctg_jetpack:jetpack_fuel_hydrogen"
+    local scs = "ship_parts:spatial_stabilizer"
 
     local col = "technic:copper_coil"
     local enc = "technic:green_energy_crystal"
     local pm = "technic:power_monitor"
+    local bat = "technic:battery"
 
     local tub = "pipeworks:tube_1"
     local dgt = "pipeworks:digiline_conductor_tube_1"
@@ -123,10 +131,10 @@ if true then
         recipe = {{al, me, al}, {ni, jti, ni}, {al, me, al}}
     })
 
-    if core.get_modpath("ctg_quartz") then
+    if core.get_modpath("ctg_quartz") and core.get_modpath("ctg_emerald") then
         core.register_craft({
-            output = "ship_parts:circuit_standard",
-            recipe = {{ic, ps, qs}, {cw, dw, nw}, {cl, ps, fb}},
+            output = "ship_parts:circuit_standard 2",
+            recipe = {{ems, ic, qs}, {cw, nw, dw}, {ps, ps, fb}},
             replacements = {{ cw, es }, { nw, es }}
         })
     else
@@ -137,11 +145,19 @@ if true then
         })
     end
 
-    core.register_craft({
-        output = "ship_parts:circuit_advanced",
-        recipe = {{ic, ps, gw}, {cw, cs, nw}, {cl, ps, fb}},
-        replacements = {{ cw, es }, { gw, es }, { nw, es }}
-    })
+    if core.get_modpath("ctg_ruby") and core.get_modpath("ctg_sapphire") then
+        core.register_craft({
+            output = "ship_parts:circuit_advanced",
+            recipe = {{rbs, ps, gw}, {ic, cs, nw}, {cl, ps, fb}},
+            replacements = {{ cw, es }, { gw, es }, { nw, es }}
+        })
+    else
+        core.register_craft({
+            output = "ship_parts:circuit_advanced",
+            recipe = {{ic, ps, gw}, {cw, cs, nw}, {cl, ps, fb}},
+            replacements = {{ cw, es }, { gw, es }, { nw, es }}
+        })
+    end
 
     core.register_craft({
         output = "ship_parts:solar_array",
@@ -185,7 +201,7 @@ if true then
 
     core.register_craft({
         output = "ship_parts:telemetry_capsule",
-        recipe = {{"", "", ""}, {rc, rc, rc}, {cm, gl, cl}}
+        recipe = {{"", "", ""}, {auc, auc, auc}, {cm, gl, cl}}
     })
 
     core.register_craft({
@@ -211,20 +227,41 @@ if true then
         })
     end
 
-    core.register_craft({
-        output = "ship_parts:reactor_cell",
-        recipe = {{tub, ic, tub}, {li, urb, li}, {tub, mi, tub}}
-    })
+    if core.get_modpath("ctg_ruby") and core.get_modpath("ctg_sapphire") then
+        core.register_craft({
+            output = "ship_parts:reactor_cell 2",
+            recipe = {{rbs, ic, tub}, {li, uri, li}, {dm, spb, tub }}
+        })
+    else
+        core.register_craft({
+            output = "ship_parts:reactor_cell",
+            recipe = {{tub, ic, tub}, {li, urb, li}, {tub, mi, tub}}
+        })
+    end
+    
+    if core.get_modpath("ctg_ruby") then
+        core.register_craft({
+            output = "ship_parts:spatial_stabilizer 2",
+            recipe = {{rbb, cam, rbb}, {met, auc, hid}, {rbb, sym, rbb}}
+        })
+    end
+
+    if core.get_modpath("ctg_sapphire") and core.get_modpath("ctg_quartz") then
+        core.register_craft({
+            output = "ship_parts:power_cell 2",
+            recipe = {{spb, flx, spb}, {bat, scs, bat}, {spb, cam, spb}}
+        })
+    end
 
     if core.get_modpath("ctg_quartz") then
         core.register_craft({
             output = "ship_parts:engine_part5",
-            recipe = {{lcd, qz, lcd}, {ps, dw, ps}, {"", pm, ""}}
+            recipe = {{lcd, qz, lcd}, {ps, dw, ps}, {ss, pm, zi}}
         })
     else
         core.register_craft({
             output = "ship_parts:engine_part5",
-            recipe = {{lcd, ps, lcd}, {ps, dw, ps}, {"", pm, ""}}
+            recipe = {{lcd, ps, lcd}, {ps, dw, ps}, {ss, pm, zi}}
         })
     end
 
