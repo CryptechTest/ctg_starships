@@ -170,6 +170,15 @@ function ship_engine.get_mese(items, take)
             c = c + 1
             break
         end
+        if stack:get_name() == 'mese_rift:mese_crystal' and stack:get_count() >= 1 then
+            new_input = ItemStack(stack)
+            if take then
+                new_input:take_item(1)
+            end
+            input_type = 81
+            c = c + 1
+            break
+        end
     end
     if (c > 0) then
         return {

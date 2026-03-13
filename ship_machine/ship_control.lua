@@ -544,7 +544,7 @@ function ship_machine.register_control_console(custom_data)
         elseif fields.submit_nav and not is_deepspace and dest.y > 22000 then
             meta:set_int("travel_ready", 0)
             message = "Jump destination beyond engine abilities..."
-        elseif fields.submit_nav and not is_deepspace and dest.y < 4000 then
+        elseif fields.submit_nav and not is_deepspace and dest.y < -11000 then
             meta:set_int("travel_ready", 0)
             message = "Jump destination beyond engine abilities..."
         elseif fields.submit_nav and ((is_deepspace and loc ~= "0") or (not is_deepspace)) then

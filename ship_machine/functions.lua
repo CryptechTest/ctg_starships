@@ -579,7 +579,7 @@ local function transport_jumpship(pos, dest, size, owner, offset)
         origin_clear = true,
         keep_timers = true,
         stop_timers = true,
-        ignored_nodes = {"vacuum:vacuum", "asteroid:atmos"}
+        ignored_nodes = {"vacuum:vacuum", "asteroid:atmos", "ctg_world:skygap"}
     }
     local ship_name = "jumpship_1_" .. owner
     -- position min/max
