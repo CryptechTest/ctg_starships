@@ -24,7 +24,7 @@ if true then
 
     minetest.register_craft({
         output = "spatial_tubes:hv_telepad_machine",
-        recipe = {{gw, scs, gw}, {"", mtp, ""}, {"", am, ""}},
+        recipe = {{gw, scs, gw}, {"", mtp, ""}, {"", "", ""}},
         replacements = {{ gw, es .. " 3" }}
     })
 end
