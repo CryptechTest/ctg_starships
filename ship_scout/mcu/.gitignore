@@ -1,1 +1,3 @@
-*.lua
+/*.lua
+
+machine.lua
