@@ -442,31 +442,33 @@ function spatial_tubes.register_machine(data)
                 if (dest_y > -11000 and dest_y < 22000) then
                     local tfound = false
                     local pos1 = {
-                        x = pos.x - 1,
-                        y = pos.y - 2,
-                        z = pos.z - 1
+                        x = dest_x - 1,
+                        y = dest_y - 2,
+                        z = dest_z - 1
                     }
                     local pos2 = {
-                        x = pos.x + 1,
-                        y = pos.y + 2,
-                        z = pos.z + 1
+                        x = dest_x + 1,
+                        y = dest_y + 2,
+                        z = dest_z + 1
                     }
                     schem_lib.common.keep_loaded(pos1, pos2)
-                    local dest = minetest.find_nodes_in_area(pos1, pos2, {node_name})
-                    if #dest > 0 then
-                        local dmeta = minetest.get_meta(dest[1])
-                        if minetest.is_protected(dest[1], sender:get_player_name()) and
+                    local dest_nodes = minetest.find_nodes_in_area(pos1, pos2, {node_name})
+                    if #dest_nodes > 0 then
+                        local dest_pos = dest_nodes[1]
+                        local dmeta = minetest.get_meta(dest_pos)
+                        if minetest.is_protected(dest_pos, sender:get_player_name()) and
                             not minetest.check_player_privs(sender:get_player_name(), "protection_bypass") then
                             minetest.chat_send_player(sender:get_player_name(),
                                 "Destination is within a protected area!")
-                            minetest.record_protection_violation(dest[1], sender:get_player_name())
+                            minetest.record_protection_violation(dest_pos, sender:get_player_name())
                             tfound = true
                         elseif dmeta:get_int("locked") ~= nil and dmeta:get_int("locked") == 0 then
                             -- save exit destination
-                            meta:set_string("exit", minetest.serialize(dest[1]))
+                            meta:set_string("exit", minetest.serialize(dest_pos))
                             -- lock receiver
                             dmeta:set_int("locked", 1)
-                            minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked!")
+                            local dist = vector.distance(pos, dest_pos)
+                            minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked! Distance " .. dist " meters.")
                             tfound = true
                         elseif dmeta:get_int("locked") == 1 then
                             minetest.chat_send_player(sender:get_player_name(), "This Telepad already has a receiver!")
