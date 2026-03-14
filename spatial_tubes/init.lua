@@ -237,11 +237,12 @@ function spatial_tubes.register_machine(data)
 
             if exit == nil then
                 local desc = "label[0.15,0.3;" .. machine_desc .. "]"
+                local target_name = "field[1,1.05;6,1;target_name;Target Name;]"
                 local input_pos =
-                    "field[1,1.5;2,1;inp_x;Dest X;]field[3,1.5;2,1;inp_y;Dest Y;]field[5,1.5;2,1;inp_z;Dest Z;]"
-                local input_save = "button[3,2.5;2,1;save;Lock Link]"
+                    "field[1,2.5;2,1;inp_x;Dest X;]field[3,2.5;2,1;inp_y;Dest Y;]field[5,2.5;2,1;inp_z;Dest Z;]"
+                local input_save = "button[3,3.5;2,1;save;Lock Link]"
 
-                formspec = {"formspec_version[6]", "size[8,4]", desc, input_pos, input_save}
+                formspec = {"formspec_version[6]", "size[8,5]", desc, target_name, input_pos, input_save}
             else
                 formspec = {}
             end
@@ -335,6 +336,9 @@ function spatial_tubes.register_machine(data)
                 if exit ~= nil then
                     technic.swap_node(pos, machine_node .. "_active")
                     local dest = (meta:get_string("sta_exit") ~= nil and type(exit) ~= "table" and "\n" .. "Transport to: " .. exit) or ""
+                    if dest == "" and exit ~= nil then
+                        dest = "\n" .. "Transport to: " .. meta:get_string("target_name") .. " (".. exit.x .. ",".. exit.y .. ",".. exit.z ..")"
+                    end
                     meta:set_string("infotext", machine_desc_tier .. S(" Ready - Charged") .. dest)
                     meta:set_int("ready", 1)
                 else
@@ -354,6 +358,9 @@ function spatial_tubes.register_machine(data)
             -- calculate charge percent
             local charge_percent = (math.floor(meta:get_int("charge") / meta:get_int("charge_max") * 100))
             local dest = (meta:get_string("sta_exit") ~= nil and type(exit) ~= "table" and "\n" .. "Transport to: " .. exit) or ""
+            if dest == "" and exit ~= nil then
+                dest = "\n" .. "Transport to: " .. meta:get_string("target_name") .. " (".. exit.x .. ",".. exit.y .. ",".. exit.z ..")"
+            end
             meta:set_string("infotext", machine_desc_tier .. S(" - Charge: " .. charge_percent .. "%" .. dest))
             -- check if run time is not expired..
             if meta:get_int("src_time") < round(time_scl * 10) then
@@ -396,6 +403,7 @@ function spatial_tubes.register_machine(data)
         local node = minetest.get_node(pos)
         local meta = minetest.get_meta(pos)
 
+        local targ_name = ""
         local dest_x = 0
         local dest_y = 0
         local dest_z = 0
@@ -420,6 +428,9 @@ function spatial_tubes.register_machine(data)
             else
                 isNumError = true
             end
+        end
+        if fields.target_name then
+            targ_name = fields.target_name
         end
 
         local name = ""
@@ -452,7 +463,21 @@ function spatial_tubes.register_machine(data)
                         z = dest_z + 1
                     }
                     schem_lib.common.keep_loaded(pos1, pos2)
-                    local dest_nodes = minetest.find_nodes_in_area(pos1, pos2, {node_name})
+                    local ndest = vector.new(dest_x, dest_y, dest_z)
+                    local dest_node = core.get_node_or_nil(ndest)
+                    local dest_nodes = {}
+                    local target_name = "spatial_tubes:hv_telepad_machine"
+                    local target_names = {target_name, "spatial_tubes:hv_telepad_machine_wait", "spatial_tubes:hv_telepad_machine_active"}
+                    if dest_node and dest_node.name == target_name then
+                        dest_nodes = { dest_node }
+                    else
+                        dest_nodes = core.find_nodes_in_area(pos1, pos2, target_names)
+                    end
+                    if #dest_nodes == 0 then
+                        dest_nodes = { core.find_node_near(ndest, 2, target_names) }
+                    end
+                    minetest.chat_send_player(sender:get_player_name(), "Found " .. tostring(#dest_nodes) ..
+                        " receivers at target (".. dest_x .. ",".. dest_y .. ",".. dest_z ..")!")
                     if #dest_nodes > 0 then
                         local dest_pos = dest_nodes[1]
                         local dmeta = minetest.get_meta(dest_pos)
@@ -465,10 +490,12 @@ function spatial_tubes.register_machine(data)
                         elseif dmeta:get_int("locked") ~= nil and dmeta:get_int("locked") == 0 then
                             -- save exit destination
                             meta:set_string("exit", minetest.serialize(dest_pos))
+                            meta:set_string("target_name", targ_name)
+                            meta:set_string("infotext", "Transport to: " .. targ_name .. " (".. dest_x .. ",".. dest_y .. ",".. dest_z ..")")
                             -- lock receiver
                             dmeta:set_int("locked", 1)
                             local dist = vector.distance(pos, dest_pos)
-                            minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked! Distance " .. tonumber(dist) .. " meters.")
+                            minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked! Distance " .. tostring(dist) .. " meters.")
                             tfound = true
                         elseif dmeta:get_int("locked") == 1 then
                             minetest.chat_send_player(sender:get_player_name(), "This Telepad already has a receiver!")
@@ -504,7 +531,7 @@ function spatial_tubes.register_machine(data)
         end
         local exit = nil
         -- get destination pos
-        if meta:get_string("sta_exit") ~= nil then
+        if ( ltier == "lv" or  ltier == "mv") and meta:get_string("sta_exit") ~= nil then
             local r = (ltier == "mv" and 75) or 50
             local teles = minetest.find_nodes_in_area({
                 x = pos.x - r,
@@ -522,7 +549,7 @@ function spatial_tubes.register_machine(data)
                     break
                 end
             end
-        elseif meta:get_string("exit") ~= nil then
+        elseif ltier == "hv" and meta:get_string("exit") ~= nil then
             exit = minetest.deserialize(meta:get_string("exit"))
         else
             minetest.chat_send_player(clicker_name, "Teleporter exit not found or defined!")
