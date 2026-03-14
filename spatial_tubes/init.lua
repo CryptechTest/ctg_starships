@@ -468,7 +468,7 @@ function spatial_tubes.register_machine(data)
                             -- lock receiver
                             dmeta:set_int("locked", 1)
                             local dist = vector.distance(pos, dest_pos)
-                            minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked! Distance " .. dist " meters.")
+                            minetest.chat_send_player(sender:get_player_name(), "Telepad destination saved and locked! Distance " .. tonumber(dist) .. " meters.")
                             tfound = true
                         elseif dmeta:get_int("locked") == 1 then
                             minetest.chat_send_player(sender:get_player_name(), "This Telepad already has a receiver!")
