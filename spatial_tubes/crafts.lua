@@ -10,19 +10,19 @@ if true then
     local ltp = "spatial_tubes:lv_telepad_machine"
     local mtp = "spatial_tubes:mv_telepad_machine"
 
-    minetest.register_craft({
+    core.register_craft({
         output = "spatial_tubes:lv_telepad_machine",
         recipe = {{gw, rec, gw}, {"", sym, ""}, {"", ms, ""}},
         replacements = {{ gw, es .. " 2" }}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         output = "spatial_tubes:mv_telepad_machine",
         recipe = {{gw, flx, gw}, {"", ltp, ""}, {"", gw, ""}},
         replacements = {{ gw, es .. " 3" }}
     })
 
-    minetest.register_craft({
+    core.register_craft({
         output = "spatial_tubes:hv_telepad_machine",
         recipe = {{gw, scs, gw}, {"", mtp, ""}, {"", "", ""}},
         replacements = {{ gw, es .. " 3" }}
