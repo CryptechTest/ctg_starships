@@ -43,6 +43,7 @@ local disallowed_targets = {
 	"ship_holodisplay:entity",
     "ship_holodisplay:ship",
     "ship_holodisplay:scanner",
+	"ship_machine:jump_drive_effect"
 }
 
 local is_player_near = function(pos)
@@ -68,7 +69,7 @@ local update_entities = function(pos)
 			local p = vector.round(vector.add(obj:get_pos(), {x = 0, y = 0.5, z = 0}))
 			local spos = {x = ominp.x + ((p.x - scanpos.x) * 0.00390625), y = ominp.y + ((p.y - scanpos.y) * 0.00390625), z= ominp.z + ((p.z - scanpos.z) * 0.00390625)}
 			core.add_entity(spos, "ship_holodisplay:entity", obj:get_player_name() .. ";" .. core.pos_to_string(p) .. ";player")
-		else
+		elseif obj.get_luaentity ~= nil then
 			local name = obj:get_luaentity().name
 			local disallowed = false
 			for _, target in ipairs(disallowed_targets) do
