@@ -309,7 +309,7 @@ function ship_machine.register_engine(data)
     })
 
     local texture_active_top = {
-        image = ltier .. "_" .. machine_name .. "_top_active.png",
+        name = ltier .. "_" .. machine_name .. "_top_active.png",
         animation = {
             type = "vertical_frames",
             aspect_w = 32,
@@ -318,7 +318,7 @@ function ship_machine.register_engine(data)
         }
     }
     local texture_active = {
-        image = ltier .. "_" .. machine_name .. "_active.png",
+        name = ltier .. "_" .. machine_name .. "_active.png",
         animation = {
             type = "vertical_frames",
             aspect_w = 32,

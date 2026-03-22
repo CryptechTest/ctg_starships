@@ -708,7 +708,7 @@ function ship_engine.register_engine_core(data)
     minetest.register_node(node_name .. "_active", {
         description = machine_desc,
         tiles = {{
-            image = ltier .. "_" .. machine_name .. "_top_active.png",
+            name = ltier .. "_" .. machine_name .. "_top_active.png",
             backface_culling = false,
             animation = {
                 type = "vertical_frames",

@@ -95,7 +95,7 @@ function ship_machine.register_jumpship(data)
     local base_texture = data.texture_name or data.machine_name
 
     local texture_active = {
-        image = base_texture .. "_active.png",
+        name = base_texture .. "_active.png",
         animation = {
             type = "vertical_frames",
             aspect_w = 32,

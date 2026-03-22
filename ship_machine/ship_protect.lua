@@ -570,7 +570,7 @@ local function register_ship_protect(def)
     end
 
     local texture_active = {
-        image = "ship_protector_anim.png",
+        name = "ship_protector_anim.png",
         animation = {
             type = "vertical_frames",
             aspect_w = 32,

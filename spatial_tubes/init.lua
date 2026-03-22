@@ -867,7 +867,7 @@ function spatial_tubes.register_machine(data)
     })
 
     local texture_active = {
-        image = "local_telepad_top" .. "_active.png" .. texture_tier,
+        name = "local_telepad_top" .. "_active.png" .. texture_tier,
         animation = {
             type = "vertical_frames",
             aspect_w = 32,

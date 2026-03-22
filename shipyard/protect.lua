@@ -600,7 +600,7 @@ end
 local player_pos = {}
 
 local texture_active = {
-    image = "ship_protector_anim.png",
+    name = "ship_protector_anim.png",
     animation = {
         type = "vertical_frames",
         aspect_w = 32,
