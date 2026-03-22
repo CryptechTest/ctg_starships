@@ -933,7 +933,7 @@ function ship_weapons.register_beam_tower(data)
     })
 
     local texture_active = {
-        image = ltier .. "_" .. machine_name .. "_side_active_anim.png",
+        name = ltier .. "_" .. machine_name .. "_side_active_anim.png",
         animation = {
             type = "vertical_frames",
             aspect_w = 16,
