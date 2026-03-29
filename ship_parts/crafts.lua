@@ -147,8 +147,8 @@ if true then
 
     if core.get_modpath("ctg_ruby") and core.get_modpath("ctg_sapphire") then
         core.register_craft({
-            output = "ship_parts:circuit_advanced",
-            recipe = {{rbs, ps, gw}, {ic, cs, nw}, {cl, ps, fb}},
+            output = "ship_parts:circuit_advanced 2",
+            recipe = {{rbs, ps, gw}, {ic, cs, nw}, {cl, ps, sw}},
             replacements = {{ cw, es }, { gw, es }, { nw, es }}
         })
     else
