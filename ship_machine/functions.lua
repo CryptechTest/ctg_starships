@@ -813,7 +813,7 @@ local function engines_charged_spend(pos, dist, size)
 end
 
 local function do_jump(pos, dest, size, jcb, offset, use_charge)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local owner = meta:get_string("owner")
     local dist = vector.distance(pos, dest)
 
@@ -826,8 +826,12 @@ local function do_jump(pos, dest, size, jcb, offset, use_charge)
         transport_jumpship(pos, dest, size, owner, offset)
 
         local drv = vector.add(pos, offset)
-        minetest.after(0.5, function()
-            digilines.receptor_send(drv, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_complete')
+        core.after(0.75, function()
+            local node = core.get_node(drv)
+            local group = core.get_item_group(node.name, "jumpdrive")
+            if group > 0 then
+                digilines.receptor_send(drv, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_complete')
+            end
         end)
         jcb(1)
         return
