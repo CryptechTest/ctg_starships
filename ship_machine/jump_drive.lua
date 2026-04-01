@@ -224,8 +224,13 @@ function ship_machine.register_jumpship(data)
             end
             return player and is_admin
         end,
-        on_blast = function()
-            -- TODO: handle destroy...
+        on_blast = function(pos, intensity)
+            if data.on_blast_hit then
+                data.on_blast_hit(pos, intensity)
+            end
+            if data.on_destroy then
+                data.on_destroy(pos)
+            end
         end,
         on_construct = function(pos)
             local node = minetest.get_node(pos)
