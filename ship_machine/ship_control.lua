@@ -435,7 +435,7 @@ function ship_machine.register_control_console(custom_data)
                     local formspec = update_formspec_nav(pos, def, message)
                     meta:set_string("formspec", formspec)
                     return
-                elseif not is_jumpdrive and bnode.name == "vacuum:vacuum" then
+                elseif not is_jumpdrive and (bnode.name == "vacuum:vacuum" or bnode.name == "air") then
                     fields.submit_nav = true
                     bFound = true;
                     meta:set_int("travel_ready", 1)
