@@ -800,7 +800,7 @@ function ship_weapons.register_plasma_cannon(data)
         local last_target = core.deserialize(meta:get_string("last_target"))
         local target = nil
         if last_target == nil then
-            core.log("finding target ship...")
+            --core.log("finding target ship...")
             local targets = find_target_ships(pos, data.range + 1)
             if #targets > 0 then
                 target = targets[math.random(1, #targets)]
