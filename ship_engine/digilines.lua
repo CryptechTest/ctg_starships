@@ -1,5 +1,5 @@
 ship_engine.engine_digiline_effector_l = function(pos, node, channel, msg)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local digiline_channel = meta:get_string("digiline_channel")
     local set_channel = digiline_channel or "ship_engine_p"
 
@@ -74,7 +74,7 @@ ship_engine.engine_digiline_effector_l = function(pos, node, channel, msg)
 end
 
 ship_engine.engine_digiline_effector_r = function(pos, node, channel, msg)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local digiline_channel = meta:get_string("digiline_channel")
     local set_channel = digiline_channel or "ship_engine_s"
 
@@ -162,7 +162,7 @@ ship_engine.engine_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "status" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         digilines.receptor_send(pos, digilines.rules.default, channel, {
             command = msg.command .. "_ack",
             charge = meta:get_int("charge"),
@@ -173,7 +173,7 @@ ship_engine.engine_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "status_c" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         if msg.ready and msg.channel == "ship_engine_r" then
             meta:set_int("engine_ready_1", 1)
         elseif msg.channel == "ship_engine_r" then
@@ -197,7 +197,7 @@ ship_engine.engine_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "ready" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local max = meta:get_int("charge_max")
         local chg = meta:get_int("charge")
         if chg >= max then
@@ -206,7 +206,7 @@ ship_engine.engine_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "is_ready" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local ready = meta:get_int("jump_ready")
         digilines.receptor_send(pos, digilines.rules.default, channel, {
             command = msg.command .. "_ack",
@@ -215,12 +215,12 @@ ship_engine.engine_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "enable" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         meta:set_int("enabled", 1)
     end
 
     if msg.command == "disable" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         meta:set_int("enabled", 0)
     end
 

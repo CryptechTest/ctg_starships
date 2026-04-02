@@ -280,7 +280,7 @@ end
 ----------------------------------------------------
 
 function ship_weapons.get_port_direction(pos)
-    local node = minetest.get_node(pos)
+    local node = core.get_node(pos)
     local param2 = node.param2
     local dir_x = 0.0
     local dir_z = 0.0
@@ -308,7 +308,7 @@ function ship_weapons.get_port_direction(pos)
 end
 
 function ship_weapons.get_port_wall_direction(pos)
-    local node = minetest.get_node(pos)
+    local node = core.get_node(pos)
     local param2 = node.param2
     local dir_x = 0.0
     local dir_z = 0.0

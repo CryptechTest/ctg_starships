@@ -4,18 +4,18 @@
 local player_pos = {}
 
 -- get static spawn position
-local statspawn = minetest.string_to_pos(minetest.settings:get("static_spawnpoint")) or {
+local statspawn = core.string_to_pos(core.settings:get("static_spawnpoint")) or {
     x = 0,
     y = 2,
     z = 0
 }
 -- spawn protection
-local protector_spawn = tonumber(minetest.settings:get("protector_spawn")) or 250
+local protector_spawn = tonumber(core.settings:get("protector_spawn")) or 250
 
 local use_jump_display_ent = false
 
 if use_jump_display_ent then
-    minetest.register_entity("ship_machine:jump_display", {
+    core.register_entity("ship_machine:jump_display", {
         physical = false,
         collisionbox = {0, 0, 0, 0, 0, 0},
         visual = "sprite",
@@ -99,12 +99,9 @@ local function register_ship_protect(def)
     }
 
     -- Load support for intllib.
-    local MP = minetest.get_modpath(minetest.get_current_modname())
-    local F = minetest.formspec_escape
-    local S = minetest.get_translator and minetest.get_translator("protector")
-
-    -- Load support for factions
-    local factions_available = minetest.global_exists("factions")
+    local MP = core.get_modpath(core.get_current_modname())
+    local F = core.formspec_escape
+    local S = core.get_translator and core.get_translator("protector")
 
     def.protector = {
         mod = def.modname or "ship_machine",
@@ -121,11 +118,11 @@ local function register_ship_protect(def)
     local ship_name = def.ship_name or "Jumpship"
 
     local protector_max_share_count = 12
-    -- get minetest.conf settings
-    local protector_flip = minetest.settings:get_bool("ship_machine.protector_flip") or false
-    local protector_hurt = tonumber(minetest.settings:get("ship_machine.protector_hurt")) or 0.5
-    local protector_show = tonumber(minetest.settings:get("ship_machine.protector_show_interval")) or 10
-    local protector_msg = minetest.settings:get_bool("ship_machine.protector_msg") ~= false
+    -- get core.conf settings
+    local protector_flip = core.settings:get_bool("ship_machine.protector_flip") or false
+    local protector_hurt = tonumber(core.settings:get("ship_machine.protector_hurt")) or 0.5
+    local protector_show = tonumber(core.settings:get("ship_machine.protector_show_interval")) or 10
+    local protector_msg = core.settings:get_bool("ship_machine.protector_msg") ~= false
 
     -- return list of members as a table
     local get_member_list = function(meta)
@@ -154,28 +151,6 @@ local function register_ship_protect(def)
 
     -- check for member name
     local is_member = function(meta, name)
-
-        if factions_available and meta:get_int("faction_members") == 1 then
-            if factions.version == nil then
-                -- backward compatibility
-                if factions.get_player_faction(name) ~= nil and factions.get_player_faction(meta:get_string("owner")) ==
-                    factions.get_player_faction(name) then
-                    return true
-                end
-            else
-                -- is member if player and owner share at least one faction
-                local owner_factions = factions.get_player_factions(name)
-                local owner = meta:get_string("owner")
-
-                if owner_factions ~= nil and owner_factions ~= false then
-                    for _, f in ipairs(owner_factions) do
-                        if factions.player_is_in_faction(f, owner) then
-                            return true
-                        end
-                    end
-                end
-            end
-        end
 
         for _, n in pairs(get_member_list(meta)) do
             if n == name then
@@ -291,28 +266,6 @@ local function register_ship_protect(def)
             formspec = formspec .. "label[0.3,7.6;" .. F(S("Ally members may not access ship, but are safe from defenses.")) .. "]"
         end
 
-        -- Display the checkbox only if the owner is member of at least 1 faction
-        if factions_available then
-            if factions.version == nil then
-                -- backward compatibility
-                if factions.get_player_faction(meta:get_string("owner")) then
-                    checkbox_faction = true
-                end
-            else
-                local player_factions = factions.get_player_factions(meta:get_string("owner"))
-                if player_factions ~= nil and #player_factions >= 1 then
-                    checkbox_faction = true
-                end
-            end
-        end
-        if checkbox_faction then
-            formspec = formspec .. "checkbox[0,5;faction_members;" .. F(S("Allow faction access")) .. ";" ..
-                           (meta:get_int("faction_members") == 1 and "true" or "false") .. "]"
-            if npp > 8 then
-                npp = 8
-            end
-        end
-
         if menu_level == 1 then
             for n = 1, #members do
                 if i < npp then
@@ -360,7 +313,7 @@ local function register_ship_protect(def)
             return
         end
 
-        minetest.chat_send_player(player, msg)
+        core.chat_send_player(player, msg)
     end
 
     -- Infolevel:
@@ -376,7 +329,7 @@ local function register_ship_protect(def)
         end
 
         -- protector_bypass privileged users can override protection
-        if infolevel == 1 and minetest.check_player_privs(digger, {
+        if infolevel == 1 and core.check_player_privs(digger, {
             protection_bypass = true
         }) then
             return true
@@ -389,12 +342,12 @@ local function register_ship_protect(def)
         
         -- is spawn area protected ?
         if inside_spawn(pos, protector_spawn) then
-            show_msg(digger, S("Spawn @1 has been protected up to a @2 block radius.", minetest.pos_to_string(statspawn), protector_spawn))
+            show_msg(digger, S("Spawn @1 has been protected up to a @2 block radius.", core.pos_to_string(statspawn), protector_spawn))
             return false
         end
 
         -- find the protector nodes
-        local nodes = minetest.find_nodes_in_area({
+        local nodes = core.find_nodes_in_area({
             x = pos.x - s.w,
             y = (pos.y - s.h) + 2,
             z = pos.z - s.l
@@ -409,11 +362,11 @@ local function register_ship_protect(def)
         for n = 1, #nodes do
 
             local p = nodes[n]
-            local n = minetest.get_node(p)
-            local g = minetest.get_item_group(n.name, "protector");
+            local n = core.get_node(p)
+            local g = core.get_item_group(n.name, "protector");
             if g == 2 then
                 
-                meta = minetest.get_meta(p)
+                meta = core.get_meta(p)
                 owner = meta:get_string("owner") or ""
                 members = meta:get_string("members") or ""
                 local _size = {
@@ -446,10 +399,10 @@ local function register_ship_protect(def)
 
                 -- when using protector as tool, show protector information
                 if infolevel == 2 and in_bound then
-                    minetest.chat_send_player(digger, S("This ship area is owned by @1", owner) .. ".")
-                    minetest.chat_send_player(digger, S("Protection located at: @1", minetest.pos_to_string(nodes[n])))
+                    core.chat_send_player(digger, S("This ship area is owned by @1", owner) .. ".")
+                    core.chat_send_player(digger, S("Protection located at: @1", core.pos_to_string(nodes[n])))
                     if members ~= "" then
-                        minetest.chat_send_player(digger, S("Members: @1.", members))
+                        core.chat_send_player(digger, S("Members: @1.", members))
                     end
                     return false
                 end
@@ -460,18 +413,18 @@ local function register_ship_protect(def)
         -- show when you can build on unprotected area
         if infolevel == 2 then
             if #nodes < 1 then
-                minetest.chat_send_player(digger, S("This ship area is not protected."))
+                core.chat_send_player(digger, S("This ship area is not protected."))
             end
-            minetest.chat_send_player(digger, S("You can build here."))
+            core.chat_send_player(digger, S("You can build here."))
         end
 
         return true
     end
 
     -- add protector hurt and flip to protection violation function
-    --[[minetest.register_on_protection_violation(function(pos, name)
+    --[[core.register_on_protection_violation(function(pos, name)
 
-        local player = minetest.get_player_by_name(name)
+        local player = core.get_player_by_name(name)
 
         if player and player:is_player() then
 
@@ -479,7 +432,7 @@ local function register_ship_protect(def)
             if protector_hurt > 0 and player:get_hp() > 0 then
 
                 -- This delay fixes item duplication bug (thanks luk3yx)
-                minetest.after(0.1, function(player)
+                core.after(0.1, function(player)
                     player:set_hp(player:get_hp() - protector_hurt)
                 end, player)
             end
@@ -514,10 +467,10 @@ local function register_ship_protect(def)
         end
     end)]]
 
-    local old_is_protected = minetest.is_protected
+    local old_is_protected = core.is_protected
 
     -- check for protected area, return true if protected and digger isn't on list
-    function minetest.is_protected(pos, digger)
+    function core.is_protected(pos, digger)
 
         digger = digger or "" -- nil check
 
@@ -550,20 +503,20 @@ local function register_ship_protect(def)
         -- make sure protector doesn't overlap any other player's area
         if not def.protector.can_dig(size, pos, name, true, 3) then
 
-            minetest.chat_send_player(name, S("Overlaps into above players protected area"))
+            core.chat_send_player(name, S("Overlaps into above players protected area"))
 
             return itemstack
         end
 
-        return minetest.item_place(itemstack, placer, pointed_thing)
+        return core.item_place(itemstack, placer, pointed_thing)
 
     end
 
     -- remove protector display entities
     local del_display = function(pos)
-        local objects = minetest.get_objects_inside_radius(pos, 0.5)
+        local objects = core.get_objects_inside_radius(pos, 0.5)
         for _, v in ipairs(objects) do
-            if v and v:get_luaentity() and v:get_luaentity().name == modname .. ":display" then
+            if v and v.get_luaentity and v:get_luaentity().name == modname .. ":display" then
                 v:remove()
             end
         end
@@ -580,7 +533,7 @@ local function register_ship_protect(def)
     }
 
     function def.rightclick(pos, node, clicker, itemstack)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local name = clicker:get_player_name()
         local s = {
             l = 1,
@@ -589,20 +542,20 @@ local function register_ship_protect(def)
         }
         if meta and def.protector.can_dig(s, pos, name, true, 1) then
             player_pos[name] = pos
-            minetest.show_formspec(name, modname .. ":node", def.protector_formspec(meta))
+            core.show_formspec(name, modname .. ":node", def.protector_formspec(meta))
         end
     end
 
     function def.punch(pos, node, puncher)
-        if minetest.is_protected(pos, puncher:get_player_name()) then
+        if core.is_protected(pos, puncher:get_player_name()) then
             return
         end
         pos = vector.subtract(pos, vector.new(0,2,0))
-        minetest.add_entity(pos, modname .. ":display")
+        core.add_entity(pos, modname .. ":display")
     end
 
     -- protection node
-    minetest.register_node(nodename, {
+    core.register_node(nodename, {
         description = S("Jumpship Protection Block"),
         drawtype = "nodebox",
         -- tiles = {"ship_protector_anim.png", "ship_protector_anim.png", "ship_protector2.png"},
@@ -636,7 +589,7 @@ local function register_ship_protect(def)
         on_place = check_overlap,
 
         after_place_node = function(pos, placer)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("owner", placer:get_player_name() or "")
             meta:set_string("members", "")
             meta:set_string("allies", "")
@@ -665,10 +618,10 @@ local function register_ship_protect(def)
 
         can_dig = function(pos, player)
             local is_admin = false
-            if minetest.check_player_privs(player, "jumpship_admin") then
+            if core.check_player_privs(player, "jumpship_admin") then
                 return true
             end
-            return player and is_admin
+            return player and is_admin or false
         end,
 
         on_blast = function()
@@ -677,11 +630,11 @@ local function register_ship_protect(def)
         after_destruct = del_display
     })
     if machine_name == "shield_protect" then
-        minetest.register_alias(modname .. ":protect2", nodename)
+        core.register_alias(modname .. ":protect2", nodename)
     end
 
     -- check formspec buttons or when name entered
-    minetest.register_on_player_receive_fields(function(player, formname, fields)
+    core.register_on_player_receive_fields(function(player, formname, fields)
 
         if formname ~= modname .. ":node" then
             return
@@ -698,7 +651,7 @@ local function register_ship_protect(def)
         local add_member_input = fields.protector_add_member
         local add_ally_input = fields.protector_add_ally
 
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         if not meta then
             return
         end
@@ -709,7 +662,7 @@ local function register_ship_protect(def)
             elseif toggle_menu == 2 then
                 meta:set_int("menu_level", 1)
             end
-            minetest.show_formspec(name, formname, def.protector_formspec(meta))
+            core.show_formspec(name, formname, def.protector_formspec(meta))
             return
         end
 
@@ -729,17 +682,11 @@ local function register_ship_protect(def)
         end
 
         -- are we adding member to a protection node ? (csm protection)
-        local nod = minetest.get_node(pos).name
+        local nod = core.get_node(pos).name
 
         if nod ~= modname .. ":protect" and nod ~= nodename then
             player_pos[name] = nil
             return
-        end
-
-
-        -- add faction members
-        if factions_available and fields.faction_members ~= nil then
-            meta:set_int("faction_members", fields.faction_members == "true" and 1 or 0)
         end
 
         -- add member [+]
@@ -770,22 +717,25 @@ local function register_ship_protect(def)
             end
         end
 
-        minetest.show_formspec(name, formname, def.protector_formspec(meta))
+        core.show_formspec(name, formname, def.protector_formspec(meta))
     end)
 
     -- display entity shown when protector node is punched
-    minetest.register_entity(modname .. ":display", {
-        physical = false,
-        collisionbox = {0, 0, 0, 0, 0, 0},
-        visual = "wielditem",
-        -- wielditem seems to be scaled to 1.5 times original node size
-        visual_size = {
-            x = 0.67,
-            y = 0.67
+    core.register_entity(modname .. ":display", {
+        initial_properties = {
+            physical = false,
+            collisionbox = {0, 0, 0, 0, 0, 0},
+            visual = "wielditem",
+            -- wielditem seems to be scaled to 1.5 times original node size
+            visual_size = {
+                x = 0.67,
+                y = 0.67
+            },
+            textures = {modname .. ":display_node"},
+            glow = 10,
         },
-        textures = {modname .. ":display_node"},
+
         timer = 0,
-        glow = 10,
 
         on_step = function(self, dtime)
 
@@ -804,7 +754,7 @@ local function register_ship_protect(def)
     local x = def.protector.size.w
     local y = def.protector.size.h
     local z = def.protector.size.l
-    minetest.register_node(modname .. ":display_node", {
+    core.register_node(modname .. ":display_node", {
         tiles = {"protector_display.png"},
         use_texture_alpha = "clip",
         walkable = false,
@@ -865,16 +815,16 @@ local function register_ship_protect(def)
         }
         local exm = pos
         exm.y = exm.y - 2.25
-        local rx = math.random(-0.05, 0.05) * 0.2
-        local rz = math.random(-0.05, 0.05) * 0.2
+        local rx = math.random(-50, 50) * 0.002
+        local rz = math.random(-50, 50) * 0.002
         local texture = prt.texture
         if (math.random() >= 0.6) then
             texture = prt.texture_r180
         end
 
-        minetest.add_particlespawner({
+        core.add_particlespawner({
             amount = amount,
-            time = prt.time + math.random(5.6, 12.8),
+            time = prt.time + math.random(56, 128) * 0.1,
             minpos = {
                 x = pos.x - 2.7,
                 y = pos.y - 2.1,
@@ -923,21 +873,23 @@ local function register_ship_protect(def)
         -- name info
         function def.register_check_tag_entity_1(meta, pos)
             local object = nil
-            local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
+            local objects = core.get_objects_inside_radius(pos, 0.5) or {}
             for _, obj in pairs(objects) do
-                local ent = obj:get_luaentity()
-                if ent then
-                    if ent.name == "ship_machine:jump_display" then
-                        object = obj
-                        break;
+                if obj.get_luaentity then
+                    local ent = obj:get_luaentity()
+                    if ent then
+                        if ent.name == "ship_machine:jump_display" then
+                            object = obj
+                            break;
+                        end
                     end
                 end
             end
             if object == nil then
-                object = minetest.add_entity(pos, "ship_machine:jump_display")
+                object = core.add_entity(pos, "ship_machine:jump_display")
             end
             if object then
-                --local meta = minetest.get_meta(pos)
+                --local meta = core.get_meta(pos)
                 local ship_hp_max = meta:get_int("hp_max") or 1000
                 local ship_hp = meta:get_int("hp") or 1000
                 local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
@@ -954,7 +906,7 @@ local function register_ship_protect(def)
         -- hull
         function def.register_check_tag_entity_2(meta, pos)
             local object = nil
-            local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
+            local objects = core.get_objects_inside_radius(pos, 0.5) or {}
             for _, obj in pairs(objects) do
                 local ent = obj:get_luaentity()
                 if ent then
@@ -965,10 +917,10 @@ local function register_ship_protect(def)
                 end
             end
             if object == nil then
-                object = minetest.add_entity(pos, "ship_machine:jump_display")
+                object = core.add_entity(pos, "ship_machine:jump_display")
             end
             if object then
-                --local meta = minetest.get_meta(pos)
+                --local meta = core.get_meta(pos)
                 local ship_hp_max = meta:get_int("hp_max")
                 local ship_hp = meta:get_int("hp")
                 local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
@@ -985,7 +937,7 @@ local function register_ship_protect(def)
         -- shield
         function def.register_check_tag_entity_3(meta, pos)
             local object = nil
-            local objects = minetest.get_objects_inside_radius(pos, 0.5) or {}
+            local objects = core.get_objects_inside_radius(pos, 0.5) or {}
             for _, obj in pairs(objects) do
                 local ent = obj:get_luaentity()
                 if ent then
@@ -996,10 +948,10 @@ local function register_ship_protect(def)
                 end
             end
             if object == nil then
-                object = minetest.add_entity(pos, "ship_machine:jump_display")
+                object = core.add_entity(pos, "ship_machine:jump_display")
             end
             if object then
-                --local meta = minetest.get_meta(pos)
+                --local meta = core.get_meta(pos)
                 local ship_shield_max = meta:get_int("shield_max") 
                 local ship_shield = meta:get_int("shield")
                 local ship_shield_prcnt = (ship_shield / ship_shield_max) * 100
@@ -1014,11 +966,11 @@ local function register_ship_protect(def)
         end
 
         function def.clear_check_tag_entity(pos)
-            local objects = minetest.get_objects_inside_radius(pos, 2) or {}
+            local objects = core.get_objects_inside_radius(pos, 2) or {}
             for _, obj in pairs(objects) do
                 local ent = obj:get_luaentity()
                 if ent then
-                    if ent.name == "ship_machine:jump_display" then
+                    if obj and obj.remove and ent.name == "ship_machine:jump_display" then
                         obj:remove()
                     end
                 end
@@ -1026,7 +978,7 @@ local function register_ship_protect(def)
         end
 
         function def.register_check_tag_entity(pos)
-            local ship_meta = minetest.get_meta(pos)
+            local ship_meta = core.get_meta(pos)
             local ship_combat_ready = ship_meta:get_int("combat_ready") > 1
             if not ship_combat_ready then
                 return
@@ -1042,7 +994,7 @@ local function register_ship_protect(def)
     end
 
     function def.regenerate_shield(pos)
-        local ship_meta = minetest.get_meta(pos)
+        local ship_meta = core.get_meta(pos)
         local ship_combat_ready = ship_meta:get_int("combat_ready") > 1
         if not ship_combat_ready then
             return
@@ -1086,7 +1038,7 @@ local function register_ship_protect(def)
         end
     end
 
-    minetest.register_abm({
+    core.register_abm({
         label = "ship effects - jumpdrive for " .. modname,
         nodenames = {nodename},
         interval = 1,
@@ -1114,7 +1066,7 @@ local function register_ship_protect(def)
     local hud_interval = 5
 
     if hud_interval > 0 then
-        minetest.register_globalstep(function(dtime)
+        core.register_globalstep(function(dtime)
 
             -- every 5 seconds
             hud_timer = hud_timer + dtime
@@ -1123,13 +1075,13 @@ local function register_ship_protect(def)
             end
             hud_timer = 0
 
-            for _, player in pairs(minetest.get_connected_players()) do
+            for _, player in pairs(core.get_connected_players()) do
 
                 local name = player:get_player_name()
                 local pos = vector.round(player:get_pos())
                 local hud_text = ""
 
-                local protectors = minetest.find_nodes_in_area({
+                local protectors = core.find_nodes_in_area({
                     x = pos.x - def.protector.size.w,
                     y = (pos.y - def.protector.size.h) + 2,
                     z = pos.z - def.protector.size.l
@@ -1141,7 +1093,7 @@ local function register_ship_protect(def)
 
                 if #protectors > 0 then
                     local npos = protectors[1]
-                    local meta = minetest.get_meta(npos)
+                    local meta = core.get_meta(npos)
                     local nodeowner = meta:get_string("owner")
 
                     local hp = ''
@@ -1187,7 +1139,7 @@ local function register_ship_protect(def)
             end
         end)
 
-        minetest.register_on_leaveplayer(function(player)
+        core.register_on_leaveplayer(function(player)
             hud[player:get_player_name()] = nil
         end)
 

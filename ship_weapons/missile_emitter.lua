@@ -1,8 +1,8 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local time_scl = 30
 
-local has_pipeworks = minetest.get_modpath("pipeworks")
+local has_pipeworks = core.get_modpath("pipeworks")
 local tube_entry_metal = ""
 if has_pipeworks then
     tube_entry_metal = "^pipeworks_tube_connection_metallic.png"
@@ -34,14 +34,14 @@ local function randFloat(min, max, precision)
 end
 
 local function needs_charge(pos)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local charge = meta:get_int("charge")
     local charge_max = meta:get_int("charge_max")
     return charge < charge_max
 end
 
 local function has_charge(pos)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local charge = meta:get_int("charge")
     return charge > 0
 end
@@ -136,7 +136,7 @@ local function spawn_particle2(pos, tier)
         maxsize = 0.72
     }
 
-    minetest.add_particlespawner(def);
+    core.add_particlespawner(def);
 
     def.minvel = {
         x = -2.41,
@@ -149,7 +149,7 @@ local function spawn_particle2(pos, tier)
         z = 2.41
     }
 
-    minetest.add_particlespawner(def);
+    core.add_particlespawner(def);
 end
 
 local function calculateDisplacement(pos, dir, power, angleForceDirection)
@@ -251,12 +251,12 @@ end
 
 function ship_weapons.missile_strike(def, op, origin, pos_target, object_target)
     local bClear = true;
-    local ray = minetest.raycast(origin, pos_target, true, false)
+    local ray = core.raycast(origin, pos_target, true, false)
     for pointed_thing in ray do
         if pointed_thing.type == "node" then
             local pos = pointed_thing.intersection_point
             if (vector.distance(origin, pos) > 0.25) and (vector.distance(pos_target, pos) > 1) then
-                local node = minetest.get_node(pos)
+                local node = core.get_node(pos)
                 if node.name ~= "air" and node.name ~= "vacuum:vacuum" and node.name ~= "vacuum:atmos_thin" then
                     bClear = false;
                     break
@@ -276,7 +276,7 @@ function ship_weapons.missile_strike(def, op, origin, pos_target, object_target)
     })
 
     local dist = vector.distance(origin, target)
-    -- minetest.log("missile pew pew! " .. tostring(dist))
+    -- core.log("missile pew pew! " .. tostring(dist))
 
     ship_weapons.launch_missile_projectile(def, op, origin, target, object_target)
     return true
@@ -290,7 +290,7 @@ function ship_weapons.missile_launch(def, op, origin, pos_target, object_target)
     })
 
     local dist = vector.distance(origin, target)
-    -- minetest.log("missile pew pew! " .. tostring(dist))
+    -- core.log("missile pew pew! " .. tostring(dist))
 
     ship_weapons.launch_missile_projectile(def, op, origin, target, object_target)
     return true
@@ -355,12 +355,12 @@ function ship_weapons.register_missile_tower(data)
 
     local on_punch = function(pos, node, puncher, pointed_thing)
 
-        -- minetest.log("punched node")
+        -- core.log("punched node")
 
         local function on_hit(self, target)
 
-            local node = minetest.get_node(target)
-            -- minetest.log("hit node " .. node.name)
+            local node = core.get_node(target)
+            -- core.log("hit node " .. node.name)
             if node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name or node.name == "ship_weapons:" .. ltier ..
                 "_" .. tmachine_name .. "_active" or node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name ..
                 "_idle" then
@@ -375,7 +375,7 @@ function ship_weapons.register_missile_tower(data)
     end
 
     local function get_dir(pos)
-        local node = minetest.get_node(pos)
+        local node = core.get_node(pos)
         local param2 = node.param2
         local dir_x = 0
         local dir_z = 0
@@ -418,7 +418,7 @@ function ship_weapons.register_missile_tower(data)
 
     local function get_yaw(pos)
         local pi = math.pi
-        local rotation = minetest.get_node(pos).param2
+        local rotation = core.get_node(pos).param2
         if rotation > 3 then
             rotation = rotation % 4 -- Mask colorfacedir values
         end
@@ -465,8 +465,8 @@ function ship_weapons.register_missile_tower(data)
         if not name or not pos then
             return
         end
-        local node = minetest.get_node(pos)
-        local meta = minetest.get_meta(pos)
+        local node = core.get_node(pos)
+        local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
         if name ~= owner then
             return
@@ -531,7 +531,7 @@ function ship_weapons.register_missile_tower(data)
     local function remove_attached(pos)
         local dir = get_dir(pos)
         local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
-        local objs = minetest.get_objects_inside_radius(e_pos, 0.15)
+        local objs = core.get_objects_inside_radius(e_pos, 0.15)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -544,14 +544,14 @@ function ship_weapons.register_missile_tower(data)
     end
 
     local function check_display(pos)
-        if not minetest.compare_block_status(pos, "active") then
+        if not core.compare_block_status(pos, "active") then
             return
         end
         local yawRad, rotation = get_yaw(pos)
         local dir = get_dir(pos)
         local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
         local found_display = false
-        local objs = minetest.get_objects_inside_radius(e_pos, 0.15)
+        local objs = core.get_objects_inside_radius(e_pos, 0.15)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -564,8 +564,8 @@ function ship_weapons.register_missile_tower(data)
             end
         end
         if not found_display then
-            local obj = minetest.add_entity(e_pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
-            minetest.get_node_timer(pos):start(30)
+            local obj = core.add_entity(e_pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
+            core.get_node_timer(pos):start(30)
             local rot = {x = 0, y = yawRad, z = 0}
             obj:set_rotation(rot)
         end
@@ -575,9 +575,9 @@ function ship_weapons.register_missile_tower(data)
     -------------------------------------------------------
     -- technic run
     local run = function(pos, node)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
-        --local operator = minetest.get_player_by_name(owner);
+        --local operator = core.get_player_by_name(owner);
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
 
@@ -590,7 +590,7 @@ function ship_weapons.register_missile_tower(data)
         local charge = meta:get_int("charge")
 
         -- Get digiline data storage
-        local digiline_data = minetest.deserialize(meta:get_string("digiline_data")) or default_digi_data
+        local digiline_data = core.deserialize(meta:get_string("digiline_data")) or default_digi_data
 
         -- Setup meta data if it does not exist.
         if not eu_input then
@@ -672,7 +672,7 @@ function ship_weapons.register_missile_tower(data)
                     if launch_timeout >= 30 then
                         launch_timeout = 0
                         digiline_data.launch = false
-                        meta:set_string("digiline_data", minetest.serialize(digiline_data))
+                        meta:set_string("digiline_data", core.serialize(digiline_data))
                         meta:set_int("firing", 0)
                     end
                     meta:set_int("launch_timeout", launch_timeout)
@@ -692,7 +692,7 @@ function ship_weapons.register_missile_tower(data)
                     local target_pos = digiline_data.target_pos or
                                            calculateNewPoint(pos, dir, digiline_data.power, digiline_data.pitch,
                             digiline_data.yaw)
-                    -- minetest.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
+                    -- core.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
                     if ship_weapons.missile_launch(proj_def, owner, pos, target_pos, nil) then
                         bFoundTarget = true;
                     end
@@ -705,7 +705,7 @@ function ship_weapons.register_missile_tower(data)
                             digiline_data.target_pos = nil
                         end
                         -- Update digiline data...
-                        meta:set_string("digiline_data", minetest.serialize(digiline_data))
+                        meta:set_string("digiline_data", core.serialize(digiline_data))
                         -- Reduce inventory storage
                         if (missile_item.new_input) then
                             inv:set_list("src", missile_item.new_input)
@@ -721,7 +721,7 @@ function ship_weapons.register_missile_tower(data)
                     local attack_type = meta:get_int("attack_type")
                     local bFoundTarget = false
                     local nTargetCount = 0
-                    local objs = minetest.get_objects_inside_radius(pos, data.range + 0.251)
+                    local objs = core.get_objects_inside_radius(pos, data.range + 0.251)
                     for _, obj in pairs(objs) do
                         if nTargetCount >= data.targets then
                             break
@@ -732,7 +732,7 @@ function ship_weapons.register_missile_tower(data)
                             if ent.name == "__builtin:item" and (attack_type == 2) then
                                 -- objects...
                                 local item1 = obj:get_luaentity().itemstring
-                                -- local obj2 = minetest.add_entity(exit, "__builtin:item")
+                                -- local obj2 = core.add_entity(exit, "__builtin:item")
                                 if ship_weapons.missile_strike(proj_def, owner, pos, obj_pos, obj) then
                                     bFoundTarget = true;
                                     nTargetCount = nTargetCount + 1
@@ -825,7 +825,7 @@ function ship_weapons.register_missile_tower(data)
     -- register machine node
 
     local node_name = data.modname .. ":" .. ltier .. "_" .. machine_name
-    minetest.register_node(node_name .. "", {
+    core.register_node(node_name .. "", {
         description = machine_desc,
         tiles = {ltier .. "_" .. tmachine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_top.png",
                  ltier .. "_" .. tmachine_name .. "_side.png", ltier .. "_" .. tmachine_name .. "_side.png",
@@ -844,11 +844,11 @@ function ship_weapons.register_missile_tower(data)
             end
             local dir = get_dir(pos)
             local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
-            local obj = minetest.add_entity(e_pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
+            local obj = core.add_entity(e_pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
             local yawRad, rotation = get_yaw(pos)
             local rot = {x = 0, y = yawRad, z = 0}
             obj:set_rotation(rot)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             if placer:is_player() then
                 meta:set_string("owner", placer:get_player_name())
                 meta:set_string("members", "")
@@ -867,8 +867,8 @@ function ship_weapons.register_missile_tower(data)
         -- on_rotate = screwdriver.disallow,
         can_dig = technic.machine_can_dig,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Missile Tower Emitter")
             meta:set_int("tube_time", 0)
             local inv = meta:get_inventory()
@@ -882,7 +882,7 @@ function ship_weapons.register_missile_tower(data)
             meta:set_int("charge_max", data.charge_max)
             meta:set_int("demand", data.demand[1])
             meta:set_string("digiline_channel", 'static_turret')
-            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
+            meta:set_string("digiline_data", core.serialize(default_digi_data))
             local formspec = ship_weapons.update_formspec(data, meta)
             meta:set_string("formspec", formspec)
         end,
@@ -908,7 +908,7 @@ function ship_weapons.register_missile_tower(data)
         on_timer = on_timer
     })
 
-    minetest.register_node(node_name .. "_active", {
+    core.register_node(node_name .. "_active", {
         description = machine_desc,
         tiles = {ltier .. "_" .. machine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_top.png",
                  ltier .. "_" .. tmachine_name .. "_side.png", ltier .. "_" .. tmachine_name .. "_side.png",
@@ -959,7 +959,7 @@ function ship_weapons.register_missile_tower(data)
         on_timer = on_timer
     })
 
-    minetest.register_node(node_name .. "_idle", {
+    core.register_node(node_name .. "_idle", {
         description = machine_desc,
         tiles = {ltier .. "_" .. machine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_top.png",
                  ltier .. "_" .. machine_name .. "_side.png", ltier .. "_" .. machine_name .. "_side.png",
@@ -1007,7 +1007,7 @@ function ship_weapons.register_missile_tower(data)
         on_timer = on_timer
     })
 
-    minetest.register_node(node_name .. "_broken", {
+    core.register_node(node_name .. "_broken", {
         description = machine_desc,
         tiles = {ltier .. "_" .. machine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_top.png",
                  ltier .. "_" .. machine_name .. "_side_cracked.png",
@@ -1027,8 +1027,8 @@ function ship_weapons.register_missile_tower(data)
             if data.tube then
                 pipeworks.after_place(pos)
             end
-            local meta = minetest.get_meta(pos)
-            minetest.get_node_timer(pos):start(30)
+            local meta = core.get_meta(pos)
+            core.get_node_timer(pos):start(30)
             meta:set_int("attack_type", 1)
             meta:set_int("last_hit", 0)
             if placer:is_player() then
@@ -1043,8 +1043,8 @@ function ship_weapons.register_missile_tower(data)
         on_rotate = screwdriver.disallow,
         can_dig = technic.machine_can_dig,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Broken Starship Missile Emitter")
             meta:set_int("tube_time", 0)
             local inv = meta:get_inventory()
@@ -1058,7 +1058,7 @@ function ship_weapons.register_missile_tower(data)
             meta:set_int("charge_max", data.charge_max)
             meta:set_int("demand", data.demand[1])
             meta:set_string("digiline_channel", 'static_turret')
-            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
+            meta:set_string("digiline_data", core.serialize(default_digi_data))
             local formspec = ship_weapons.update_formspec(data, meta)
             meta:set_string("formspec", formspec)
         end,
@@ -1082,7 +1082,7 @@ function ship_weapons.register_missile_tower(data)
         },
 
         on_timer = function(pos, elapsed)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             local time = meta:get_int("time") + elapsed
             if time >= 1 then
                 local yawRad, rotation = get_yaw(pos)
@@ -1090,7 +1090,7 @@ function ship_weapons.register_missile_tower(data)
                 meta:set_int("broken", 0);
                 local dir = get_dir(pos)
                 local e_pos = vector.subtract(pos, vector.multiply(dir, 0.45))
-                local obj = minetest.add_entity(e_pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
+                local obj = core.add_entity(e_pos, "ship_weapons:" .. ltier .. "_missile_tower_display")
                 local rot = {x = 0, y = yawRad, z = 0}
                 obj:set_rotation(rot)
                 meta:set_int("hp", data.hp)
@@ -1112,7 +1112,7 @@ function ship_weapons.register_missile_tower(data)
     -------------------------------------------------------
 
     -- display entity shown for tower hit effect
-    minetest.register_entity("ship_weapons:" .. ltier .. "_missile_tower_display", {
+    core.register_entity("ship_weapons:" .. ltier .. "_missile_tower_display", {
         initial_properties = {
             physical = false,
             collisionbox = {-0.55, -0.55, -0.55, 0.55, 0.55, -0.55},
@@ -1137,7 +1137,7 @@ function ship_weapons.register_missile_tower(data)
             end
             self.timer = 0
             local pos = self.object:get_pos()
-            local node = minetest.get_node(pos)
+            local node = core.get_node(pos)
             if node and not node.name:match(ltier .. "_" .. tmachine_name) then
                 self.object:remove()
             end
@@ -1146,8 +1146,8 @@ function ship_weapons.register_missile_tower(data)
         on_death = function(self, killer)
             local pos = self.object:get_pos()
             technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
-            minetest.get_node_timer(self.pos):start(30)
-            local meta = minetest.get_meta(self.pos)
+            core.get_node_timer(self.pos):start(30)
+            local meta = core.get_meta(self.pos)
             meta:set_int("broken", 1)
             meta:set_int("hp", 0)
         end,
@@ -1159,7 +1159,7 @@ function ship_weapons.register_missile_tower(data)
                 self.object:set_properties({
                     is_visible = false
                 })
-                minetest.get_node_timer(pos):start(3)
+                core.get_node_timer(pos):start(3)
             end
         end,
 
@@ -1167,9 +1167,9 @@ function ship_weapons.register_missile_tower(data)
 
             local function on_hit(self, target)
 
-                local node = minetest.get_node(target)
-                local meta = minetest.get_meta(target)
-                -- minetest.log("hit " .. node.name)
+                local node = core.get_node(target)
+                local meta = core.get_meta(target)
+                -- core.log("hit " .. node.name)
 
                 if node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name or node.name == "ship_weapons:" ..
                     ltier .. "_" .. tmachine_name .. "_active" or node.name == "ship_weapons:" .. ltier .. "_" ..
@@ -1192,8 +1192,8 @@ function ship_weapons.register_missile_tower(data)
                         technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
                         meta:set_int("broken", 1)
                         self.object:remove()
-                        minetest.get_node_timer(target):start(math.random(data.repair_length, data.repair_length + 30))
-                        minetest.sound_play("ctg_zap", {
+                        core.get_node_timer(target):start(math.random(data.repair_length, data.repair_length + 30))
+                        core.sound_play("ctg_zap", {
                             pos = target,
                             gain = 0.8,
                             pitch = randFloat(2.2, 2.25)
@@ -1202,7 +1202,7 @@ function ship_weapons.register_missile_tower(data)
 
                     return true
                 elseif node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken" then
-                    local meta = minetest.get_meta(target)
+                    local meta = core.get_meta(target)
                     if meta:get_int("broken") == 1 then
                         self.object:remove()
                     end
@@ -1235,7 +1235,7 @@ function ship_weapons.register_missile_tower(data)
     local x = 0.0
     local y = 0.0
     local z = -0.2
-    minetest.register_node("ship_weapons:" .. ltier .. "_missile_tower_display_node", {
+    core.register_node("ship_weapons:" .. ltier .. "_missile_tower_display_node", {
         tiles = {"ctg_tower_select_" .. ltier .. ".png"},
         use_texture_alpha = "clip",
         walkable = false,
@@ -1266,14 +1266,14 @@ function ship_weapons.register_missile_tower(data)
 
     -------------------------------------------------------
 
-    --[[minetest.register_abm({
+    --[[core.register_abm({
         label = "missile emitter effect",
         nodenames = {"ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_active", "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_idle"},
         interval = 3,
         chance = 3,
         -- min_y = 0,
         action = function(pos)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             if meta:get_int("last_hit") == 0 then
                 --spawn_particle_area(pos, ltier)
             end

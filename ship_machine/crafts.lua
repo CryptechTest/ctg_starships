@@ -17,27 +17,27 @@ if true then
     local hvt = "technic:hv_transformer"
 
     -- lv
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_machine:lv_gravity_drive_lite",
         recipe = {{cel, ls, cel}, {cc, ec, cc}, {t, ss, t}}
     })
 
     -- mv
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_machine:mv_gravity_generator",
         recipe = {{nw, gw, nw}, {cc, gdl, cc}, {aw, mvt, aw}},
         replacements = {{ nw, es .. " 2" }, {aw, es .. " 2"}}
     })
 
     -- hv
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_machine:hv_gravity_generator",
         recipe = {{gw, cam, gw}, {hvt, gdmv, hvt}, {gw, sw, gw}},
         replacements = {{ gw, es .. " 4"}, {sw, es}}
     })
 
     -- hv
-    minetest.register_craft({
+    core.register_craft({
         output = "ship_machine:hv_gravity_generator",
         recipe = {{gw, cam, gw}, {cc, gdmv, cc}, {sw, hvt, sw}},
         replacements = {{ gw, es .. " 2" }, {sw, es .. " 2"}}

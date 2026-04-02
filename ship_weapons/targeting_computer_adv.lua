@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local time_scl = 10
 
@@ -15,12 +15,12 @@ local function check_path(origin, pos_target)
         return -1
     end
     local bClear = 0;
-    local ray = minetest.raycast(origin, pos_target, true, false)
+    local ray = core.raycast(origin, pos_target, true, false)
     for pointed_thing in ray do
         if pointed_thing.type == "node" then
             local pos = pointed_thing.intersection_point
             if (vector.distance(origin, pos) > 1.25) and (vector.distance(pos_target, pos) > 3) then
-                local node = minetest.get_node(pos)
+                local node = core.get_node(pos)
                 if node.name ~= "air" and node.name ~= "vacuum:vacuum" and node.name ~= "vacuum:atmos_thin" and
                     node.name ~= ":asteroid:atmos" then
                     bClear = bClear + 1;
@@ -36,7 +36,7 @@ local function find_ship(pos, d, r)
     local ships = {}
     local bFoundTarget = false
     local nTargetCount = 0
-    local objs = minetest.get_objects_inside_radius(pos, r + 0.251)
+    local objs = core.get_objects_inside_radius(pos, r + 0.251)
     for _, obj in pairs(objs) do
         if nTargetCount >= 3 then
             break
@@ -59,7 +59,7 @@ local function find_ship(pos, d, r)
 end
 
 local function find_ship_protect(pos, r)
-    local nodes = minetest.find_nodes_in_area({
+    local nodes = core.find_nodes_in_area({
         x = pos.x - r,
         y = pos.y - r,
         z = pos.z - r
@@ -72,19 +72,19 @@ local function find_ship_protect(pos, r)
 end
 
 local function do_strike_obj(pos, mode, ltier, digi_channel_emit)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local ship_pos = find_ship_protect(pos, 72)
-    local dish_pos = minetest.deserialize(meta:get_string("dish_pos")) or nil
+    local dish_pos = core.deserialize(meta:get_string("dish_pos")) or nil
     if dish_pos == nil then
         return 0
     end
-    local meta_dish = minetest.get_meta(dish_pos)
+    local meta_dish = core.get_meta(dish_pos)
     local range = meta_dish:get_int("range")
     -------------------------------------------------------
     -- strike launch to target object
     local bFoundTarget = false
     local nTargetCount = 0
-    local objs = minetest.get_objects_inside_radius(dish_pos, range + 0.251)
+    local objs = core.get_objects_inside_radius(dish_pos, range + 0.251)
     for _, obj in pairs(objs) do
         if nTargetCount >= 1 then
             break
@@ -110,7 +110,7 @@ local function do_strike_obj(pos, mode, ltier, digi_channel_emit)
                 end
             elseif obj:is_player() and (mode == 2 or mode == 3) and #ship_pos > 0 then
                 local name = obj:get_player_name()
-                local ship_meta = minetest.get_meta(ship_pos[1])
+                local ship_meta = core.get_meta(ship_pos[1])
                 -- players
                 if name ~= ship_meta:get_string("owner") and not ship_weapons.is_member(ship_meta, name) and not ship_weapons.is_ally(ship_meta, name) then
                     bFoundTarget = true;
@@ -142,13 +142,13 @@ local function do_strike_obj(pos, mode, ltier, digi_channel_emit)
 end
 
 local function do_strike_ship(pos, mode, ltier, digi_channel_emit)
-    local meta = minetest.get_meta(pos)
-    local dish_pos = minetest.deserialize(meta:get_string("dish_pos")) or nil
+    local meta = core.get_meta(pos)
+    local dish_pos = core.deserialize(meta:get_string("dish_pos")) or nil
     if not dish_pos then
         return 0
     end
-    local meta_dish = minetest.get_meta(dish_pos)
-    local dish_dir = minetest.deserialize(meta_dish:get_string("dish_dir")) or nil
+    local meta_dish = core.get_meta(dish_pos)
+    local dish_dir = core.deserialize(meta_dish:get_string("dish_dir")) or nil
     if not dish_dir then
         return 0
     end
@@ -164,7 +164,7 @@ local function do_strike_ship(pos, mode, ltier, digi_channel_emit)
     local protects = find_ship_protect(dish_pos, 72)
     local our_ship = nil
     for _, node in pairs(protects) do
-        local ship_meta = minetest.get_meta(node)
+        local ship_meta = core.get_meta(node)
         local name = ship_meta:get_string("owner")
         if name == meta:get_string("owner") then
             our_ship = {
@@ -184,7 +184,7 @@ local function do_strike_ship(pos, mode, ltier, digi_channel_emit)
         -- check for line of sight...
         local nodes_in_path = check_path(dish_pos, node_pos)
         if node_pos and nodes_in_path < 48 then
-            local ship_meta = minetest.get_meta(node_pos)
+            local ship_meta = core.get_meta(node_pos)
             local name = ship_meta:get_string("owner")
             local r = (nodes_in_path * 0.8) + 3
             local target_pos = vector.add(node_pos, {
@@ -265,8 +265,8 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
     local connect_sides = {"top", "bottom", "left", "right"}
 
     local on_receive_fields = function(pos, formname, fields, sender)
-        local node = minetest.get_node(pos)
-        local meta = minetest.get_meta(pos)
+        local node = core.get_node(pos)
+        local meta = core.get_meta(pos)
         local name = sender:get_player_name()
         if not name or not pos then
             return
@@ -597,9 +597,9 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
     -------------------------------------------------------
     -- technic run
     local run = function(pos, node)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
-        local operator = minetest.get_player_by_name(owner);
+        local operator = core.get_player_by_name(owner);
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
 
@@ -609,7 +609,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
 
         local attack_mode = meta:get_int("attack_mode")
         local dish_ping = meta:get_int("dish_ping")
-        local dish_pos = minetest.deserialize(meta:get_string("dish_pos")) or nil
+        local dish_pos = core.deserialize(meta:get_string("dish_pos")) or nil
 
         local digi_channel_dish = meta:get_string("digiline_channel_dish")
         local digi_channel_emit = meta:get_string("digiline_channel_emit")
@@ -637,7 +637,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         end
 
         -- Get digiline data storage
-        -- local digiline_data = minetest.deserialize(meta:get_string("digiline_data")) or default_digi_data
+        -- local digiline_data = core.deserialize(meta:get_string("digiline_data")) or default_digi_data
 
         -- Setup meta data if it does not exist.
         if not eu_input then
@@ -701,7 +701,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         end
     end
 
-    minetest.register_node(node_name, {
+    core.register_node(node_name, {
         description = machine_desc,
         tiles = {"mv_target_computer_top.png", "mv_target_computer_side.png", "mv_target_computer_side.png",
                  "mv_target_computer_side.png", "mv_target_computer_side.png", "mv_target_computer_side.png"},
@@ -725,7 +725,7 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         sounds = default.node_sound_glass_defaults(),
         connect_sides = connect_sides,
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Weapons Control " .. "-" .. " " .. machine_desc)
             if placer:is_player() then
                 meta:set_string("owner", placer:get_player_name()) -- TODO: get owner from area...
@@ -737,14 +737,14 @@ function ship_weapons.register_targeting_computer_adv(custom_data)
         on_rotate = screwdriver.disallow,
         can_dig = technic.machine_can_dig,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             -- local inv = meta:get_inventory()
             meta:set_int("enabled", 1)
             meta:set_int("selected_dir", 13)
             meta:set_int("attack_mode", 1)
             meta:set_string("formspec", ship_weapons.update_formspec(data, meta))
-            meta:set_string("pos_target", minetest.serialize({}))
+            meta:set_string("pos_target", core.serialize({}))
             meta:set_int("target_error_number", 0)
             meta:set_int("target_locked", 0)
             meta:set_int("target_delay", 3)

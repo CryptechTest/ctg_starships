@@ -1,5 +1,5 @@
 -- Load support for MT game translation.
-local S = minetest.get_translator("ship_weapons")
+local S = core.get_translator("ship_weapons")
 
 -- loss probabilities array (one in X will be lost)
 local loss_prob = {}
@@ -9,9 +9,9 @@ loss_prob["default:dirt"] = 4
 
 -- Fill a list with data for content IDs, after all nodes are registered
 local cid_data = {}
-minetest.register_on_mods_loaded(function()
-	for name, def in pairs(minetest.registered_nodes) do
-		cid_data[minetest.get_content_id(name)] = {
+core.register_on_mods_loaded(function()
+	for name, def in pairs(core.registered_nodes) do
+		cid_data[core.get_content_id(name)] = {
 			name = name,
 			groups = def.groups,
 			drop = def.drop,
@@ -44,7 +44,7 @@ end
 
 local function rand_pos(center, pos, radius)
 	local def
-	local reg_nodes = minetest.registered_nodes
+	local reg_nodes = core.registered_nodes
 	local i = 0
 	repeat
 		-- Give up and use the center if this takes too long
@@ -54,7 +54,7 @@ local function rand_pos(center, pos, radius)
 		end
 		pos.x = center.x + math.random(-radius, radius)
 		pos.z = center.z + math.random(-radius, radius)
-		def = reg_nodes[minetest.get_node(pos).name]
+		def = reg_nodes[core.get_node(pos).name]
 		i = i + 1
 	until def and not def.walkable
 end
@@ -70,7 +70,7 @@ local function eject_drops(drops, pos, radius)
 			rand_pos(pos, drop_pos, radius)
 			local dropitem = ItemStack(item)
 			dropitem:set_count(take)
-			local obj = minetest.add_item(drop_pos, dropitem)
+			local obj = core.add_item(drop_pos, dropitem)
 			if obj then
 				obj:get_luaentity().collect = true
 				obj:set_acceleration({x = 0, y = -10, z = 0})
@@ -100,7 +100,7 @@ end
 
 local basic_flame_on_construct -- cached value
 local function destroy(drops, npos, cid, c_air, c_fire, on_blast_queue, on_construct_queue, ignore_protection, ignore_on_blast, owner)
-	if not ignore_protection and minetest.is_protected(npos, owner) then
+	if not ignore_protection and core.is_protected(npos, owner) then
 		return cid
 	end
 
@@ -123,7 +123,7 @@ local function destroy(drops, npos, cid, c_air, c_fire, on_blast_queue, on_const
     elseif is_atmos(def.name) then
         return c_air
 	else
-		local node_drops = minetest.get_node_drops(def.name, "")
+		local node_drops = core.get_node_drops(def.name, "")
 		for _, item in pairs(node_drops) do
 			add_drop(drops, item)
 		end
@@ -172,17 +172,17 @@ local function get_stor(npos, def)
 			sto.groups.metal = def.groups['level']
 		end
 	end
-	local node = minetest.get_node(npos)
+	local node = core.get_node(npos)
 	sto.param1 = node.param1 ~= 0 and node.param1 or nil
 	sto.param2 = node.param2 ~= 0 and node.param2 or nil
     local has_meta = {}
-    local meta_positions = minetest.find_nodes_with_meta(npos, npos)
+    local meta_positions = core.find_nodes_with_meta(npos, npos)
     for i = 1, #meta_positions do
-        has_meta[minetest.hash_node_position(meta_positions[i])] = true
+        has_meta[core.hash_node_position(meta_positions[i])] = true
     end
-	if has_meta[minetest.hash_node_position(npos)] then
+	if has_meta[core.hash_node_position(npos)] then
 		sto.meta = {}
-		local meta = minetest.get_meta(npos)
+		local meta = core.get_meta(npos)
 		sto.meta.fields = meta:to_table().fields
 		local inv = meta:get_inventory()
 		if inv then
@@ -230,7 +230,7 @@ local function destroy_safe(drops, npos, cid, c_air, c_fire, on_blast_queue, on_
 		stor = get_stor(npos, def)
 		return c_fire, stor
 	else
-		local node_drops = minetest.get_node_drops(def.name, "")
+		local node_drops = core.get_node_drops(def.name, "")
 		for _, item in pairs(node_drops) do
 			add_drop(drops, item)
 		end
@@ -273,7 +273,7 @@ local function calc_velocity(pos1, pos2, old_vel, power)
 end
 
 local function entity_physics(pos, radius, drops)
-	local objs = minetest.get_objects_inside_radius(pos, radius)
+	local objs = core.get_objects_inside_radius(pos, radius)
 	for _, obj in pairs(objs) do
 		local obj_pos = obj:get_pos()
 		if obj_pos then
@@ -295,7 +295,7 @@ local function entity_physics(pos, radius, drops)
 					local do_damage = true
 					local do_knockback = true
 					local entity_drops = {}
-					local objdef = minetest.registered_entities[luaobj.name]
+					local objdef = core.registered_entities[luaobj.name]
 
 					if objdef and objdef.on_blast then
 						do_damage, do_knockback, entity_drops = objdef.on_blast(luaobj, damage)
@@ -338,7 +338,7 @@ local function area_fire(pos, radius)
 end
 
 local function add_effects_hit_shield(pos, radius)
-	minetest.add_particlespawner({
+	core.add_particlespawner({
 		amount = 5 + math.floor(radius + 0.5),
 		time = 0.4,
 		minpos = vector.subtract(pos, radius / 2),
@@ -378,7 +378,7 @@ local function add_effects_hit_shield(pos, radius)
 end
 
 local function add_effects_hit(pos, radius, drops)
-	minetest.add_particle({
+	core.add_particle({
 		pos = pos,
 		velocity = vector.new(),
 		acceleration = vector.new(),
@@ -389,7 +389,7 @@ local function add_effects_hit(pos, radius, drops)
 		texture = "tnt_boom.png",
 		glow = 15,
 	})
-	minetest.add_particlespawner({
+	core.add_particlespawner({
 		amount = 16,
 		time = 0.6,
 		minpos = vector.subtract(pos, radius / 4),
@@ -419,7 +419,7 @@ local function add_effects_hit(pos, radius, drops)
         collisiondetection = true,
         glow = 3,
 	})
-	minetest.add_particlespawner({
+	core.add_particlespawner({
 		amount = 20,
 		time = 0.7,
 		minpos = vector.subtract(pos, radius / 3),
@@ -450,7 +450,7 @@ local function add_effects_hit(pos, radius, drops)
         collisiondetection = true,
         glow = 5,
 	})
-	minetest.add_particlespawner({
+	core.add_particlespawner({
 		amount = 72,
 		time = 0.45,
 		minpos = vector.subtract(pos, radius / 2),
@@ -490,7 +490,7 @@ local function add_effects_hit(pos, radius, drops)
 		local count = stack:get_count()
 		if count > most then
 			most = count
-			local def = minetest.registered_nodes[name]
+			local def = core.registered_nodes[name]
 			if def then
 				node = { name = name }
 				if def.tiles and type(def.tiles[1]) == "string" then
@@ -500,7 +500,7 @@ local function add_effects_hit(pos, radius, drops)
 		end
 	end
 
-	minetest.add_particlespawner({
+	core.add_particlespawner({
 		amount = 64,
 		time = 0.1,
 		minpos = vector.subtract(pos, radius / 2),
@@ -521,16 +521,16 @@ local function add_effects_hit(pos, radius, drops)
 end
 
 function ship_weapons.burn(pos, nodename)
-	local name = nodename or minetest.get_node(pos).name
-	local def = minetest.registered_nodes[name]
+	local name = nodename or core.get_node(pos).name
+	local def = core.registered_nodes[name]
 	if not def then
 		return
 	elseif def.on_ignite then
 		def.on_ignite(pos)
-	elseif minetest.get_item_group(name, "tnt") > 0 then
-		minetest.swap_node(pos, {name = name .. "_burning"})
-		minetest.sound_play("tnt_ignite", {pos = pos, gain = 1.0}, true)
-		minetest.get_node_timer(pos):start(1)
+	elseif core.get_item_group(name, "tnt") > 0 then
+		core.swap_node(pos, {name = name .. "_burning"})
+		core.sound_play("tnt_ignite", {pos = pos, gain = 1.0}, true)
+		core.get_node_timer(pos):start(1)
 	end
 end
 
@@ -544,7 +544,7 @@ local function find_ship_protect(pos)
 		l = 50
 	}
     -- find the protector nodes
-    local prots = minetest.find_nodes_in_area({
+    local prots = core.find_nodes_in_area({
         x = pos.x - s.w,
         y = pos.y - s.h,
         z = pos.z - s.l
@@ -556,7 +556,7 @@ local function find_ship_protect(pos)
 
 	local prot = nil
 	for _, p in pairs(prots) do
-		local ship_meta = minetest.get_meta(p)
+		local ship_meta = core.get_meta(p)
 		local size = {
 			w = ship_meta:get_int("p_width") or 10, 
 			l = ship_meta:get_int("p_length") or 10, 
@@ -613,14 +613,14 @@ local function plasma_explode(pos, radius, ignore_protection, ignore_on_blast, o
 	local a = VoxelArea:new({MinEdge = minp, MaxEdge = maxp})
 	local data = vm1:get_data()
 	local count = 0
-	local c_tnt = minetest.get_content_id("tnt:tnt")
-	local c_tnt_burning = minetest.get_content_id("tnt:tnt_burning")
-	local c_tnt_boom = minetest.get_content_id("tnt:boom")
-	local c_vac = minetest.get_content_id("vacuum:vacuum")
-	local c_air = minetest.get_content_id("air")
-	local c_ignore = minetest.CONTENT_IGNORE
-	local c_bott_air = minetest.get_content_id("vacuum:air_bottle")
-	local c_bott_hyd = minetest.get_content_id("ctg_machines:hydrogen_bottle")
+	local c_tnt = core.get_content_id("tnt:tnt")
+	local c_tnt_burning = core.get_content_id("tnt:tnt_burning")
+	local c_tnt_boom = core.get_content_id("tnt:boom")
+	local c_vac = core.get_content_id("vacuum:vacuum")
+	local c_air = core.get_content_id("air")
+	local c_ignore = core.CONTENT_IGNORE
+	local c_bott_air = core.get_content_id("vacuum:air_bottle")
+	local c_bott_hyd = core.get_content_id("ctg_machines:hydrogen_bottle")
 	-- make sure we still have explosion even when centre node isnt tnt related
 	if explode_center then
 		count = 1
@@ -662,9 +662,9 @@ local function plasma_explode(pos, radius, ignore_protection, ignore_on_blast, o
 	local drops = {}
 	local on_blast_queue = {}
 	local on_construct_queue = {}
-	basic_flame_on_construct = minetest.registered_nodes["fire:basic_flame"].on_construct
+	basic_flame_on_construct = core.registered_nodes["fire:basic_flame"].on_construct
 
-	local c_fire = minetest.get_content_id("fire:basic_flame")
+	local c_fire = core.get_content_id("fire:basic_flame")
 	for z = -radius, radius do
 	for y = -radius, radius do
 	local vi = a:index(pos.x + (-radius), pos.y + y, pos.z + z)
@@ -697,7 +697,7 @@ local function plasma_explode(pos, radius, ignore_protection, ignore_on_blast, o
 		local s = vector.add(pos, rad)
 		local r = vector.length(rad)
 		if r / radius < 1.4 then
-			minetest.check_single_for_falling(s)
+			core.check_single_for_falling(s)
 		end
 	end
 	end
@@ -720,8 +720,8 @@ local function plasma_explode(pos, radius, ignore_protection, ignore_on_blast, o
 		queued_data.fn(queued_data.pos)
 	end
 
-	minetest.log("action", "PLASMA owned by " .. owner .. " detonated at " ..
-		minetest.pos_to_string(pos) .. " with radius " .. radius)
+	core.log("action", "PLASMA owned by " .. owner .. " detonated at " ..
+		core.pos_to_string(pos) .. " with radius " .. radius)
 
 	return drops, radius, 0
 end
@@ -742,14 +742,14 @@ local function plasma_safe_explode(pos, radius, damage, ignore_protection, ignor
 	local a = VoxelArea:new({MinEdge = minp, MaxEdge = maxp})
 	local data = vm1:get_data()
 	local count = 0
-	local c_tnt = minetest.get_content_id("tnt:tnt")
-	local c_tnt_burning = minetest.get_content_id("tnt:tnt_burning")
-	local c_tnt_boom = minetest.get_content_id("tnt:boom")
-	local c_vac = minetest.get_content_id("vacuum:vacuum")
-	local c_air = minetest.get_content_id("air")
-	local c_ignore = minetest.CONTENT_IGNORE
-	local c_bott_air = minetest.get_content_id("vacuum:air_bottle")
-	local c_bott_hyd = minetest.get_content_id("ctg_machines:hydrogen_bottle")
+	local c_tnt = core.get_content_id("tnt:tnt")
+	local c_tnt_burning = core.get_content_id("tnt:tnt_burning")
+	local c_tnt_boom = core.get_content_id("tnt:boom")
+	local c_vac = core.get_content_id("vacuum:vacuum")
+	local c_air = core.get_content_id("air")
+	local c_ignore = core.CONTENT_IGNORE
+	local c_bott_air = core.get_content_id("vacuum:air_bottle")
+	local c_bott_hyd = core.get_content_id("ctg_machines:hydrogen_bottle")
 
 	-- make sure we still have explosion even when centre node isnt tnt related
 	if explode_center then
@@ -784,7 +784,7 @@ local function plasma_safe_explode(pos, radius, damage, ignore_protection, ignor
 		return drops, radius
 	end
 
-	local ship_meta = minetest.get_meta(shipp)
+	local ship_meta = core.get_meta(shipp)
 
 	local ship_combat_ready = ship_meta:get_int("combat_ready") > 1 or false
 	local ship_hp_max = ship_meta:get_int("hp_max") or 1000
@@ -808,12 +808,12 @@ local function plasma_safe_explode(pos, radius, damage, ignore_protection, ignor
 
 	local on_blast_queue = {}
 	local on_construct_queue = {}
-	basic_flame_on_construct = minetest.registered_nodes["fire:basic_flame"].on_construct
+	basic_flame_on_construct = core.registered_nodes["fire:basic_flame"].on_construct
 
 	local dam_thres = 1
 	local hit_damage = 0
 	local n_hits = {}
-	local c_fire = minetest.get_content_id("fire:basic_flame")
+	local c_fire = core.get_content_id("fire:basic_flame")
 	for z = -radius, radius do
 	for y = -radius, radius do
 	local vi = a:index(pos.x + (-radius), pos.y + y, pos.z + z)
@@ -869,7 +869,7 @@ local function plasma_safe_explode(pos, radius, damage, ignore_protection, ignor
 		local s = vector.add(pos, rad)
 		local r = vector.length(rad)
 		if r / radius < 1.4 then
-			minetest.check_single_for_falling(s)
+			core.check_single_for_falling(s)
 		end
 	end
 	end
@@ -895,7 +895,7 @@ local function plasma_safe_explode(pos, radius, damage, ignore_protection, ignor
 
 	if ship_combat_ready and ship_shield_prcnt <= dam_thres and #n_hits > 0 then
 		-- get node hit storage
-		local hits = minetest.deserialize(ship_meta:get_string("node_damage_list")) or {}
+		local hits = core.deserialize(ship_meta:get_string("node_damage_list")) or {}
 		-- check node hit list
 		for _, n_hit in pairs(n_hits) do
 			local o_pos = vector.subtract(n_hit.pos, shipp)
@@ -911,7 +911,7 @@ local function plasma_safe_explode(pos, radius, damage, ignore_protection, ignor
 			}
 			table.insert(hits, hit)
 		end
-		ship_meta:set_string("node_damage_list", minetest.serialize(hits))
+		ship_meta:set_string("node_damage_list", core.serialize(hits))
 	end
 
 	if ship_combat_ready then
@@ -932,8 +932,8 @@ local function plasma_safe_explode(pos, radius, damage, ignore_protection, ignor
 		end
 	end
 
-	minetest.log("action", "PLASMA owned by " .. owner .. " detonated at " ..
-		minetest.pos_to_string(pos) .. " with radius " .. radius)
+	core.log("action", "PLASMA owned by " .. owner .. " detonated at " ..
+		core.pos_to_string(pos) .. " with radius " .. radius)
 
 	return drops, radius, ship_shield_prcnt
 end
@@ -952,11 +952,11 @@ function ship_weapons.safe_plasma_boom(pos, def)
 	local pitch = 1.1
 	if shield > 0 then
 		pitch = 1.0 + (shield * 0.01)
-		minetest.sound_play("ctg_shield_hit", {pos = pos, gain = 1.5, pitch = ship_weapons.randFloat(0.25,0.30),
+		core.sound_play("ctg_shield_hit", {pos = pos, gain = 1.5, pitch = ship_weapons.randFloat(0.25,0.30),
 				max_hear_distance = math.min(def.radius * 20, 128)}, true)
 	end
 	local sound = def.sound or "tnt_explode"
-	minetest.sound_play(sound, {pos = pos, gain = 2.5, pitch = pitch,
+	core.sound_play(sound, {pos = pos, gain = 2.5, pitch = pitch,
 			max_hear_distance = math.min(def.radius * 20, 128)}, true)
 	-- append entity drops
 	local damage_radius = (radius / math.max(1, def.radius)) * def.damage_radius
@@ -968,7 +968,7 @@ function ship_weapons.safe_plasma_boom(pos, def)
 	if def.fire then
 		area_fire(pos, damage_radius)
 	end
-	minetest.log("action", "A SAFE PLASMA explosion occurred at " .. minetest.pos_to_string(pos) ..
+	core.log("action", "A SAFE PLASMA explosion occurred at " .. core.pos_to_string(pos) ..
 		" with radius " .. radius)
 end
 
@@ -985,7 +985,7 @@ function ship_weapons.plasma_boom(pos, def)
 
 	local pitch = 1.1
 	local sound = def.sound or "tnt_explode"
-	minetest.sound_play(sound, {pos = pos, gain = 2.5, pitch = pitch,
+	core.sound_play(sound, {pos = pos, gain = 2.5, pitch = pitch,
 			max_hear_distance = math.min(def.radius * 20, 128)}, true)
 	-- append entity drops
 	local damage_radius = (radius / math.max(1, def.radius)) * def.damage_radius
@@ -997,6 +997,6 @@ function ship_weapons.plasma_boom(pos, def)
 	if def.fire then
 		area_fire(pos, damage_radius)
 	end
-	minetest.log("action", "A PLASMA explosion occurred at " .. minetest.pos_to_string(pos) ..
+	core.log("action", "A PLASMA explosion occurred at " .. core.pos_to_string(pos) ..
 		" with radius " .. radius)
 end

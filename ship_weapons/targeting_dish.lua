@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local time_scl = 10
 
@@ -66,9 +66,9 @@ function ship_weapons.register_targeting_dish(custom_data)
     -------------------------------------------------------
     -- technic run
     local run = function(pos, node)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
-        local operator = minetest.get_player_by_name(owner);
+        local operator = core.get_player_by_name(owner);
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
 
@@ -109,7 +109,7 @@ function ship_weapons.register_targeting_dish(custom_data)
         end
     end
 
-    minetest.register_node(node_name, {
+    core.register_node(node_name, {
         description = machine_desc,
         tiles = {"ctg_" .. ltier .. "_target_dish_side.png^[transformR90",
                  "ctg_" .. ltier .. "_target_dish_side.png^[transformFXR90", "ctg_" .. ltier .. "_target_dish_side.png",
@@ -155,7 +155,7 @@ function ship_weapons.register_targeting_dish(custom_data)
         sounds = default.node_sound_metal_defaults(),
         connect_sides = connect_sides,
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", machine_desc)
             meta:set_string("digiline_channel", 'targeting_dish')
             meta:set_string("digiline_channel_computer", 'targeting_computer')
@@ -168,8 +168,8 @@ function ship_weapons.register_targeting_dish(custom_data)
         end,
         can_dig = technic.machine_can_dig,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             -- local inv = meta:get_inventory()
             meta:set_int("enabled", 0)
             meta:set_int("range", data.range)
@@ -194,13 +194,13 @@ function ship_weapons.register_targeting_dish(custom_data)
         },
 
         on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             local formspec = update_formspec(pos)
             meta:set_string("formspec", formspec)
         end,
 
         on_receive_fields = function(pos, formname, fields, sender)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             if fields.quit then
                 return
             end

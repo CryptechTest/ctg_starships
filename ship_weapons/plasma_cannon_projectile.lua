@@ -16,11 +16,11 @@ local function damage_aoe(damage, puncher, pos, radius)
     if turret_owner == nil then
         return
     end
-    local attacker = minetest.get_player_by_name(turret_owner)
+    local attacker = core.get_player_by_name(turret_owner)
     if not attacker then
         return
     end
-    local targs = minetest.get_objects_inside_radius({x=pos.x,y=pos.y,z=pos.z}, radius)
+    local targs = core.get_objects_inside_radius({x=pos.x,y=pos.y,z=pos.z}, radius)
     for _,t in pairs(targs) do
         local dist=math.sqrt(((t:get_pos().x-pos.x)^2)+((t:get_pos().y-pos.y)^2)+((t:get_pos().z-pos.z)^2))
         local DistDamage=damage/math.max(dist, 1)
@@ -72,7 +72,7 @@ local function register_projectile(def)
     local texture_mod = "^ship_weapons_energy_ball.png"
 
     --Main projectile registration function
-    minetest.register_entity(def.name, {
+    core.register_entity(def.name, {
         initial_properties = {
             physical = false,
             is_visible = true,
@@ -102,7 +102,7 @@ local function register_projectile(def)
             local pos = self.object:get_pos()
             local radius = 1
             --Death smoke
-            minetest.add_particlespawner({
+            core.add_particlespawner({
                 amount = 8,
                 time = 0.6,
                 minpos = vector.subtract(pos, radius / 4),
@@ -141,7 +141,7 @@ local function register_projectile(def)
                 elseif r == 1 then
                     hit_flare = def.hit_flare .. "^[transformFXR90"
                 end
-                minetest.add_particle({
+                core.add_particle({
                     pos = pos,
                     expirationtime = 0.57,
                     size = def.hit_flare_size,
@@ -153,7 +153,7 @@ local function register_projectile(def)
             end
             --Hit sound
             if def.hit_sound then
-                minetest.sound_play(def.hit_sound, {pos=self.previous_pos, pitch=2.35, gain=def.hit_sound_gain, max_hear_distance=2*48})
+                core.sound_play(def.hit_sound, {pos=self.previous_pos, pitch=2.35, gain=def.hit_sound_gain, max_hear_distance=2*48})
             end
         end,
 
@@ -182,7 +182,7 @@ local function register_projectile(def)
                 }
                 ship_weapons.launch_plasma_projectile(proj_def, self.owner, pos, self.target_pos, self.object_target)
                 if def.hit_flare then
-                    minetest.add_particle({
+                    core.add_particle({
                         pos = self.previous_pos,
                         expirationtime = 0.2,
                         size = def.hit_flare_size,
@@ -200,7 +200,7 @@ local function register_projectile(def)
             --Trail particle spawner
             if def.trail_particle then
                 --Smoke Effect
-                minetest.add_particlespawner({
+                core.add_particlespawner({
                     amount = 1,
                     time = 0.015,
                     minpos = {x=pos.x-0.1, y=pos.y-0.1, z=pos.z-0.1},
@@ -222,7 +222,7 @@ local function register_projectile(def)
                     dir.y = dir.y - 0.15
                 end
                 --Sparks Effect
-                minetest.add_particlespawner({
+                core.add_particlespawner({
                     amount = def.trail_particle_amount,
                     time = 0.125,
                     minpos = {x=pos.x-def.trail_particle_displacement+dir.x, y=pos.y-def.trail_particle_displacement+dir.y, z=pos.z-def.trail_particle_displacement+dir.z},
@@ -247,7 +247,7 @@ local function register_projectile(def)
                     self.target_pos = self.object_target:get_pos();
                 end
             elseif retarget then
-                local objs = minetest.get_objects_inside_radius(pos, 2.5)
+                local objs = core.get_objects_inside_radius(pos, 2.5)
                 for _, obj in pairs(objs) do
                     local obj_pos = obj:get_pos()
                     if obj:get_luaentity() and not obj:is_player() then
@@ -285,16 +285,16 @@ local function register_projectile(def)
 
             --Hit detection
             local delta = {x = pos.x-self.previous_pos.x, y = pos.y - self.previous_pos.y, z = pos.z - self.previous_pos.z}
-            local ray = minetest.raycast(pos, {
+            local ray = core.raycast(pos, {
                                                x = pos.x + delta.x * projectile_raycast_dist,
                                                y = pos.y + delta.y * projectile_raycast_dist,
                                                z = pos.z + delta.z * projectile_raycast_dist
                                                }, true, def.liquids_stop)
             local target = ray:next()
             if target and target.type == "node" then
-                local node = minetest.get_node_or_nil(minetest.get_pointed_thing_position(target, false))
-                if node and minetest.registered_nodes[node.name] and (minetest.registered_nodes[node.name].walkable and not is_atmos(node.name) or
-                def.liquids_stop and minetest.registered_nodes[node.name].liquidtype ~= "none") then
+                local node = core.get_node_or_nil(core.get_pointed_thing_position(target, false))
+                if node and core.registered_nodes[node.name] and (core.registered_nodes[node.name].walkable and not is_atmos(node.name) or
+                def.liquids_stop and core.registered_nodes[node.name].liquidtype ~= "none") then
                     if def.aoe then
                         damage_aoe(def.damage, self, target.intersection_point, def.aoe_radius)
                     end
@@ -307,7 +307,7 @@ local function register_projectile(def)
                 if def.aoe then
                     damage_aoe(def.damage, self, target.intersection_point, def.aoe_radius)
                 else
-                    local player = minetest.get_player_by_name(self.owner)
+                    local player = core.get_player_by_name(self.owner)
                     --[[if player then
                         target.ref:punch(player, 1.0, {
                         full_punch_interval=1.0,
@@ -322,7 +322,7 @@ local function register_projectile(def)
             end
 
             if self.node_hit then
-                local objs = minetest.get_objects_inside_radius(pos, 1.85)
+                local objs = core.get_objects_inside_radius(pos, 1.85)
                 for _, obj in pairs(objs) do
                     local obj_pos = obj:get_pos()
                     if obj:get_luaentity() and not obj:is_player() then
@@ -351,7 +351,7 @@ local function register_projectile(def)
                     elseif r == 1 then
                         hit_flare = def.hit_flare .. "^[transformFXR90"
                     end
-                    minetest.add_particle({
+                    core.add_particle({
                         pos = self.previous_pos,
                         expirationtime = 0.4,
                         size = def.hit_flare_size,
@@ -363,7 +363,7 @@ local function register_projectile(def)
                 end
                 --Hit particles
                 if def.hit_particle then
-                    minetest.add_particlespawner({
+                    core.add_particlespawner({
                         amount = def.hit_particle_amount,
                         time = 0.05,
                         minpos = self.previous_pos,
@@ -386,12 +386,12 @@ local function register_projectile(def)
                 end
                 --Hit sound
                 if def.hit_sound then
-                    minetest.sound_play(def.hit_sound, {pos=self.previous_pos, pitch=3.35, gain=def.hit_sound_gain, max_hear_distance=2*64})
+                    core.sound_play(def.hit_sound, {pos=self.previous_pos, pitch=3.35, gain=def.hit_sound_gain, max_hear_distance=2*64})
                 end
                 --Drop a drop item, if defined
                 if def.drop then
                     if math.random() < def.drop_chance then
-                        minetest.add_item(self.previous_pos, def.drop)
+                        core.add_item(self.previous_pos, def.drop)
                     end
                 end
                 --Remove the projectile
@@ -401,7 +401,7 @@ local function register_projectile(def)
             --Spawn a hit flare and remove the projectile if it timeouts
             if self.timer > def.timeout then
                 if def.flare then
-                    minetest.add_particle({
+                    core.add_particle({
                         pos = self.previous_pos,
                         expirationtime = 0.25,
                         size = math.floor(def.flare_size/2),
@@ -505,7 +505,7 @@ local function setup_projectile_register(tier)
         projectile_visual_size = 0.32,
         on_hit = function(self, target)
             local def = { radius = radius, damage = damage, ignore_protection = false, fire = true, owner = self.owner }
-            if not minetest.is_protected(target.intersection_point, "") then
+            if not core.is_protected(target.intersection_point, "") then
                 ship_weapons.plasma_boom(target.intersection_point, def)
             else
                 ship_weapons.safe_plasma_boom(target.intersection_point, def)
@@ -513,7 +513,7 @@ local function setup_projectile_register(tier)
         end,
         on_timeout = function(self)
             local def = { radius = radius, damage = damage, ignore_protection = false, fire = false, owner = self.owner }
-            if not minetest.is_protected(self.previous_pos, "") then
+            if not core.is_protected(self.previous_pos, "") then
                 ship_weapons.plasma_boom(self.previous_pos, def)
             else
                 ship_weapons.safe_plasma_boom(self.previous_pos, def)
@@ -726,7 +726,7 @@ function ship_weapons.launch_plasma_projectile(custom_def, operator, origin, tar
     local port_b = {x=_port_b.x+dir.x*spawndist, y=_port_b.y+dir.y*spawndist, z=_port_b.z+dir.z*spawndist}
 
     local function spawn_proj(_pos)
-        local obj = minetest.add_entity(_pos, proj_name.."_projectile")
+        local obj = core.add_entity(_pos, proj_name.."_projectile")
         if not obj then return end
         if not obj:get_luaentity() then return end
         --core.log('cannon spawn_proj(_pos)')
@@ -751,7 +751,7 @@ function ship_weapons.launch_plasma_projectile(custom_def, operator, origin, tar
         obj:set_acceleration({x=0, y=projectile_gravity, z=0})
         
         --Fire flash
-        minetest.add_particle({
+        core.add_particle({
             pos = _pos,
             expirationtime = 0.1,
             size = def.flare_size,
@@ -766,7 +766,7 @@ function ship_weapons.launch_plasma_projectile(custom_def, operator, origin, tar
         local s_vel_min = vector.subtract(s_vel, {x=math.random(-r,r), y=math.random(-r,r), z=math.random(-r,r)})
         local s_vel_max = vector.add(s_vel, {x=math.random(-r,r), y=math.random(-r,r), z=math.random(-r,r)})
         local s_pos = {x=_pos.x+dir.x*0.8, y=_pos.y+dir.y*0.8, z=_pos.z+dir.z*0.8}
-        minetest.add_particlespawner({
+        core.add_particlespawner({
             amount = 25,
             time = 0.175,
             minpos = {x=s_pos.x-0.01, y=s_pos.y-0.01, z=s_pos.z-0.01},
@@ -783,7 +783,7 @@ function ship_weapons.launch_plasma_projectile(custom_def, operator, origin, tar
             glow = 14,
         })
         --Fire sound
-        if def.fire_sound then minetest.sound_play(def.fire_sound, {pos=_pos, pitch=math.random(2.4,2.5), gain=def.fire_sound_gain, max_hear_distance=2*48}) end
+        if def.fire_sound then core.sound_play(def.fire_sound, {pos=_pos, pitch=math.random(2.4,2.5), gain=def.fire_sound_gain, max_hear_distance=2*48}) end
     end
 
     --Projectile creation

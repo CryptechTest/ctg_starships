@@ -3,7 +3,7 @@ local function register_ammo(def)
 
     local amount = def.amount or 1
 
-    minetest.register_craftitem(def.name, {
+    core.register_craftitem(def.name, {
         description = def.description,
         inventory_image = def.texture,
         wield_image = def.texture,
@@ -13,7 +13,7 @@ local function register_ammo(def)
 
     if def.recipe then
         for _, v in pairs(def.recipe) do
-            minetest.register_craft({
+            core.register_craft({
                 type = "shaped",
                 output = def.name .. " " .. amount,
                 recipe = v

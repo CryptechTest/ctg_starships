@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local time_scl = 30
 
@@ -33,14 +33,14 @@ local function randFloat(min, max, precision)
 end
 
 local function needs_charge(pos)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local charge = meta:get_int("charge")
     local charge_max = meta:get_int("charge_max")
     return charge < charge_max
 end
 
 local function has_charge(pos)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local charge = meta:get_int("charge")
     return charge > 0
 end
@@ -112,7 +112,7 @@ local function spawn_particle2(pos, tier)
         maxsize = 0.72
     }
 
-    minetest.add_particlespawner(def);
+    core.add_particlespawner(def);
 
     def.minvel = {
         x = -2.41,
@@ -125,7 +125,7 @@ local function spawn_particle2(pos, tier)
         z = 2.41
     }
 
-    minetest.add_particlespawner(def);
+    core.add_particlespawner(def);
 end
 
 -------------------------------------------------------
@@ -167,7 +167,7 @@ function ship_weapons.rail_cannon_frag(def, op, origin, pos_target, object_targe
     })
 
     local dist = vector.distance(o_origin, target)
-    --minetest.log("cannon pew pew! " .. tostring(dist))
+    --core.log("cannon pew pew! " .. tostring(dist))
 
     local pitch, pitch_deg = ship_weapons.calculatePitch(o_origin, target)
     local yaw, yaw_deg = ship_weapons.calculateYaw(o_origin, target)
@@ -179,7 +179,7 @@ function ship_weapons.rail_cannon_frag(def, op, origin, pos_target, object_targe
     if yaw_deg < 0 then
         yaw = math.rad(360 + yaw_deg)
     end    
-    --minetest.log("adjusting angle:  pitch= " .. tostring(pitch_deg) .. "  yaw= " .. tostring(yaw_deg))
+    --core.log("adjusting angle:  pitch= " .. tostring(pitch_deg) .. "  yaw= " .. tostring(yaw_deg))
     
     local function num_is_close(target, actual)
         local target_frac = (target * 0.01) + 4.75
@@ -188,7 +188,7 @@ function ship_weapons.rail_cannon_frag(def, op, origin, pos_target, object_targe
 
     local rotation_done = false
     local target_found = false
-    local objs = minetest.get_objects_inside_radius(o_origin, 0.15)
+    local objs = core.get_objects_inside_radius(o_origin, 0.15)
     for _, obj in pairs(objs) do
         if obj:get_luaentity() then
             local ent = obj:get_luaentity()
@@ -202,7 +202,7 @@ function ship_weapons.rail_cannon_frag(def, op, origin, pos_target, object_targe
                     if ent._rotation_done then
                         rotation_done = true
                     end
-                    --minetest.log("new rot yaw= " .. tostring(math.deg(ent._rotation_set.y)))
+                    --core.log("new rot yaw= " .. tostring(math.deg(ent._rotation_set.y)))
                 end                
                 break
             end
@@ -216,14 +216,14 @@ function ship_weapons.rail_cannon_frag(def, op, origin, pos_target, object_targe
     end
 
     if not target_found then
-        --minetest.log("target not found!")
+        --core.log("target not found!")
         --return 1
     end
     if not rotation_done then
-        --minetest.log("rotation not done!")
+        --core.log("rotation not done!")
         return 1
     end
-    --minetest.log("launching frag!")
+    --core.log("launching frag!")
     ship_weapons.launch_energy_rail_projectile(def, op, o_origin, target, object_target)
     return 3
 end
@@ -236,13 +236,13 @@ function ship_weapons.rail_cannon_launch(def, op, origin, pos_target, object_tar
     })
 
     local dist = vector.distance(origin, target)
-    -- minetest.log("missile pew pew! " .. tostring(dist))
+    -- core.log("missile pew pew! " .. tostring(dist))
     
     local pitch = ship_weapons.calculatePitch(origin, target)
     local yaw = ship_weapons.calculateYaw(origin, target)
 
     local rotation_done = false
-    local objs = minetest.get_objects_inside_radius(origin, 0.15)
+    local objs = core.get_objects_inside_radius(origin, 0.15)
     for _, obj in pairs(objs) do
         if obj:get_luaentity() then
             local ent = obj:get_luaentity()
@@ -323,11 +323,11 @@ function ship_weapons.register_rail_cannon(data)
     end
 
     local on_punch = function(pos, node, puncher, pointed_thing)
-        -- minetest.log("punched node")
+        -- core.log("punched node")
         local function on_hit(self, target)
 
-            local node = minetest.get_node(target)
-            -- minetest.log("hit node " .. node.name)
+            local node = core.get_node(target)
+            -- core.log("hit node " .. node.name)
             if node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name then
 
                 technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
@@ -339,11 +339,11 @@ function ship_weapons.register_rail_cannon(data)
     end
 
     local on_timer = function(pos, elapsed)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         --technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_idle")
         meta:set_int("broken", 0);
         local o_pos = vector.add(pos, {x=0,y=0.65,z=0})
-        local objs = minetest.get_objects_inside_radius(o_pos, 0.15)
+        local objs = core.get_objects_inside_radius(o_pos, 0.15)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -366,8 +366,8 @@ function ship_weapons.register_rail_cannon(data)
             player_pos[name] = nil
             return
         end
-        local node = minetest.get_node(pos)
-        local meta = minetest.get_meta(pos)
+        local node = core.get_node(pos)
+        local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
         if name ~= owner then
             return
@@ -438,7 +438,7 @@ function ship_weapons.register_rail_cannon(data)
             o_y = 0.65
         end
         local o_pos = vector.add(pos, {x=0,y=o_y,z=0})
-        local objs = minetest.get_objects_inside_radius(o_pos, 0.15)
+        local objs = core.get_objects_inside_radius(o_pos, 0.15)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -678,7 +678,7 @@ function ship_weapons.register_rail_cannon(data)
         local ships = {}
         local bFoundTarget = false
         local nTargetCount = 0
-        local objs = minetest.get_objects_inside_radius(pos, r + 0.251)
+        local objs = core.get_objects_inside_radius(pos, r + 0.251)
         for _, obj in pairs(objs) do
             if nTargetCount >= 3 then
                 break
@@ -701,7 +701,7 @@ function ship_weapons.register_rail_cannon(data)
     end
 
     local function find_ship_protect(pos, r)
-        local nodes = minetest.find_nodes_in_area({
+        local nodes = core.find_nodes_in_area({
             x = pos.x - r,
             y = pos.y - r,
             z = pos.z - r
@@ -718,12 +718,12 @@ function ship_weapons.register_rail_cannon(data)
             return -1
         end
         local bClear = 0;
-        local ray = minetest.raycast(origin, pos_target, true, false)
+        local ray = core.raycast(origin, pos_target, true, false)
         for pointed_thing in ray do
             if pointed_thing.type == "node" then
                 local pos = pointed_thing.intersection_point
                 if (vector.distance(origin, pos) > 1.25) and (vector.distance(pos_target, pos) > 3) then
-                    local node = minetest.get_node(pos)
+                    local node = core.get_node(pos)
                     if node.name ~= "air" and node.name ~= "vacuum:vacuum" and node.name ~= "vacuum:atmos_thin" and
                         node.name ~= ":asteroid:atmos" then
                         bClear = bClear + 1;
@@ -736,7 +736,7 @@ function ship_weapons.register_rail_cannon(data)
     end
 
     local function find_target_ships(pos, range)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         if range > 79 * 2 then
             range = 79 * 2
         end
@@ -749,7 +749,7 @@ function ship_weapons.register_rail_cannon(data)
         local protects = find_ship_protect(pos, 72)
         local our_ship = nil
         for _, node in pairs(protects) do
-            local ship_meta = minetest.get_meta(node)
+            local ship_meta = core.get_meta(node)
             local name = ship_meta:get_string("owner")
             if name == meta:get_string("owner") then
                 our_ship = {
@@ -769,7 +769,7 @@ function ship_weapons.register_rail_cannon(data)
             -- check for line of sight...
             local nodes_in_path = check_path(pos, node_pos)
             if node_pos and nodes_in_path < 48 then
-                local ship_meta = minetest.get_meta(node_pos)
+                local ship_meta = core.get_meta(node_pos)
                 local name = ship_meta:get_string("owner")
                 local r = (nodes_in_path * 0.7) + 1
                 local target_pos = vector.add(node_pos, {
@@ -790,7 +790,7 @@ function ship_weapons.register_rail_cannon(data)
     end
 
     local function find_target_ship(pos, target)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         -------------------------------------------------------
         -- strike launch to target object
         local bFoundTarget = false
@@ -798,7 +798,7 @@ function ship_weapons.register_rail_cannon(data)
         -- check for line of sight...
         local nodes_in_path = check_path(pos, target)
         if target and nodes_in_path < 48 then
-            local ship_meta = minetest.get_meta(target)
+            local ship_meta = core.get_meta(target)
             local name = ship_meta:get_string("owner")
             bFoundTarget = true;
             nTargetCount = nTargetCount + 1
@@ -853,9 +853,9 @@ function ship_weapons.register_rail_cannon(data)
 
     -- technic run
     local run = function(pos, node)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
-        --local operator = minetest.get_player_by_name(owner);
+        --local operator = core.get_player_by_name(owner);
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
         local mount_dir = meta:get_string("mount_dir") or "floor"
@@ -869,7 +869,7 @@ function ship_weapons.register_rail_cannon(data)
         local charge = meta:get_int("charge") or 0
 
         -- Get digiline data storage
-        local digiline_data = minetest.deserialize(meta:get_string("digiline_data")) or default_digi_data
+        local digiline_data = core.deserialize(meta:get_string("digiline_data")) or default_digi_data
 
         -- Setup meta data if it does not exist.
         if not eu_input then
@@ -958,7 +958,7 @@ function ship_weapons.register_rail_cannon(data)
                     local dir = ship_weapons.get_port_direction(pos)
                     local target_pos = digiline_data.target_pos or 
                             ship_weapons.calculateNewPoint(pos, dir, digiline_data.power, digiline_data.pitch, digiline_data.yaw)
-                    -- minetest.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
+                    -- core.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
                     --[[if ship_weapons.rail_cannon_launch(proj_def, owner, pos, target_pos, nil) then
                         bFoundTarget = true;
                     end]]
@@ -972,7 +972,7 @@ function ship_weapons.register_rail_cannon(data)
                             digiline_data.target_pos = nil
                         end
                         -- Update digiline data...
-                        meta:set_string("digiline_data", minetest.serialize(digiline_data))
+                        meta:set_string("digiline_data", core.serialize(digiline_data))
                         --break;
                     end
                 elseif meta:get_int("attack_type") == 6 then
@@ -1130,7 +1130,7 @@ function ship_weapons.register_rail_cannon(data)
         sounds = default.node_sound_metal_defaults(),
         on_rotate = screwdriver.disallow,
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             if placer:is_player() then
                 meta:set_string("owner", placer:get_player_name())
                 meta:set_string("members", "")
@@ -1141,7 +1141,7 @@ function ship_weapons.register_rail_cannon(data)
                         
             local under = pointed_thing.under
             local above = pointed_thing.above
-            local wdir = minetest.dir_to_wallmounted(vector.subtract(under, above))
+            local wdir = core.dir_to_wallmounted(vector.subtract(under, above))
             --local mount_dir = meta:get_string("mount_dir")
             local gun_pos = pos
             local mount_dir = "wall"
@@ -1169,7 +1169,7 @@ function ship_weapons.register_rail_cannon(data)
                 gun_pos = vector.add(pos, {x = 0, y =0, z = 0.65})
                 yaw = math.rad(180)
             end
-            local ent_obj = minetest.add_entity(gun_pos, "ship_weapons:" .. ltier .. "_rail_cannon_barrel")
+            local ent_obj = core.add_entity(gun_pos, "ship_weapons:" .. ltier .. "_rail_cannon_barrel")
             if wdir == 1 then
                 ent_obj:set_properties({_mount_dir = "floor"})
             elseif wdir == 0 then
@@ -1192,8 +1192,8 @@ function ship_weapons.register_rail_cannon(data)
         --can_dig = technic.machine_can_dig,
         on_rightclick = rightclick,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "LV Rail Cannon")
             local inv = meta:get_inventory()
             inv:set_size("src", 1)
@@ -1205,7 +1205,7 @@ function ship_weapons.register_rail_cannon(data)
             meta:set_string("target_dir", core.serialize({x = 0, y = 0, z = 0}))
             local formspec = ship_weapons.update_formspec(data, meta)
             meta:set_string("formspec", formspec)
-            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
+            meta:set_string("digiline_data", core.serialize(default_digi_data))
         end,
         allow_metadata_inventory_put = technic.machine_inventory_put,
         allow_metadata_inventory_take = function(pos, listname, index, stack, player)
@@ -1235,14 +1235,14 @@ function ship_weapons.register_rail_cannon(data)
     local def_node_wall = table.copy(_def_node)
     def_node_floor.on_place = function(itemstack, placer, pointed_thing)
         local under = pointed_thing.under
-        local node = minetest.get_node(under)
-        local def = minetest.registered_nodes[node.name]
+        local node = core.get_node(under)
+        local def = core.registered_nodes[node.name]
         if def and def.on_rightclick and
             not (placer and placer:is_player() and placer:get_player_control().sneak) then
             return def.on_rightclick(under, node, placer, itemstack, pointed_thing) or itemstack
         end
         local above = pointed_thing.above
-        local wdir = minetest.dir_to_wallmounted(vector.subtract(under, above))
+        local wdir = core.dir_to_wallmounted(vector.subtract(under, above))
         local fakestack = itemstack
         if wdir == 0 then
             fakestack:set_name(node_name .. "_ceiling")
@@ -1251,7 +1251,7 @@ function ship_weapons.register_rail_cannon(data)
         else
             fakestack:set_name(node_name .. "_wall")
         end
-        itemstack = minetest.item_place(fakestack, placer, pointed_thing, wdir)
+        itemstack = core.item_place(fakestack, placer, pointed_thing, wdir)
         itemstack:set_name(node_name)
         return itemstack
     end
@@ -1266,11 +1266,11 @@ function ship_weapons.register_rail_cannon(data)
     }
     --[[def_node_ceiling.after_place_node = function(pos, placer, itemstack, pointed_thing)
         local gun_pos = vector.add(pos, {x = 0, y =-0.65, z = 0})
-        local ent_obj = minetest.add_entity(gun_pos, "ship_weapons:" .. ltier .. "_rail_cannon_barrel")
+        local ent_obj = core.add_entity(gun_pos, "ship_weapons:" .. ltier .. "_rail_cannon_barrel")
         --local cannon = etc:get_luaentity()
         ent_obj:set_properties({_mount_dir = "ceiling"})
         ent_obj:set_rotation({x=0,y=0,z=math.rad(180)})
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         if placer:is_player() then
             meta:set_string("owner", placer:get_player_name())
             meta:set_string("members", "")
@@ -1289,11 +1289,11 @@ function ship_weapons.register_rail_cannon(data)
     def_node_wall.connect_sides = connect_sides_wall
     def_node_wall.groups = active_groups
 	def_node_wall.paramtype2 = "wallmounted"
-    minetest.register_node(node_name .. "", def_node_floor)
-    minetest.register_node(node_name .. "_wall", def_node_wall)
-    minetest.register_node(node_name .. "_ceiling", def_node_ceiling)
+    core.register_node(node_name .. "", def_node_floor)
+    core.register_node(node_name .. "_wall", def_node_wall)
+    core.register_node(node_name .. "_ceiling", def_node_ceiling)
     
-    minetest.register_on_player_receive_fields(function(player, formname, fields)
+    core.register_on_player_receive_fields(function(player, formname, fields)
         if formname ~= data.modname .. ":" .. ltier .. "_" .. tmachine_name then
             return
         end
@@ -1340,8 +1340,8 @@ function ship_weapons.register_rail_cannon(data)
         sounds = default.node_sound_metal_defaults(),
         on_rotate = screwdriver.disallow,
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            local meta = minetest.get_meta(pos)
-            --minetest.get_node_timer(pos):start(30)
+            local meta = core.get_meta(pos)
+            --core.get_node_timer(pos):start(30)
             meta:set_int("attack_type", 1)
             meta:set_int("last_hit", 0)
             if placer:is_player() then
@@ -1357,8 +1357,8 @@ function ship_weapons.register_rail_cannon(data)
         end,
         --can_dig = technic.machine_can_dig,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Broken " .. tier .. " Rail Cannon")
             local inv = meta:get_inventory()
             inv:set_size("src", 1)
@@ -1369,7 +1369,7 @@ function ship_weapons.register_rail_cannon(data)
             meta:set_int("demand", data.demand[1])
             local formspec = ship_weapons.update_formspec(data, meta)
             meta:set_string("formspec", formspec)
-            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
+            meta:set_string("digiline_data", core.serialize(default_digi_data))
         end,
         allow_metadata_inventory_put = technic.machine_inventory_put,
         allow_metadata_inventory_take = technic.machine_inventory_take,
@@ -1387,7 +1387,7 @@ function ship_weapons.register_rail_cannon(data)
             }
         },
         on_timer = function(pos, elapsed)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             local time = meta:get_int("time") + elapsed
             if time >= 1 then
                 local mount_dir = meta:get_string("mount_dir")
@@ -1399,7 +1399,7 @@ function ship_weapons.register_rail_cannon(data)
                     technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_ceiling")
                 end
                 meta:set_int("broken", 0);
-                --minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_rail_cannon_display")
+                --core.add_entity(pos, "ship_weapons:" .. ltier .. "_rail_cannon_display")
                 meta:set_int("hp", data.hp)
                 meta:set_int("charge", 0)
             else
@@ -1416,14 +1416,14 @@ function ship_weapons.register_rail_cannon(data)
     def_node_broken_ceiling.connect_sides = connect_sides_ceiling;
     def_node_broken_floor.on_place = function(itemstack, placer, pointed_thing)
         local under = pointed_thing.under
-        local node = minetest.get_node(under)
-        local def = minetest.registered_nodes[node.name]
+        local node = core.get_node(under)
+        local def = core.registered_nodes[node.name]
         if def and def.on_rightclick and
             not (placer and placer:is_player() and placer:get_player_control().sneak) then
             return def.on_rightclick(under, node, placer, itemstack, pointed_thing) or itemstack
         end
         local above = pointed_thing.above
-        local wdir = minetest.dir_to_wallmounted(vector.subtract(under, above))
+        local wdir = core.dir_to_wallmounted(vector.subtract(under, above))
         local fakestack = itemstack
         if wdir == 0 then
             fakestack:set_name(node_name .. "_broken" .. "_ceiling")
@@ -1433,7 +1433,7 @@ function ship_weapons.register_rail_cannon(data)
             fakestack:set_name(node_name .. "_broken" .. "_wall")
         end
 
-        itemstack = minetest.item_place(fakestack, placer, pointed_thing, wdir)
+        itemstack = core.item_place(fakestack, placer, pointed_thing, wdir)
         itemstack:set_name(node_name)
         return itemstack
     end
@@ -1455,9 +1455,9 @@ function ship_weapons.register_rail_cannon(data)
 	def_node_broken_ceiling.paramtype2 = "wallmounted"
 	def_node_broken_wall.paramtype2 = "wallmounted"
 
-    minetest.register_node(node_name .. "_broken", def_node_broken_floor)
-    minetest.register_node(node_name .. "_wall_broken", def_node_broken_wall)
-    minetest.register_node(node_name .. "_ceiling_broken", def_node_broken_ceiling)
+    core.register_node(node_name .. "_broken", def_node_broken_floor)
+    core.register_node(node_name .. "_wall_broken", def_node_broken_wall)
+    core.register_node(node_name .. "_ceiling_broken", def_node_broken_ceiling)
 
     technic.register_machine(tier, node_name, technic.receiver)
     technic.register_machine(tier, node_name .. "_wall", technic.receiver)
@@ -1473,7 +1473,7 @@ function ship_weapons.register_rail_cannon(data)
     -------------------------------------------------------
 
     -- display entity shown for turret top and barrels
-    minetest.register_entity("ship_weapons:" .. ltier .. "_rail_cannon_barrel", {
+    core.register_entity("ship_weapons:" .. ltier .. "_rail_cannon_barrel", {
         initial_properties = {
             physical = true,
             collide_with_objects = true,
@@ -1512,7 +1512,7 @@ function ship_weapons.register_rail_cannon(data)
             local pos = nil
             local mount_dir = ""
             local pos_ceiling = vector.add(self.object:get_pos(), {x=0,y=0.65,z=0})
-            local pos_wall =  minetest.find_node_near(self.object:get_pos(), 1.05, "group:ship_cannon")
+            local pos_wall =  core.find_node_near(self.object:get_pos(), 1.05, "group:ship_cannon")
             if core.get_node(pos_ceiling).name:match("_ceiling") then
                 self._mount_dir = "ceiling"
                 mount_dir = "ceiling"
@@ -1715,14 +1715,14 @@ function ship_weapons.register_rail_cannon(data)
                 y = 0.65
                 o_pos = vector.add(pos, {x=0,y=y,z=0})
             elseif self._mount_dir == "wall" then
-                local pos_wall =  minetest.find_node_near(self.object:get_pos(), 1.05, "group:ship_cannon")
+                local pos_wall =  core.find_node_near(self.object:get_pos(), 1.05, "group:ship_cannon")
                 o_pos = pos_wall
             end
             local o_pos = vector.add(pos, {x=0,y=y,z=0}) 
             technic.swap_node(o_pos, "ship_weapons:" .. ltier .. "_" .. _tmachine_name .. "_broken")
             if o_pos then
                 spawn_particle2(o_pos, ltier)
-                minetest.get_node_timer(pos):start(30)
+                core.get_node_timer(pos):start(30)
                 local meta = core.get_meta(o_pos)
                 meta:set_int("broken", 1)
                 meta:set_int("hp", 0)
@@ -1737,7 +1737,7 @@ function ship_weapons.register_rail_cannon(data)
                 y = 0.65
                 o_pos = vector.add(pos, {x=0,y=y,z=0})
             elseif self._mount_dir == "wall" then
-                local pos_wall =  minetest.find_node_near(self.object:get_pos(), 1.05, "group:ship_cannon")
+                local pos_wall =  core.find_node_near(self.object:get_pos(), 1.05, "group:ship_cannon")
                 o_pos = pos_wall
             end
             local node = core.get_node(o_pos)
@@ -1755,15 +1755,15 @@ function ship_weapons.register_rail_cannon(data)
                     _target = vector.add(target, {x=0,y=o_y,z=0}) 
                     _tmachine_name = tmachine_name .. "_ceiling"
                 elseif self._mount_dir == "wall" then
-                    local pos_wall =  minetest.find_node_near(target, 1.07, "group:ship_cannon")
+                    local pos_wall =  core.find_node_near(target, 1.07, "group:ship_cannon")
                     o_y = 0
                     _target = pos_wall
                     _tmachine_name = tmachine_name .. "_wall"
                 end
                 target = _target
-                local node = minetest.get_node(target)
-                local meta = minetest.get_meta(target)
-                -- minetest.log("hit " .. node.name)
+                local node = core.get_node(target)
+                local meta = core.get_meta(target)
+                -- core.log("hit " .. node.name)
 
                 if node.name == "ship_weapons:" .. ltier .. "_" .. _tmachine_name then
                     --technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "")
@@ -1781,8 +1781,8 @@ function ship_weapons.register_rail_cannon(data)
                         technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. _tmachine_name .. "_broken")
                         meta:set_int("broken", 1)
                         self.object:remove()
-                        minetest.get_node_timer(target):start(math.random(data.repair_length, data.repair_length + 30))
-                        minetest.sound_play("ctg_zap", {
+                        core.get_node_timer(target):start(math.random(data.repair_length, data.repair_length + 30))
+                        core.sound_play("ctg_zap", {
                             pos = target,
                             gain = 0.5,
                             pitch = randFloat(5.2, 5.25)
@@ -1791,7 +1791,7 @@ function ship_weapons.register_rail_cannon(data)
 
                     return true
                 elseif node.name == "ship_weapons:" .. ltier .. "_" .. _tmachine_name .. "_broken" then
-                    local meta = minetest.get_meta(target)
+                    local meta = core.get_meta(target)
                     if meta:get_int("broken") == 1 then
                         self.object:remove()
                     end
@@ -1812,7 +1812,7 @@ function ship_weapons.register_rail_cannon(data)
     -- Display-zone node, Do NOT place the display as a node,
     -- it is made to be used as an entity (see above)
 
-    minetest.register_node("ship_weapons:" .. ltier .. "_rail_cannon_barrel_node", {
+    core.register_node("ship_weapons:" .. ltier .. "_rail_cannon_barrel_node", {
         tiles = {
             ltier .. "_rail_cannon_top.png", -- top
             ltier .. "_rail_cannon_bottom.png", -- bottom
@@ -1865,7 +1865,7 @@ function ship_weapons.register_rail_cannon(data)
 
     local function spawn_particle_area(pos, tier)
         local dir = ship_weapons.get_port_wall_direction(pos)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local hp = meta:get_int("hp")
         --local amount = hp + math.random(1, hp + 1)
         local def = {
@@ -1924,10 +1924,10 @@ function ship_weapons.register_rail_cannon(data)
             maxsize = 0.8
         }
     
-        minetest.add_particlespawner(def);
+        core.add_particlespawner(def);
     end
 
-    minetest.register_abm({
+    core.register_abm({
         label = "rail cannon effect",
         nodenames = {"ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken", "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_wall_broken", "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_ceiling_broken"},
         interval = 2,

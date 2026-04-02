@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local mese_image_mask = "default_mese_crystal.png^[colorize:#75757555"
 
@@ -59,11 +59,11 @@ function ship_engine.update_formspec(data, running, enabled, has_mese, percent, 
         if has_mese or running then
             meseimg = "animated_image[5,1;1,1;;" .. "engine_mese_anim.png" .. ";4;400;]"
         end
-        local power_field = "label[0.5,2.5;" .. minetest.colorize('#21daff', "Energy Stats") .. "]"
-        local input_field = "label[0.5,3.6;Drawing]label[0.5,3.9;" .. minetest.colorize('#fca903', "-" .. eu_input) ..
+        local power_field = "label[0.5,2.5;" .. core.colorize('#21daff', "Energy Stats") .. "]"
+        local input_field = "label[0.5,3.6;Drawing]label[0.5,3.9;" .. core.colorize('#fca903', "-" .. eu_input) ..
                                 "]"
         local output_field =
-            "label[0.5,2.9;Generating]label[0.5,3.2;" .. minetest.colorize('#03fc56', "+" .. eu_supply) .. "]"
+            "label[0.5,2.9;Generating]label[0.5,3.2;" .. core.colorize('#03fc56', "+" .. eu_supply) .. "]"
 
         formspec = "size[8,9;]" .. "list[current_name;src;2,1;1,1;]" .. "list[current_name;dst;5,1;1,1;]" ..
                        "list[current_player;main;0,5;8,4;]" .. "label[0,0;" .. machine_desc:format(tier) .. "]" .. image ..
@@ -192,21 +192,21 @@ function ship_engine.get_mese(items, take)
 end
 
 function ship_engine.needs_charge(pos)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local charge = meta:get_int("charge")
     local charge_max = meta:get_int("charge_max")
     return charge < charge_max
 end
 
 local function reset_charge(pos)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local charge = meta:get_int("charge")
     local charge_max = meta:get_int("charge_max")
     meta:set_int("charge", charge - charge_max)
 end
 
 local function spend_charge(pos, amt)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local charge = meta:get_int("charge")
     local new_charge = charge - amt
     if new_charge < 0 then
@@ -247,7 +247,7 @@ function ship_engine.spawn_particle(pos, dir_x, dir_y, dir_z, acl_x, acl_y, acl_
     local rx = dir_x * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
     local ry = dir_y * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
     local rz = dir_z * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
-    minetest.add_particlespawner({
+    core.add_particlespawner({
         amount = amount,
         -- pos = pos,
         minpos = {

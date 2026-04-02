@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local time_tick = 50
 local time_scl = time_tick
@@ -21,7 +21,7 @@ end
 
 local function out_result(pos, ninput, machine_node, machine_desc_tier, tier)
     local output = {}
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local inv = meta:get_inventory()
     if ninput and ninput.new_input then
         inv:set_list("src", {ninput.new_input})
@@ -32,7 +32,7 @@ local function out_result(pos, ninput, machine_node, machine_desc_tier, tier)
 end
 
 local function out_results(pos, machine_node, machine_desc_tier, tier, do_use)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local inv = meta:get_inventory()
     local ninput = ship_engine.get_mese(inv:get_list("src"), do_use)
     local result = -1
@@ -56,13 +56,13 @@ function ship_engine.register_engine(data)
 
     local tube = {
         insert_object = function(pos, node, stack, direction)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             local inv = meta:get_inventory()
             local added = inv:add_item("src", stack)
             return added
         end,
         can_insert = function(pos, node, stack, direction)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             local inv = meta:get_inventory()
             return inv:room_for_item("src", stack)
         end,
@@ -107,7 +107,7 @@ function ship_engine.register_engine(data)
     end
 
     local run = function(pos, node)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
         local eu_supply = meta:get_int(tier .. "_EU_supply")
@@ -316,7 +316,7 @@ function ship_engine.register_engine(data)
     end
 
     local on_receive_fields = function(pos, formname, fields, sender)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         if fields.quit then
             meta:set_int("editing", 0)
             return
@@ -328,7 +328,7 @@ function ship_engine.register_engine(data)
         if not is_owner and is_protected then
             return
         end
-        local node = minetest.get_node(pos)
+        local node = core.get_node(pos)
         local charge_max = meta:get_int("charge_max")
         local charge = meta:get_int("charge")
         local eu_input = meta:get_int(tier .. "_EU_input")
@@ -357,7 +357,7 @@ function ship_engine.register_engine(data)
     end
 
     local node_name = data.modname .. ":" .. ltier .. "_" .. machine_name
-    minetest.register_node(node_name .. "", {
+    core.register_node(node_name .. "", {
         description = machine_desc,
         tiles = {ltier .. "_" .. tmachine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_bottom.png",
                  ltier .. "_" .. tmachine_name .. "_side.png", ltier .. "_" .. tmachine_name .. "_side.png",
@@ -377,19 +377,19 @@ function ship_engine.register_engine(data)
             return technic.machine_after_dig_node
         end,
         on_push_item = function(pos, dir, item)
-            local tube_dir = minetest.get_meta(pos):get_int("tube_dir")
+            local tube_dir = core.get_meta(pos):get_int("tube_dir")
             if dir == tubelib2.Turn180Deg[tube_dir] then
-                local s = minetest.get_meta(pos):get_string("peer_pos")
+                local s = core.get_meta(pos):get_string("peer_pos")
                 if s and s ~= "" then
-                    return push_item(minetest.string_to_pos(s))
+                    return push_item(core.string_to_pos(s))
                 end
             end
         end,
         on_rotate = screwdriver.disallow,
         can_dig = technic.machine_can_dig,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Starship Engine")
             meta:set_int("tube_time", 0)
             local inv = meta:get_inventory()
@@ -431,7 +431,7 @@ function ship_engine.register_engine(data)
         }
     })
 
-    minetest.register_node(node_name .. "_active", {
+    core.register_node(node_name .. "_active", {
         description = machine_desc,
         tiles = {ltier .. "_" .. tmachine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_bottom.png",
                  ltier .. "_" .. tmachine_name .. "_side.png", ltier .. "_" .. tmachine_name .. "_side.png",
@@ -449,11 +449,11 @@ function ship_engine.register_engine(data)
             return technic.machine_after_dig_node
         end,
         on_push_item = function(pos, dir, item)
-            local tube_dir = minetest.get_meta(pos):get_int("tube_dir")
+            local tube_dir = core.get_meta(pos):get_int("tube_dir")
             if dir == tubelib2.Turn180Deg[tube_dir] then
-                local s = minetest.get_meta(pos):get_string("peer_pos")
+                local s = core.get_meta(pos):get_string("peer_pos")
                 if s and s ~= "" then
-                    return push_item(minetest.string_to_pos(s))
+                    return push_item(core.string_to_pos(s))
                 end
             end
         end,
@@ -521,7 +521,7 @@ function ship_engine.register_engine_core(data)
     end
 
     local run = function(pos, node)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
 
@@ -628,7 +628,7 @@ function ship_engine.register_engine_core(data)
     end
 
     local node_name = data.modname .. ":" .. ltier .. "_" .. machine_name
-    minetest.register_node(node_name, {
+    core.register_node(node_name, {
         description = machine_desc,
         tiles = {ltier .. "_" .. tmachine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_bottom.png",
                  ltier .. "_" .. tmachine_name .. "_side.png", ltier .. "_" .. tmachine_name .. "_side.png",
@@ -651,8 +651,8 @@ function ship_engine.register_engine_core(data)
         can_dig = technic.machine_can_dig,
 
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Starship Hyperdrive")
             -- meta:set_int("tube_time", 0)
             local inv = meta:get_inventory()
@@ -678,8 +678,8 @@ function ship_engine.register_engine_core(data)
             if fields.quit then
                 return
             end
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             local enabled = false
             if fields.toggle then
                 if meta:get_int("enabled") == 1 then
@@ -705,7 +705,7 @@ function ship_engine.register_engine_core(data)
         }
     })
 
-    minetest.register_node(node_name .. "_active", {
+    core.register_node(node_name .. "_active", {
         description = machine_desc,
         tiles = {{
             name = ltier .. "_" .. machine_name .. "_top_active.png",
@@ -747,8 +747,8 @@ function ship_engine.register_engine_core(data)
             if fields.quit then
                 return
             end
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             local enabled = false
             if fields.toggle then
                 if meta:get_int("enabled") == 1 then
@@ -781,7 +781,7 @@ function ship_engine.register_engine_core(data)
 end
 
 -- engine radiation
-if minetest.get_modpath("radiant_damage") then
+if core.get_modpath("radiant_damage") then
 
     local on_radiation_damage = function(player, damage, pos)
         if player:get_hp() <= 0 or damage == 0 then
@@ -812,7 +812,7 @@ if minetest.get_modpath("radiant_damage") then
                 if not stack:is_empty() then
                     local name = stack:get_name()
                     if name:match('lead') then
-                        local use = minetest.get_item_group(name, "armor_use") * old_damage * 0.1
+                        local use = core.get_item_group(name, "armor_use") * old_damage * 0.1
                         armor:damage(player, i, stack, use)
                     end
                 end
@@ -820,16 +820,16 @@ if minetest.get_modpath("radiant_damage") then
         end
         damage = math.floor(damage)
         if damage > 0 then
-            minetest.log("action",
+            core.log("action",
                 player:get_player_name() .. " takes " .. tostring(damage) .. " damage from engine radiation damage at " ..
-                    minetest.pos_to_string(pos))
+                    core.pos_to_string(pos))
             player:set_hp(player:get_hp() - damage)
         end
         if damage > 0 or has_prot then
             if has_prot then
                 old_damage = old_damage * 0.5
             end
-            minetest.sound_play({
+            core.sound_play({
                 name = "radiant_damage_geiger",
                 gain = math.min(1, math.max(0.6, old_damage) / 10)
             }, {
@@ -910,7 +910,7 @@ local function dmg_object(pos, object, strength)
     apply_fractional_damage(object, dmg * mul)
 end
 
-minetest.register_abm({
+core.register_abm({
     label = "ship engine particles",
     nodenames = {"ship_engine:lv_engine_l_active", "ship_engine:lv_engine_r_active"},
     -- neighbors = {"air", "vacuum:vacuum", "vacuum:atmos_thin"},
@@ -919,8 +919,8 @@ minetest.register_abm({
     min_y = vacuum.vac_heights.space.start_height,
     action = function(pos)
 
-        local node = minetest.get_node(pos)
-        local meta = minetest.get_meta(pos)
+        local node = core.get_node(pos)
+        local meta = core.get_meta(pos)
         local param2 = node.param2
 
         local dir = param2;
@@ -946,7 +946,7 @@ minetest.register_abm({
             z = zdir
         })
 
-        local xnode = minetest.get_node(npos)
+        local xnode = core.get_node(npos)
         local xclear = meta:get_int("exhaust_clear")
         if xnode.name == "vacuum:vacuum" then
             meta:set_int("exhaust_clear", 1)
@@ -956,7 +956,7 @@ minetest.register_abm({
         end
 
         local strength = 4
-        for _, o in pairs(minetest.get_objects_inside_radius(npos, 1.55)) do
+        for _, o in pairs(core.get_objects_inside_radius(npos, 1.55)) do
             if o ~= nil and o:get_hp() > 0 then
                 dmg_object(pos, o, strength)
             end

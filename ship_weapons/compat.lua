@@ -7,7 +7,7 @@ local ltier = 'lv'
 local tmachine_name = 'beam_tower'
 
 -- display entity shown for tower hit effect
-minetest.register_entity("ship_weapons:tower_display", {
+core.register_entity("ship_weapons:tower_display", {
     physical = false,
     collisionbox = {-0.75, -0.75, -0.75, 0.75, 0.75, 0.75},
     visual = "wielditem",
@@ -24,8 +24,8 @@ minetest.register_entity("ship_weapons:tower_display", {
 
     on_death = function(self, killer)
         technic.swap_node(self.pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
-        minetest.get_node_timer(self.pos):start(30)
-        local meta = minetest.get_meta(self.pos)
+        core.get_node_timer(self.pos):start(30)
+        local meta = core.get_meta(self.pos)
         meta:set_int("broken", 1)
         meta:set_int("hp", 0)
     end,
@@ -37,7 +37,7 @@ minetest.register_entity("ship_weapons:tower_display", {
             self.object:set_properties({
                 is_visible = false
             })
-            minetest.get_node_timer(pos):start(3)
+            core.get_node_timer(pos):start(3)
         end
     end,
 
@@ -45,9 +45,9 @@ minetest.register_entity("ship_weapons:tower_display", {
 
         local function on_hit(self, target)
 
-            local node = minetest.get_node(target)
-            local meta = minetest.get_meta(target)
-            -- minetest.log("hit " .. node.name)
+            local node = core.get_node(target)
+            local meta = core.get_meta(target)
+            -- core.log("hit " .. node.name)
 
             if node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name or 
                 node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_active" or
@@ -70,8 +70,8 @@ minetest.register_entity("ship_weapons:tower_display", {
                     technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
                     meta:set_int("broken", 1)
                     self.object:remove()
-                    minetest.get_node_timer(target):start(math.random(data.repair_length, data.repair_length + 30))
-                    minetest.sound_play("ctg_zap", {
+                    core.get_node_timer(target):start(math.random(data.repair_length, data.repair_length + 30))
+                    core.sound_play("ctg_zap", {
                         pos = target,
                         gain = 0.8,
                         pitch = ship_weapons.randFloat(2.2, 2.25)
@@ -80,7 +80,7 @@ minetest.register_entity("ship_weapons:tower_display", {
 
                 return true
             elseif node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken" then
-                local meta = minetest.get_meta(target)
+                local meta = core.get_meta(target)
                 if meta:get_int("broken") == 1 then
                     self.object:remove()
                 end

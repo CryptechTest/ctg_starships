@@ -135,11 +135,11 @@ local is_player_near = function(pos)
 end
 
 local function is_atmos_node(pos)
-    local node = minetest.get_node(pos)
+    local node = core.get_node(pos)
     if node.name == "air" then
         return true
     end
-    if minetest.get_item_group(node.name, "vacuum") == 1 or minetest.get_item_group(node.name, "atmosphere") > 0 then
+    if core.get_item_group(node.name, "vacuum") == 1 or core.get_item_group(node.name, "atmosphere") > 0 then
         return true
     end
     return false

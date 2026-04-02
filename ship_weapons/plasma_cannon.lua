@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local time_scl = 30
 
@@ -33,14 +33,14 @@ local function randFloat(min, max, precision)
 end
 
 local function needs_charge(pos)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local charge = meta:get_int("charge")
     local charge_max = meta:get_int("charge_max")
     return charge < charge_max
 end
 
 local function has_charge(pos)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local charge = meta:get_int("charge")
     return charge > 0
 end
@@ -151,7 +151,7 @@ local function spawn_particle2(pos, tier)
         maxsize = 0.72
     }
 
-    minetest.add_particlespawner(def);
+    core.add_particlespawner(def);
 
     def.minvel = {
         x = -2.41,
@@ -164,7 +164,7 @@ local function spawn_particle2(pos, tier)
         z = 2.41
     }
 
-    minetest.add_particlespawner(def);
+    core.add_particlespawner(def);
 end
 
 -------------------------------------------------------
@@ -193,7 +193,7 @@ function ship_weapons.cannon_volley(def, op, origin, pos_target, object_target)
     })
 
     local dist = vector.distance(origin, target)
-    --minetest.log("cannon pew pew! " .. tostring(dist))
+    --core.log("cannon pew pew! " .. tostring(dist))
 
     local pitch, pitch_deg = ship_weapons.calculatePitch(origin, target)
     local yaw, yaw_deg = ship_weapons.calculateYaw(origin, target)
@@ -205,7 +205,7 @@ function ship_weapons.cannon_volley(def, op, origin, pos_target, object_target)
     if yaw_deg < 0 then
         yaw = math.rad(360 + yaw_deg)
     end    
-    --minetest.log("adjusting angle:  pitch= " .. tostring(pitch_deg) .. "  yaw= " .. tostring(yaw_deg))
+    --core.log("adjusting angle:  pitch= " .. tostring(pitch_deg) .. "  yaw= " .. tostring(yaw_deg))
     
     local function num_is_close(target, actual)
         local target_frac = (target * 0.01) + 4.75
@@ -215,7 +215,7 @@ function ship_weapons.cannon_volley(def, op, origin, pos_target, object_target)
     local turret_obj = nil
     local rotation_done = false
     local target_found = false
-    local objs = minetest.get_objects_inside_radius(origin, 0.45)
+    local objs = core.get_objects_inside_radius(origin, 0.45)
     for _, obj in pairs(objs) do
         if obj:get_luaentity() then
             local ent = obj:get_luaentity()
@@ -230,7 +230,7 @@ function ship_weapons.cannon_volley(def, op, origin, pos_target, object_target)
                     if ent._rotation_done then
                         rotation_done = true
                     end
-                    --minetest.log("new rot yaw= " .. tostring(math.deg(ent._rotation_set.y)))
+                    --core.log("new rot yaw= " .. tostring(math.deg(ent._rotation_set.y)))
                 end                
                 break
             end
@@ -248,14 +248,14 @@ function ship_weapons.cannon_volley(def, op, origin, pos_target, object_target)
     end
 
     if not target_found then
-        --minetest.log("target not found!")
+        --core.log("target not found!")
         --return 1
     end
     if not rotation_done then
-        --minetest.log("rotation not done!")
+        --core.log("rotation not done!")
         return 1
     end
-    --minetest.log("launching volley!")
+    --core.log("launching volley!")
     ship_weapons.launch_plasma_projectile(def, op, origin, target, object_target)
     return 3
 end
@@ -268,13 +268,13 @@ function ship_weapons.cannon_launch(def, op, origin, pos_target, object_target)
     })
 
     local dist = vector.distance(origin, target)
-    -- minetest.log("missile pew pew! " .. tostring(dist))
+    -- core.log("missile pew pew! " .. tostring(dist))
     
     local pitch = ship_weapons.calculatePitch(origin, target)
     local yaw = ship_weapons.calculateYaw(origin, target)
 
     local rotation_done = false
-    local objs = minetest.get_objects_inside_radius(origin, 0.45)
+    local objs = core.get_objects_inside_radius(origin, 0.45)
     for _, obj in pairs(objs) do
         if obj:get_luaentity() then
             local ent = obj:get_luaentity()
@@ -353,11 +353,11 @@ function ship_weapons.register_plasma_cannon(data)
     end
 
     local on_punch = function(pos, node, puncher, pointed_thing)
-        -- minetest.log("punched node")
+        -- core.log("punched node")
         local function on_hit(self, target)
 
-            local node = minetest.get_node(target)
-            -- minetest.log("hit node " .. node.name)
+            local node = core.get_node(target)
+            -- core.log("hit node " .. node.name)
             if node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name then
 
                 technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
@@ -369,10 +369,10 @@ function ship_weapons.register_plasma_cannon(data)
     end
 
     local on_timer = function(pos, elapsed)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         --technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_idle")
         meta:set_int("broken", 0);
-        local objs = minetest.get_objects_inside_radius(pos, 0.45)
+        local objs = core.get_objects_inside_radius(pos, 0.45)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -395,8 +395,8 @@ function ship_weapons.register_plasma_cannon(data)
             player_pos[name] = nil
             return
         end
-        local node = minetest.get_node(pos)
-        local meta = minetest.get_meta(pos)
+        local node = core.get_node(pos)
+        local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
         if name ~= owner then
             return
@@ -457,7 +457,7 @@ function ship_weapons.register_plasma_cannon(data)
     end
 
     local function remove_attached(pos)
-        local objs = minetest.get_objects_inside_radius(pos, 0.25)
+        local objs = core.get_objects_inside_radius(pos, 0.25)
         for _, obj in pairs(objs) do
             if obj:get_luaentity() then
                 local ent = obj:get_luaentity()
@@ -664,7 +664,7 @@ function ship_weapons.register_plasma_cannon(data)
         local ships = {}
         local bFoundTarget = false
         local nTargetCount = 0
-        local objs = minetest.get_objects_inside_radius(pos, r + 0.251)
+        local objs = core.get_objects_inside_radius(pos, r + 0.251)
         for _, obj in pairs(objs) do
             if nTargetCount >= 3 then
                 break
@@ -687,7 +687,7 @@ function ship_weapons.register_plasma_cannon(data)
     end
 
     local function find_ship_protect(pos, r)
-        local nodes = minetest.find_nodes_in_area({
+        local nodes = core.find_nodes_in_area({
             x = pos.x - r,
             y = pos.y - r,
             z = pos.z - r
@@ -704,12 +704,12 @@ function ship_weapons.register_plasma_cannon(data)
             return -1
         end
         local bClear = 0;
-        local ray = minetest.raycast(origin, pos_target, true, false)
+        local ray = core.raycast(origin, pos_target, true, false)
         for pointed_thing in ray do
             if pointed_thing.type == "node" then
                 local pos = pointed_thing.intersection_point
                 if (vector.distance(origin, pos) > 1.25) and (vector.distance(pos_target, pos) > 3) then
-                    local node = minetest.get_node(pos)
+                    local node = core.get_node(pos)
                     if node.name ~= "air" and node.name ~= "vacuum:vacuum" and node.name ~= "vacuum:atmos_thin" and
                         node.name ~= ":asteroid:atmos" then
                         bClear = bClear + 1;
@@ -722,7 +722,7 @@ function ship_weapons.register_plasma_cannon(data)
     end
 
     local function find_target_ships(pos, range)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         if range > 79 * 2 then
             range = 79 * 2
         end
@@ -735,7 +735,7 @@ function ship_weapons.register_plasma_cannon(data)
         --[[local protects = find_ship_protect(pos, 72)
         local our_ship = nil
         for _, node in pairs(protects) do
-            local ship_meta = minetest.get_meta(node)
+            local ship_meta = core.get_meta(node)
             local name = ship_meta:get_string("owner")
             if name == meta:get_string("owner") then
                 our_ship = {
@@ -755,7 +755,7 @@ function ship_weapons.register_plasma_cannon(data)
             -- check for line of sight...
             local nodes_in_path = check_path(pos, node_pos)
             if node_pos and nodes_in_path < 48 then
-                local ship_meta = minetest.get_meta(node_pos)
+                local ship_meta = core.get_meta(node_pos)
                 local name = ship_meta:get_string("owner")
                 local r = (nodes_in_path * 0.7) + 1
                 local target_pos = vector.add(node_pos, {
@@ -776,7 +776,7 @@ function ship_weapons.register_plasma_cannon(data)
     end
 
     local function find_target_ship(pos, target)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         -------------------------------------------------------
         -- strike launch to target object
         local bFoundTarget = false
@@ -784,7 +784,7 @@ function ship_weapons.register_plasma_cannon(data)
         -- check for line of sight...
         local nodes_in_path = check_path(pos, target)
         if target and nodes_in_path < 48 then
-            local ship_meta = minetest.get_meta(target)
+            local ship_meta = core.get_meta(target)
             local name = ship_meta:get_string("owner")
             bFoundTarget = true;
             nTargetCount = nTargetCount + 1
@@ -839,9 +839,9 @@ function ship_weapons.register_plasma_cannon(data)
 
     -- technic run
     local run = function(pos, node)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
-        --local operator = minetest.get_player_by_name(owner);
+        --local operator = core.get_player_by_name(owner);
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
 
@@ -854,7 +854,7 @@ function ship_weapons.register_plasma_cannon(data)
         local charge = meta:get_int("charge")
 
         -- Get digiline data storage
-        local digiline_data = minetest.deserialize(meta:get_string("digiline_data")) or default_digi_data
+        local digiline_data = core.deserialize(meta:get_string("digiline_data")) or default_digi_data
 
         -- Setup meta data if it does not exist.
         if not eu_input then
@@ -941,7 +941,7 @@ function ship_weapons.register_plasma_cannon(data)
                     local dir = ship_weapons.get_port_direction(pos)
                     local target_pos = digiline_data.target_pos or
                             ship_weapons.calculateNewPoint(pos, dir, digiline_data.power, digiline_data.pitch, digiline_data.yaw)
-                    -- minetest.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
+                    -- core.log("nx= " .. target_pos.x .. "  ny=" .. target_pos.y .. "  nz=" .. target_pos.z)
                     if ship_weapons.cannon_volley(proj_def, owner, pos, target_pos, nil) == 3 then
                         bFoundTarget = true;
                     end
@@ -954,7 +954,7 @@ function ship_weapons.register_plasma_cannon(data)
                             digiline_data.target_pos = nil
                         end
                         -- Update digiline data...
-                        meta:set_string("digiline_data", minetest.serialize(digiline_data))
+                        meta:set_string("digiline_data", core.serialize(digiline_data))
                         -- Reduce inventory storage
                         if (plasma_energy_item.new_input) then
                             inv:set_list("src", plasma_energy_item.new_input)
@@ -1078,7 +1078,7 @@ function ship_weapons.register_plasma_cannon(data)
     -- register machine node
 
     local node_name = data.modname .. ":" .. ltier .. "_" .. machine_name
-    minetest.register_node(node_name .. "", {
+    core.register_node(node_name .. "", {
         description = machine_desc,
         tiles = {ltier .. "_" .. tmachine_name .. "_base_top.png", ltier .. "_" .. tmachine_name .. "_base.png",
                  ltier .. "_" .. tmachine_name .. "_base.png", ltier .. "_" .. tmachine_name .. "_base.png",
@@ -1111,12 +1111,12 @@ function ship_weapons.register_plasma_cannon(data)
         sounds = default.node_sound_metal_defaults(),
         on_rotate = screwdriver.disallow,
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            --minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_plasma_cannon_display")
+            --core.add_entity(pos, "ship_weapons:" .. ltier .. "_plasma_cannon_display")
             local gun_pos = vector.add(pos, {x = 0, y = 0.25, z = 0})
-            local ent = minetest.add_entity(gun_pos, "ship_weapons:" .. ltier .. "_plasma_cannon_barrel")
+            local ent = core.add_entity(gun_pos, "ship_weapons:" .. ltier .. "_plasma_cannon_barrel")
             --local cannon = etc:get_luaentity()
 
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             if placer:is_player() then
                 meta:set_string("owner", placer:get_player_name())
                 meta:set_string("members", "")
@@ -1134,8 +1134,8 @@ function ship_weapons.register_plasma_cannon(data)
         --can_dig = technic.machine_can_dig,
         on_rightclick = rightclick,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "LV Plasma Cannon")
             local inv = meta:get_inventory()
             inv:set_size("src", 1)
@@ -1150,7 +1150,7 @@ function ship_weapons.register_plasma_cannon(data)
             meta:set_string("target_dir", core.serialize({x = 0, y = 0, z = 0}))
             local formspec = ship_weapons.update_formspec(data, meta)
             meta:set_string("formspec", formspec)
-            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
+            meta:set_string("digiline_data", core.serialize(default_digi_data))
         end,
 
         allow_metadata_inventory_put = technic.machine_inventory_put,
@@ -1179,7 +1179,7 @@ function ship_weapons.register_plasma_cannon(data)
         on_timer = on_timer
     })
     
-    minetest.register_on_player_receive_fields(function(player, formname, fields)
+    core.register_on_player_receive_fields(function(player, formname, fields)
         if formname ~= data.modname .. ":" .. ltier .. "_" .. tmachine_name then
             return
         end
@@ -1196,7 +1196,7 @@ function ship_weapons.register_plasma_cannon(data)
         core.show_formspec(name, data.modname .. ":" .. ltier .. "_" .. tmachine_name, ship_weapons.update_formspec(data, meta))
     end)
 
-    minetest.register_node(node_name .. "_broken", {
+    core.register_node(node_name .. "_broken", {
         description = machine_desc,
         tiles = {ltier .. "_" .. machine_name .. "_base_top_broken.png", ltier .. "_" .. tmachine_name .. "_base_broken.png",
                  ltier .. "_" .. machine_name .. "_base_broken.png",
@@ -1222,8 +1222,8 @@ function ship_weapons.register_plasma_cannon(data)
         sounds = default.node_sound_metal_defaults(),
         on_rotate = screwdriver.disallow,
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            local meta = minetest.get_meta(pos)
-            --minetest.get_node_timer(pos):start(30)
+            local meta = core.get_meta(pos)
+            --core.get_node_timer(pos):start(30)
             meta:set_int("attack_type", 1)
             meta:set_int("last_hit", 0)
             if placer:is_player() then
@@ -1239,8 +1239,8 @@ function ship_weapons.register_plasma_cannon(data)
         end,
         --can_dig = technic.machine_can_dig,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Broken " .. tier .. " Plasma Cannon")
             local inv = meta:get_inventory()
             inv:set_size("src", 1)
@@ -1254,7 +1254,7 @@ function ship_weapons.register_plasma_cannon(data)
             meta:set_int("demand", data.demand[1])
             local formspec = ship_weapons.update_formspec(data, meta)
             meta:set_string("formspec", formspec)
-            meta:set_string("digiline_data", minetest.serialize(default_digi_data))
+            meta:set_string("digiline_data", core.serialize(default_digi_data))
         end,
 
         allow_metadata_inventory_put = technic.machine_inventory_put,
@@ -1276,12 +1276,12 @@ function ship_weapons.register_plasma_cannon(data)
         },
 
         on_timer = function(pos, elapsed)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             local time = meta:get_int("time") + elapsed
             if time >= 1 then
                 technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name)
                 meta:set_int("broken", 0);
-                --minetest.add_entity(pos, "ship_weapons:" .. ltier .. "_plasma_cannon_display")
+                --core.add_entity(pos, "ship_weapons:" .. ltier .. "_plasma_cannon_display")
                 meta:set_int("hp", data.hp)
                 meta:set_int("charge", 0)
             else
@@ -1302,7 +1302,7 @@ function ship_weapons.register_plasma_cannon(data)
     -------------------------------------------------------
 
     -- display entity shown for tower hit effect
-    minetest.register_entity("ship_weapons:" .. ltier .. "_plasma_cannon_barrel", {
+    core.register_entity("ship_weapons:" .. ltier .. "_plasma_cannon_barrel", {
         initial_properties = {
             physical = true,
             collide_with_objects = true,
@@ -1467,7 +1467,7 @@ function ship_weapons.register_plasma_cannon(data)
             technic.swap_node(pos, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
             if pos then
                 spawn_particle2(pos, ltier)
-                minetest.get_node_timer(pos):start(30)
+                core.get_node_timer(pos):start(30)
                 local meta = core.get_meta(pos)
                 meta:set_int("broken", 1)
                 meta:set_int("hp", 0)
@@ -1484,9 +1484,9 @@ function ship_weapons.register_plasma_cannon(data)
 
             local function on_hit(self, target)
 
-                local node = minetest.get_node(target)
-                local meta = minetest.get_meta(target)
-                -- minetest.log("hit " .. node.name)
+                local node = core.get_node(target)
+                local meta = core.get_meta(target)
+                -- core.log("hit " .. node.name)
 
                 if node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name then
                     --technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "")
@@ -1504,8 +1504,8 @@ function ship_weapons.register_plasma_cannon(data)
                         technic.swap_node(target, "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken")
                         meta:set_int("broken", 1)
                         self.object:remove()
-                        minetest.get_node_timer(target):start(math.random(data.repair_length, data.repair_length + 30))
-                        minetest.sound_play("ctg_zap", {
+                        core.get_node_timer(target):start(math.random(data.repair_length, data.repair_length + 30))
+                        core.sound_play("ctg_zap", {
                             pos = target,
                             gain = 0.5,
                             pitch = randFloat(2.2, 2.25)
@@ -1514,7 +1514,7 @@ function ship_weapons.register_plasma_cannon(data)
 
                     return true
                 elseif node.name == "ship_weapons:" .. ltier .. "_" .. tmachine_name .. "_broken" then
-                    local meta = minetest.get_meta(target)
+                    local meta = core.get_meta(target)
                     if meta:get_int("broken") == 1 then
                         self.object:remove()
                     end
@@ -1535,7 +1535,7 @@ function ship_weapons.register_plasma_cannon(data)
     -- Display-zone node, Do NOT place the display as a node,
     -- it is made to be used as an entity (see above)
 
-    minetest.register_node("ship_weapons:" .. ltier .. "_plasma_cannon_barrel_node", {
+    core.register_node("ship_weapons:" .. ltier .. "_plasma_cannon_barrel_node", {
         tiles = {
             ltier .. "_plasma_cannon_top.png", -- top
             ltier .. "_plasma_cannon_bottom.png", -- bottom

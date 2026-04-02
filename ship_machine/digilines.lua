@@ -12,7 +12,7 @@ ship_machine.gravity_drive_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "status" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         digilines.receptor_send(pos, digilines.rules.default, channel, {
             command = msg.command,
             charge = meta:get_int("charge"),
@@ -23,7 +23,7 @@ ship_machine.gravity_drive_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "ready" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local max = meta:get_int("charge_max")
         local chg = meta:get_int("charge")
         local ready = "NOT RDY"
@@ -37,12 +37,12 @@ ship_machine.gravity_drive_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "enable" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         meta:set_int("enabled", 1)
     end
 
     if msg.command == "disable" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         meta:set_int("enabled", 0)
     end
 
@@ -62,7 +62,7 @@ ship_machine.gravity_drive_lite_digiline_effector = function(pos, node, channel,
     end
 
     if msg.command == "status" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         digilines.receptor_send(pos, digilines.rules.default, channel, {
             command = msg.command .. "_ack",
             charge = meta:get_int("charge"),
@@ -73,7 +73,7 @@ ship_machine.gravity_drive_lite_digiline_effector = function(pos, node, channel,
     end
 
     if msg.command == "ready" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local max = meta:get_int("charge_max")
         local chg = meta:get_int("charge")
         local ready = "NOT RDY"
@@ -87,12 +87,12 @@ ship_machine.gravity_drive_lite_digiline_effector = function(pos, node, channel,
     end
 
     if msg.command == "enable" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         meta:set_int("enabled", 1)
     end
 
     if msg.command == "disable" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         meta:set_int("enabled", 0)
     end
 
@@ -111,12 +111,12 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
         return
     end
 
-    -- minetest.log(dump(msg))
+    -- core.log(dump(msg))
     if msg.command == 'jump' then
         if (not msg.offset) then
             return
         end
-        --minetest.log(dump(msg.offset))
+        --core.log(dump(msg.offset))
         local node = core.get_node(pos)
         local meta = core.get_meta(pos)
         local owner = meta:get_string("owner")
@@ -184,18 +184,18 @@ ship_machine.jumpdrive_digiline_effector = function(pos, node, channel, msg)
     end
 
     if msg.command == "enable" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         meta:set_int("enabled", 1)
     end
 
     if msg.command == "disable" then
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         meta:set_int("enabled", 0)
     end
 
     if msg.command == "pos" then
         digilines.receptor_send(pos, digilines.rules.default, 'jumpdrive', {
-            pos = minetest.serialize(pos)
+            pos = core.serialize(pos)
         })
     end
 

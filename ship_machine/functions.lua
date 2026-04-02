@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local mese_image_mask = "default_mese_crystal.png^[colorize:#75757555"
 
@@ -66,9 +66,9 @@ function ship_machine.update_formspec(data, meta, running, percent)
         elseif running then
             act_msg = "image[3,3.45;4.75,0.9;gravity_offline.png]"
         end
-        local power_field = "label[0.5,0.8;" .. minetest.colorize('#21daff', "Energy Stats") .. "]"
-        local input_field = "label[0.5,1.2;Input Eu]label[0.5,1.55;" .. minetest.colorize('#03fc56', "+" .. eu_input) .. "]"
-        local demand_field = "label[0.5,1.9;Demand Eu]label[0.5,2.25;" .. minetest.colorize('#fca903', "-" .. eu_demand) .. "]"
+        local power_field = "label[0.5,0.8;" .. core.colorize('#21daff', "Energy Stats") .. "]"
+        local input_field = "label[0.5,1.2;Input Eu]label[0.5,1.55;" .. core.colorize('#03fc56', "+" .. eu_input) .. "]"
+        local demand_field = "label[0.5,1.9;Demand Eu]label[0.5,2.25;" .. core.colorize('#fca903', "-" .. eu_demand) .. "]"
 
         formspec = "formspec_version[8]" .. "size[8,9;]" .. "real_coordinates[false]" ..
                        "list[current_player;main;0,5;8,4;]" .. "listring[current_player;main]" .. "label[0,0;" ..
@@ -105,14 +105,20 @@ function ship_machine.update_jumpdrive_formspec(data, meta)
     if typename == 'jump_drive' or typename == 'jump_drive_spawn' then
         local owner = "label[5,0;Owner:]label[6,0;" .. meta:get_string("owner") .. "]"
         local set_owner = "field[1,2.65;4,1;owner_name;Owner Name;]button[5,2.25;1,1;set_owner;Set]"
+        local rem_ship = ""
         local set_owner_local = "field[1,3.85;4,1;owner_name_local;Owner Local;]button[5,3.45;1,1;set_owner_local;Set]"
         local input_name = "field[1,1.45;4,1;file_name;File Name;]"
         local input_save_load = "button[5,1;1,1;save;Save]button[6,1;1,1;load;Load]"
         local btn_lock = "button[6,3.45;1,1;lock;Lock]"
+        
+        local dupe_found = meta:get_int("jump_active") == 1 or false
+        if dupe_found then
+            rem_ship = "button[6,2.25;1,1;rem_ship;Del]"
+        end
 
         formspec = "formspec_version[3]" .. "size[8,5;]" .. "real_coordinates[false]" .. 
                     "label[0,0;" .. machine_desc:format(tier) .. "]" .. input_name .. 
-                    input_save_load .. owner .. set_owner .. set_owner_local .. btn_lock
+                    input_save_load .. owner .. set_owner .. rem_ship .. set_owner_local .. btn_lock
     end
 
     return formspec
@@ -145,7 +151,7 @@ local function do_particles(pos, amount, radius)
         texture = prt.texture_r180
     end
 
-    minetest.add_particlespawner({
+    core.add_particlespawner({
         amount = amount,
         time = prt.time + math.random(0.5, 1),
         minpos = {
@@ -212,7 +218,7 @@ local function do_particle_tele(pos, amount, radius)
         texture = prt.texture_r180
     end
 
-    minetest.add_particlespawner({
+    core.add_particlespawner({
         amount = amount,
         time = prt.time + math.random(1, 2.25),
         minpos = {
@@ -261,12 +267,12 @@ end
 
 local function move_offline_players(origin, offset)
     local dest = vector.add(origin, offset)
-    local dmeta = minetest.get_meta(dest)
+    local dmeta = core.get_meta(dest)
 
     local stor_str = dmeta:get_string("player_storage")
     local contents = {}
     if stor_str ~= nil and #stor_str > 0 then
-        contents = minetest.deserialize(stor_str)
+        contents = core.deserialize(stor_str)
     end
 
     for p, _ in pairs(contents) do
@@ -274,46 +280,46 @@ local function move_offline_players(origin, offset)
         if lpos then
             local npos = vector.add(lpos, offset);
             ship_machine.locations[p] = npos
-            -- minetest.log("updated loc for player " .. p)
+            -- core.log("updated loc for player " .. p)
         else
             contents[p] = false
         end
         ship_machine.save_locations();
     end
-    dmeta:set_string("player_storage", minetest.serialize(contents))
+    dmeta:set_string("player_storage", core.serialize(contents))
 end
 
 local function move_bed(pos, pos_new, n)
 
-    local node = minetest.get_node(pos)
+    local node = core.get_node(pos)
     local other
     local player_name = nil
 
     if n == 2 then
         -- if top, get bottom
         other = pos
-        local dir = minetest.facedir_to_dir(node.param2)
+        local dir = core.facedir_to_dir(node.param2)
         pos = vector.subtract(pos, dir) -- pos = other
         pos_new = vector.subtract(pos_new, dir)
         -- try and fetch player from beds db...
-        player_name = beds.player_bed[minetest.serialize(pos)]
+        player_name = beds.player_bed[core.serialize(pos)]
     elseif n == 1 then
         -- try and fetch player from beds db...
-        player_name = beds.player_bed[minetest.serialize(pos)]
+        player_name = beds.player_bed[core.serialize(pos)]
         -- if bottom, get top
-        local dir = minetest.facedir_to_dir(node.param2)
+        local dir = core.facedir_to_dir(node.param2)
         other = vector.add(pos, dir)
     else
         core.log("[ship_machine] failed to lookup bed!")
     end
 
     if not player_name then
-        player_name = beds.player_bed[minetest.serialize(other)]
+        player_name = beds.player_bed[core.serialize(other)]
     end
 
     if player_name == nil then
         --core.log("[ship_machine] failed to lookup player_name, using owner!")
-        local node_meta = minetest.get_meta(pos)
+        local node_meta = core.get_meta(pos)
         if node_meta:get_string("owner") then
             -- fetch player from node meta
             player_name = node_meta:get_string("owner")
@@ -326,7 +332,7 @@ local function move_bed(pos, pos_new, n)
         beds.remove_spawns_at(other)
         beds.remove_player_beds_at(pos)
 
-        local player = minetest.get_player_by_name(player_name)
+        local player = core.get_player_by_name(player_name)
         if player ~= nil then
             local old_spawn = beds.spawn[player_name]
             if old_spawn ~= nil then
@@ -348,11 +354,11 @@ local function move_bed(pos, pos_new, n)
                     local spos = core.deserialize(ppos)
                     if pos.x == spos.x and pos.y == spos.y and pos.z == spos.z then
 
-                        meta:set_string("pos", minetest.serialize(pos_new))
+                        meta:set_string("pos", core.serialize(pos_new))
                         inv:set_stack("beds", i, bed)
 
-                        beds.player_bed[minetest.serialize(pos_new)] = player_name
-                        beds.bed_cooldown[minetest.serialize(pos_new)] = false
+                        beds.player_bed[core.serialize(pos_new)] = player_name
+                        beds.bed_cooldown[core.serialize(pos_new)] = false
 
                         --core.chat_send_player(player_name, "[Debug] Bed Moved on Jump!")
                         break;
@@ -368,11 +374,11 @@ local function move_bed(pos, pos_new, n)
 end
 
 local function move_beds(pos1, pos2, offset)
-    local bed_nodes = minetest.find_nodes_in_area(pos1, pos2, "group:bed")
+    local bed_nodes = core.find_nodes_in_area(pos1, pos2, "group:bed")
     for _, bedpos in pairs(bed_nodes) do
-        local bed = minetest.get_node(bedpos)
+        local bed = core.get_node(bedpos)
         if bed ~= nil then
-            local g = minetest.get_item_group(bed.name, "bed");
+            local g = core.get_item_group(bed.name, "bed");
             if g >= 1 then
                 local bed_dest = vector.add(bedpos, offset)
                 move_bed(bedpos, bed_dest, g)
@@ -386,15 +392,15 @@ local function move_beds(pos1, pos2, offset)
 end
 
 local function update_tubes(pos1, pos2, offset)
-    local tubes = minetest.find_nodes_in_area(pos1, pos2, "group:tube")
+    local tubes = core.find_nodes_in_area(pos1, pos2, "group:tube")
     if tubes == nil or #tubes == 0 then
         return
     end
     for _, tubepos in pairs(tubes) do
-        local node = minetest.get_node(tubepos)
+        local node = core.get_node(tubepos)
         if node ~= nil then
             if node.name:find("pipeworks:teleport_tube") then
-                local meta = minetest.get_meta(tubepos)
+                local meta = core.get_meta(tubepos)
                 local channel = meta:get_string("channel")
                 local cr = meta:get_int("can_receive")
                 local player_name = meta:get_string("owner")
@@ -411,8 +417,8 @@ local function update_tubes(pos1, pos2, offset)
                 local receivers = {}
                 for key, val in pairs(tube_db) do
                     if val.cr == 1 and val.channel == channel and not vector.equals(val, tubepos) then
-                        minetest.load_area(val)
-                        local node_name = minetest.get_node(val).name
+                        core.load_area(val)
+                        local node_name = core.get_node(val).name
                         if node_name:find("pipeworks:teleport_tube") then
                             table.insert(receivers, val)
                         end
@@ -436,7 +442,7 @@ local function clear_switching_station(pos)
     if network_id then
         technic.remove_network(network_id)
     end
-    minetest.get_node_timer(pos):stop()
+    core.get_node_timer(pos):stop()
 end
 
 local function setup_switching_station(pos)
@@ -450,11 +456,11 @@ local function setup_switching_station(pos)
         technic.activate_network(network_id)
         schem_lib.func.do_particle_zap(vector.subtract(pos, {x=0,y=1,z=0}), 1)
     end
-    minetest.get_node_timer(pos):start(1.0)
+    core.get_node_timer(pos):start(1.0)
 end
 
 local function update_switching_stations(pos1, pos2, clear)
-    local switch_nodes = minetest.find_nodes_in_area(pos1, pos2, "technic:switching_station")
+    local switch_nodes = core.find_nodes_in_area(pos1, pos2, "technic:switching_station")
     for _, sw_pos in pairs(switch_nodes) do
         if clear then
             clear_switching_station(sw_pos)
@@ -465,10 +471,10 @@ local function update_switching_stations(pos1, pos2, clear)
 end
 
 local function clear_active_miners(pos1, pos2)
-    if not minetest.get_modpath("testcoin") then
+    if not core.get_modpath("testcoin") then
         return
     end
-    local rigs = minetest.find_nodes_in_area(pos1, pos2, "group:mining_rig")
+    local rigs = core.find_nodes_in_area(pos1, pos2, "group:mining_rig")
     for _, r_pos in pairs(rigs) do
         testcoin.remove_active_miner(r_pos)
     end
@@ -476,10 +482,10 @@ end
 
 local function do_effect(pos, pos1, pos2)
     local function _effect(obj, i)
-        minetest.after(i+0.5, function()
+        core.after(i+0.5, function()
             if (obj ~= nil) then
                 local name = obj:get_player_name()
-                minetest.sound_play("tele_drone", {
+                core.sound_play("tele_drone", {
                     to_player = name,
                     gain = math.random(0.8, 1.1),
                     pitch = math.random(0.8, 1)
@@ -491,7 +497,7 @@ local function do_effect(pos, pos1, pos2)
         end)
     end
     -- get cube of area nearby
-    local objects = minetest.get_objects_in_area(pos1, pos2) or {}
+    local objects = core.get_objects_in_area(pos1, pos2) or {}
     local players = {}
     for _, obj in pairs(objects) do
         if (obj ~= nil and obj:is_player()) then
@@ -551,26 +557,26 @@ local function emerge_callback_on_complete(meta, flags)
     if meta.ttl ~= nil and meta.ttl > 0 then
         ttl = meta.ttl
     end
-    minetest.after(0, function()
+    core.after(0, function()
         post_emerge_complete(meta) 
     end)
-    minetest.after(0.5, function()
+    core.after(0.5, function()
         schem_lib.func.jump_ship_move_contents(meta)
     end)
-    minetest.after(ttl - 0.5, function()
+    core.after(ttl - 0.5, function()
         schem_lib.func.jump_ship_emit_player(meta, true)
     end)
     if flags and flags.origin_clear then
         local size = meta.offset
         local pos1 = vector.subtract(meta.origin, vector.new(size.x, size.y, size.z))
         local pos2 = vector.add(meta.origin, vector.new(size.x, size.y, size.z))
-        minetest.after(ttl + 0.25, function()
+        core.after(ttl + 0.25, function()
             schem_lib.func.clear_position(pos1, pos2)
         end)
     end
 end
 
-local function transport_jumpship(pos, dest, size, owner, offset)
+local function transport_jumpship(pos, dest, size, owner)
     local save = false
     local flags = {
         file_cache = save,
@@ -632,12 +638,12 @@ local function check_engines_charged(pos, size, dist, use_charge)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:ship_engine")
+    local nodes = core.find_nodes_in_area(pos1, pos2, "group:ship_engine")
 
     if #nodes == 2 then
 
-        local eng1 = minetest.get_meta(nodes[1])
-        local eng2 = minetest.get_meta(nodes[2])
+        local eng1 = core.get_meta(nodes[1])
+        local eng2 = core.get_meta(nodes[2])
 
         local charge1 = eng1:get_int('charge')
         local charge2 = eng2:get_int('charge')
@@ -672,7 +678,7 @@ local function check_engines_charged(pos, size, dist, use_charge)
         local charged = 0
 
         for _, node in pairs(nodes) do
-            local eng = minetest.get_meta(node)
+            local eng = core.get_meta(node)
             local charge = eng:get_int('charge')
             local charge_max = eng:get_int('charge_max')
             local _charged = false
@@ -702,12 +708,12 @@ local function get_engines_charge(pos, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
+    local nodes = core.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
 
     local drive = nil
     for _, p in pairs(nodes) do
         local prot = vector.add(p, vector.new(0, 2, 0))
-        local ship_meta = minetest.get_meta(prot)
+        local ship_meta = core.get_meta(prot)
         local _size = {
             w = ship_meta and ship_meta:get_int("p_width") or size.w,
             l = ship_meta and ship_meta:get_int("p_length") or size.l,
@@ -740,13 +746,13 @@ local function get_engines_charge(pos, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(c_pos1, c_pos2, "group:ship_engine")
+    local nodes = core.find_nodes_in_area(c_pos1, c_pos2, "group:ship_engine")
     local charge = 0
 
     if #nodes == 2 then
 
-        local eng1 = minetest.get_meta(nodes[1])
-        local eng2 = minetest.get_meta(nodes[2])
+        local eng1 = core.get_meta(nodes[1])
+        local eng2 = core.get_meta(nodes[2])
 
         local charge1 = eng1:get_int('charge')
         local charge2 = eng2:get_int('charge')
@@ -756,7 +762,7 @@ local function get_engines_charge(pos, size)
     elseif #nodes > 2 then
 
         for _, node in pairs(nodes) do
-            local eng = minetest.get_meta(node)
+            local eng = core.get_meta(node)
             local _charge = eng:get_int('charge')
             charge = charge + _charge
         end
@@ -788,7 +794,7 @@ local function engines_charged_spend(pos, dist, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:ship_engine")
+    local nodes = core.find_nodes_in_area(pos1, pos2, "group:ship_engine")
 
     if #nodes == 2 then
 
@@ -812,6 +818,29 @@ local function engines_charged_spend(pos, dist, size)
     return false
 end
 
+local function do_post_jump(drv)
+    drv = vector.subtract(drv, {x = 0, y = 0.5, z = 0})
+    core.after(0.8, function()
+        local node = core.get_node(drv)
+        local group = core.get_item_group(node.name, "jumpdrive")
+        if group > 0 then
+            digilines.receptor_send(drv, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_complete')
+        else
+            core.log("warning", "[ship_machine][digilines] Jump drive not found at destination " .. core.serialize(drv) .. "!")
+        end
+    end)
+    core.after(1.2, function()
+        local node = core.get_node(drv)
+        local group = core.get_item_group(node.name, "jumpdrive")
+        if group > 0 then
+            local dest_meta = core.get_meta(drv)
+            dest_meta:set_int("jump_active", 0)
+        else
+            core.log("warning", "[ship_machine][digilines] Jump drive not found at destination " .. core.serialize(drv) .. "!")
+        end
+    end)
+end
+
 local function do_jump(pos, dest, size, jcb, offset, use_charge)
     local meta = core.get_meta(pos)
     local owner = meta:get_string("owner")
@@ -823,16 +852,14 @@ local function do_jump(pos, dest, size, jcb, offset, use_charge)
         if use_charge then
             engines_charged_spend(pos, dist, size)
         end
-        transport_jumpship(pos, dest, size, owner, offset)
 
-        local drv = vector.add(pos, offset)
-        core.after(0.75, function()
-            local node = core.get_node(drv)
-            local group = core.get_item_group(node.name, "jumpdrive")
-            if group > 0 then
-                digilines.receptor_send(drv, technic.digilines.rules_allfaces, 'jumpdrive', 'jump_complete')
-            end
-        end)
+        -- move the ship (async)
+        transport_jumpship(pos, dest, size, owner)
+
+        -- post move work (async)
+        do_post_jump(dest)
+
+        -- fire callback success
         jcb(1)
         return
     end
@@ -850,7 +877,7 @@ local function check_jump_dest_jump(pos, size, jcb, offset)
         area_clear = false
     end
 
-    minetest.after(0.5, function()
+    core.after(0.5, function()
         if area_clear then
             jcb(1, hash)
         else
@@ -874,7 +901,7 @@ local function perform_jump(pos, size, jcb, offset, use_charge)
         area_clear = false
     end
 
-    minetest.after(1, function()
+    core.after(1, function()
         if not area_clear then
             area_clear = schem_lib.func.check_dest_clear(pos, dest, size)
             if not area_clear then
@@ -883,11 +910,12 @@ local function perform_jump(pos, size, jcb, offset, use_charge)
             end
         end
 
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         if meta:get_int("jumps") == nil then
             meta:set_int("jumps", 0)
         end
         meta:set_int("jumps", meta:get_int("jumps") + 1)
+        meta:set_int("jump_active", 1)
 
         do_jump(pos, dest, size, jcb, offset, use_charge)
 
@@ -927,7 +955,7 @@ function ship_machine.save_jumpship(pos, size, player, ship_name)
         }
     }, flags)
 
-    minetest.chat_send_player(player:get_player_name(), "Saving Jumpship as... " .. ship_name)
+    core.chat_send_player(player:get_player_name(), "Saving Jumpship as... " .. ship_name)
 end
 
 function ship_machine.load_jumpship(pos, player, ship_name)
@@ -943,9 +971,9 @@ function ship_machine.load_jumpship(pos, player, ship_name)
     })
 
     if lmeta then
-        minetest.chat_send_player(player:get_player_name(), "Loading Jumpship...")
+        core.chat_send_player(player:get_player_name(), "Loading Jumpship...")
     else
-        minetest.chat_send_player(player:get_player_name(), "Loading Jumpship Failed!")
+        core.chat_send_player(player:get_player_name(), "Loading Jumpship Failed!")
     end
 end
 
@@ -961,11 +989,11 @@ function ship_machine.get_protector(pos, size)
         z = size.l
     })
 
-    local prots = minetest.find_nodes_in_area(pos1, pos2, "group:ship_protector")
+    local prots = core.find_nodes_in_area(pos1, pos2, "group:ship_protector")
 
     local prot = nil
     for _, p in pairs(prots) do
-        local ship_meta = minetest.get_meta(p)
+        local ship_meta = core.get_meta(p)
         local _size = {
             w = ship_meta:get_int("p_width") or 10,
             l = ship_meta:get_int("p_length") or 10,
@@ -997,7 +1025,7 @@ function ship_machine.get_ship_contains(pos, size, name)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, name)
+    local nodes = core.find_nodes_in_area(pos1, pos2, name)
 
     local prot = nil
     for _, p in pairs(nodes) do
@@ -1027,12 +1055,12 @@ function ship_machine.engine_do_jump(pos, size, jump_callback, dest_offset)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
+    local nodes = core.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
 
     local drive = nil
     for _, p in pairs(nodes) do
         local prot = vector.add(p, vector.new(0, 2, 0))
-        local ship_meta = minetest.get_meta(prot)
+        local ship_meta = core.get_meta(prot)
         local _size = {
             w = ship_meta and ship_meta:get_int("p_width") or size.w,
             l = ship_meta and ship_meta:get_int("p_length") or size.l,
@@ -1339,7 +1367,7 @@ end
 
 function ship_machine.get_jump_dest_from_drive(pos, offset)
     local node = core.get_node(pos)
-    local group = minetest.get_item_group(node.name, "jumpdrive");
+    local group = core.get_item_group(node.name, "jumpdrive");
     if group then
         return vector.add(pos, offset)
     end
@@ -1358,12 +1386,12 @@ function ship_machine.get_jump_dest(pos, offset, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
+    local nodes = core.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
 
     local drive = nil
     for _, p in pairs(nodes) do
         local prot = vector.add(p, vector.new(0, 2, 0))
-        local ship_meta = minetest.get_meta(prot)
+        local ship_meta = core.get_meta(prot)
         local _size = {
             w = ship_meta and ship_meta:get_int("p_width") or size.w,
             l = ship_meta and ship_meta:get_int("p_length") or size.l,
@@ -1398,12 +1426,12 @@ function ship_machine.get_jumpdrive(pos, size)
         z = size.l
     })
 
-    local nodes = minetest.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
+    local nodes = core.find_nodes_in_area(pos1, pos2, "group:jumpdrive")
 
     local drive = nil
     for _, p in pairs(nodes) do
         local prot = vector.add(p, vector.new(0, 2, 0))
-        local ship_meta = minetest.get_meta(prot)
+        local ship_meta = core.get_meta(prot)
         local _size = {
             w = ship_meta and ship_meta:get_int("p_width") or size.w,
             l = ship_meta and ship_meta:get_int("p_length") or size.l,

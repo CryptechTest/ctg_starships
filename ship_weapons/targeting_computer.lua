@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local function isNumber(str)
     return tonumber(str) ~= nil
@@ -32,8 +32,8 @@ function ship_weapons.register_targeting_computer(custom_data)
     }
 
     local on_receive_fields = function(pos, formname, fields, sender)
-        local node = minetest.get_node(pos)
-        local meta = minetest.get_meta(pos)
+        local node = core.get_node(pos)
+        local meta = core.get_meta(pos)
         local name = sender:get_player_name()
         if not name or not pos then
             return
@@ -334,7 +334,7 @@ function ship_weapons.register_targeting_computer(custom_data)
 
     end
 
-    minetest.register_node(modname .. ":" .. lmachine_name .. "", {
+    core.register_node(modname .. ":" .. lmachine_name .. "", {
         description = machine_desc,
         tiles = {"lv_target_computer_top.png", "lv_target_computer_side.png", "lv_target_computer_side.png",
                  "lv_target_computer_side.png", "lv_target_computer_side.png", "lv_target_computer_side.png"},
@@ -357,7 +357,7 @@ function ship_weapons.register_targeting_computer(custom_data)
         },
         sounds = default.node_sound_glass_defaults(),
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Weapons Control " .. "-" .. " " .. machine_desc)
             if placer:is_player() then
                 meta:set_string("owner", placer:get_player_name())
@@ -369,14 +369,14 @@ function ship_weapons.register_targeting_computer(custom_data)
         on_rotate = screwdriver.disallow,
         can_dig = technic.machine_can_dig,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             -- local inv = meta:get_inventory()
             meta:set_int("enabled", 1)
             meta:set_int("selected_dir", 13)
             meta:set_int("attack_mode", 1)
             meta:set_string("formspec", ship_weapons.update_formspec(data, meta))
-            meta:set_string("pos_target", minetest.serialize({}))
+            meta:set_string("pos_target", core.serialize({}))
             meta:set_int("target_error_number", 0)
             meta:set_int("target_locked", 0)
             meta:set_int("target_delay", 3)

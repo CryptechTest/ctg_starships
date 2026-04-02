@@ -1,4 +1,4 @@
-local world_path = minetest.get_worldpath()
+local world_path = core.get_worldpath()
 local file = world_path .. "/ship_locations"
 
 function ship_machine.read_locations()

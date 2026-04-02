@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local time_scl = 20
 
@@ -17,7 +17,7 @@ local function push_item(pos, inv, param2)
 end
 
 local function needs_charge(pos)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local charge = meta:get_int("charge")
     local charge_max = meta:get_int("charge_max")
     return charge < charge_max
@@ -62,13 +62,13 @@ function ship_machine.register_engine(data)
 
     local tube = {
         insert_object = function(pos, node, stack, direction)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             local inv = meta:get_inventory()
             local added = inv:add_item("src", stack)
             return added
         end,
         can_insert = function(pos, node, stack, direction)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             local inv = meta:get_inventory()
             return inv:room_for_item("src", stack)
         end,
@@ -99,7 +99,7 @@ function ship_machine.register_engine(data)
 
     -- technic run
     local run = function(pos, node)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
 
@@ -223,7 +223,7 @@ function ship_machine.register_engine(data)
     -- register machine node
 
     local node_name = data.modname .. ":" .. ltier .. "_" .. machine_name
-    minetest.register_node(node_name .. "", {
+    core.register_node(node_name .. "", {
         description = machine_desc,
         tiles = {ltier .. "_" .. tmachine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_bottom.png",
                  ltier .. "_" .. tmachine_name .. ".png", ltier .. "_" .. tmachine_name .. ".png",
@@ -243,11 +243,11 @@ function ship_machine.register_engine(data)
             return technic.machine_after_dig_node
         end,
         on_push_item = function(pos, dir, item)
-            local tube_dir = minetest.get_meta(pos):get_int("tube_dir")
+            local tube_dir = core.get_meta(pos):get_int("tube_dir")
             if dir == tubelib2.Turn180Deg[tube_dir] then
-                local s = minetest.get_meta(pos):get_string("peer_pos")
+                local s = core.get_meta(pos):get_string("peer_pos")
                 if s and s ~= "" then
-                    push_item(minetest.string_to_pos(s))
+                    push_item(core.string_to_pos(s))
                     return true
                 end
             end
@@ -255,8 +255,8 @@ function ship_machine.register_engine(data)
         on_rotate = screwdriver.disallow,
         can_dig = technic.machine_can_dig,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Starship Engine")
             meta:set_int("tube_time", 0)
             local inv = meta:get_inventory()
@@ -281,8 +281,8 @@ function ship_machine.register_engine(data)
             if fields.quit then
                 return
             end
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             local enabled = false
             if fields.toggle then
                 if meta:get_int("enabled") == 1 then
@@ -327,7 +327,7 @@ function ship_machine.register_engine(data)
         }
     }
 
-    minetest.register_node(node_name .. "_active", {
+    core.register_node(node_name .. "_active", {
         description = machine_desc,
         tiles = {texture_active_top, ltier .. "_" .. tmachine_name .. "_bottom.png", texture_active, texture_active,
                  texture_active, texture_active},
@@ -351,11 +351,11 @@ function ship_machine.register_engine(data)
         can_dig = technic.machine_can_dig,
 
         on_push_item = function(pos, dir, item)
-            local tube_dir = minetest.get_meta(pos):get_int("tube_dir")
+            local tube_dir = core.get_meta(pos):get_int("tube_dir")
             if dir == tubelib2.Turn180Deg[tube_dir] then
-                local s = minetest.get_meta(pos):get_string("peer_pos")
+                local s = core.get_meta(pos):get_string("peer_pos")
                 if s and s ~= "" then
-                    push_item(minetest.string_to_pos(s))
+                    push_item(core.string_to_pos(s))
                     return true
                 end
             end
@@ -370,8 +370,8 @@ function ship_machine.register_engine(data)
             if fields.quit then
                 return
             end
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             local enabled = false
             if fields.toggle then
                 if meta:get_int("enabled") == 1 then

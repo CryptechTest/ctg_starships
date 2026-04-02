@@ -14,9 +14,6 @@ local MP = minetest.get_modpath(minetest.get_current_modname())
 local F = minetest.formspec_escape
 local S = minetest.get_translator and minetest.get_translator("protector")
 
--- Load support for factions
-local factions_available = minetest.global_exists("factions")
-
 shipyard.protector = {
     mod = "shipyard",
     modpath = MP,
@@ -59,32 +56,6 @@ end
 
 -- check for member name
 shipyard.protector.is_member = function(meta, name)
-
-    if factions_available and meta:get_int("faction_members") == 1 then
-
-        if factions.version == nil then
-
-            -- backward compatibility
-            if factions.get_player_faction(name) ~= nil and factions.get_player_faction(meta:get_string("owner")) ==
-                factions.get_player_faction(name) then
-                return true
-            end
-        else
-            -- is member if player and owner share at least one faction
-            local owner_factions = factions.get_player_factions(name)
-            local owner = meta:get_string("owner")
-
-            if owner_factions ~= nil and owner_factions ~= false then
-
-                for _, f in ipairs(owner_factions) do
-
-                    if factions.player_is_in_faction(f, owner) then
-                        return true
-                    end
-                end
-            end
-        end
-    end
 
     for _, n in pairs(get_member_list(meta)) do
 
@@ -154,33 +125,6 @@ shipyard.protector_formspec = function(meta)
     local npp = protector_max_share_count -- max users added to protector list
     local i = 0
     local checkbox_faction = false
-
-    -- Display the checkbox only if the owner is member of at least 1 faction
-    if factions_available then
-
-        if factions.version == nil then
-
-            -- backward compatibility
-            if factions.get_player_faction(meta:get_string("owner")) then
-                checkbox_faction = true
-            end
-        else
-            local player_factions = factions.get_player_factions(meta:get_string("owner"))
-
-            if player_factions ~= nil and #player_factions >= 1 then
-                checkbox_faction = true
-            end
-        end
-    end
-    if checkbox_faction then
-
-        formspec = formspec .. "checkbox[0,5;faction_members;" .. F(S("Allow faction access")) .. ";" ..
-                       (meta:get_int("faction_members") == 1 and "true" or "false") .. "]"
-
-        if npp > 8 then
-            npp = 8
-        end
-    end
 
     for n = 1, #members do
 
@@ -785,11 +729,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
     if not meta then
         return
-    end
-
-    -- add faction members
-    if factions_available and fields.faction_members ~= nil then
-        meta:set_int("faction_members", fields.faction_members == "true" and 1 or 0)
     end
 
     -- add member [+]

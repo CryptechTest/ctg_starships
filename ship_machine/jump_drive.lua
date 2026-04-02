@@ -1,4 +1,4 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local function round(v)
     return math.floor(v + 0.5)
@@ -7,7 +7,7 @@ end
 local time_scl = 10
 
 local function reg_effect_ent()
-    minetest.register_entity("ship_machine:jump_drive_effect", {
+    core.register_entity("ship_machine:jump_drive_effect", {
         initial_properties = {
             physical = false,
             collisionbox = {0, 0, 0, 0, 0, 0},            
@@ -110,7 +110,7 @@ function ship_machine.register_jumpship(data)
     -------------------------------------------------------
     -- technic run
     local run = function(pos, node)
-        local meta = minetest.get_meta(pos)
+        local meta = core.get_meta(pos)
         local inv = meta:get_inventory()
         local eu_input = meta:get_int(tier .. "_EU_input")
 
@@ -154,9 +154,63 @@ function ship_machine.register_jumpship(data)
     end
 
     -------------------------------------------------------
+    -------------------------------------------------------
+    -- on blast/destroy
+    local function on_blast_hit(pos, intensity)
+        local pos_above = vector.add(pos, {x=0,y=2,z=0})
+        local ship_meta = core.get_meta(pos_above)
+        local hp = ship_meta:get_int("hp")
+        if hp <= 0 then
+            return false
+        end
+
+        local shield = ship_meta:get_int("shield")
+        if shield > 0 then
+            shield = shield - intensity * 2
+            ship_meta:set_int("shield", shield)
+        else
+            hp = hp - intensity * 2
+            ship_meta:set_int("hp", hp)
+        end
+
+        intensity = intensity or 1
+        intensity = math.min(intensity, 3)
+        ship_weapons.safe_boom(pos, {radius = intensity * 0.5})
+
+        return true
+    end
+
+    local function on_destroy(pos)
+        local pos_above = vector.add(pos, {x=0,y=2,z=0})
+        local ship_meta = core.get_meta(pos_above)
+        local hp = ship_meta:get_int("hp")
+        if hp > 0 then
+            return false
+        end
+
+        local node_above = core.get_node(pos_above)
+        local group_above = core.get_item_group(node_above.name, "ship_protector")
+        if group_above > 0 then
+            -- remove protection node
+            core.remove_node(pos_above)
+        end
+        -- remove jumpdrive node
+        core.remove_node(pos)
+
+        -- create explosion...
+        ship_weapons.boom(pos, {radius = 3})
+
+        core.log("action","Destroyed JumpShip '" .. data.ship_name .. "' at " .. core.serialize(pos))
+
+        return true
+    end
+
+    -------------------------------------------------------
+    -------------------------------------------------------
+    -- register
 
     local nodename = data.modname .. ":" .. data.machine_name
-    minetest.register_node(nodename, {
+    core.register_node(nodename, {
         description = S(data.machine_desc),
         tiles = {texture_active, base_texture .. "_bottom.png", texture_active, texture_active, texture_active,
                  texture_active},
@@ -205,36 +259,39 @@ function ship_machine.register_jumpship(data)
         },
 
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("owner", placer:get_player_name())
             local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
             meta:set_string("formspec", formspec)
 		    core.get_node_timer(pos):start(5)
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
-
-            return technic.machine_after_dig_node
+            return technic.machine_after_dig_node(pos, oldnode, oldmetadata, digger)
         end,
         on_rotate = screwdriver.disallow,
         connect_sides = connect_sides,
         can_dig = function(pos, player)
             local is_admin = false
-            if minetest.check_player_privs(player, "jumpship_admin") then
+            if core.check_player_privs(player, "jumpship_admin") then
                 return true
             end
-            return player and is_admin
+            return player and is_admin or false
         end,
         on_blast = function(pos, intensity)
             if data.on_blast_hit then
                 data.on_blast_hit(pos, intensity)
+            else
+                on_blast_hit(pos, intensity)
             end
             if data.on_destroy then
                 data.on_destroy(pos)
+            else
+                on_destroy(pos)
             end
         end,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Starship Jump Drive Allocator")
             meta:set_int("enabled", 1)
             meta:set_int("ready", 0)
@@ -255,13 +312,13 @@ function ship_machine.register_jumpship(data)
             if fields.quit then
                 return
             end
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             if fields.setup then
                 local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
                 meta:set_string("formspec", formspec)
             end
             local is_admin = false
-            if minetest.check_player_privs(sender, "jumpship_admin") then
+            if core.check_player_privs(sender, "jumpship_admin") then
                 is_admin = true
             end
             if not is_admin then
@@ -276,14 +333,14 @@ function ship_machine.register_jumpship(data)
                 return
             end
 		    core.get_node_timer(pos):start(5)
-            local node = minetest.get_node(pos)
+            local node = core.get_node(pos)
             local owner_name = ""
             if fields.set_owner and fields.owner_name then
                 owner_name = fields.owner_name
                 meta:set_string("owner", owner_name)
-                local prot = minetest.find_node_near(pos, 3, "group:ship_protector")
+                local prot = core.find_node_near(pos, 3, "group:ship_protector")
                 if prot then
-                    local meta2 = minetest.get_meta(prot)
+                    local meta2 = core.get_meta(prot)
                     meta2:set_string("owner", owner_name)
                     meta2:set_string("infotext", S("Protection (owned by @1)", meta2:get_string("owner")))
                     ship_machine.update_ship_owner_all(pos, data.size, owner_name)
@@ -293,9 +350,9 @@ function ship_machine.register_jumpship(data)
             if fields.set_owner_local and fields.owner_name_local then
                 owner_name = fields.owner_name_local
                 meta:set_string("owner", owner_name)
-                local prot = minetest.find_node_near(pos, 3, "group:ship_protector")
+                local prot = core.find_node_near(pos, 3, "group:ship_protector")
                 if prot then
-                    local meta2 = minetest.get_meta(prot)
+                    local meta2 = core.get_meta(prot)
                     meta2:set_string("owner", owner_name)
                     meta2:set_string("infotext", S("Protection (owned by @1)", meta2:get_string("owner")))
                 end
@@ -305,14 +362,29 @@ function ship_machine.register_jumpship(data)
                 file_name = fields.file_name
             end
             if fields.save and #file_name > 1 then
-                minetest.after(0, function()
+                core.after(0, function()
                     ship_machine.save_jumpship(pos, data.size, sender, file_name)
                 end)
             end
             if fields.load and #file_name > 1 then
-                minetest.after(0, function()
+                core.after(0, function()
                     ship_machine.load_jumpship(pos, sender, file_name)
                 end)
+            end
+            if fields.rem_ship then
+                if sender.get_player_name then
+                    core.close_formspec(sender:get_player_name(), formname)
+                end
+                core.after(0.2, function()
+                    local size = data.size
+                    local pos1 = vector.subtract(pos, vector.new(size.w, size.h, size.l))
+                    local pos2 = vector.add(pos, vector.new(size.w, size.h, size.l))
+                    schem_lib.func.clear_position(pos1, pos2)
+                    if sender.get_player_name then
+                        core.chat_send_player(sender:get_player_name(), "Dupelicate Jumpship Removed!")
+                    end
+                end)
+                return
             end
             local formspec = ship_machine.update_jumpdrive_formspec(data, meta)
             meta:set_string("formspec", formspec)

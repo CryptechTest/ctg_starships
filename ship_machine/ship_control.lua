@@ -1,11 +1,11 @@
-local S = minetest.get_translator(minetest.get_current_modname())
+local S = core.get_translator(core.get_current_modname())
 
 local function isInteger(str)
     return tonumber(str) ~= nil
 end
 
 local function update_formspec_nav(pos, data, message)
-    local meta = minetest.get_meta(pos)
+    local meta = core.get_meta(pos)
     local machine_name = data.machine_name
     local machine_desc = data.machine_desc .. " - Navigation"
     local typename = data.typename
@@ -48,12 +48,12 @@ local function update_formspec_nav(pos, data, message)
         if not shipp then
             return fspec .. bg_form
         end
-        local ship_meta = minetest.get_meta(shipp)
+        local ship_meta = core.get_meta(shipp)
 
         -- ship details
         local min_dist = math.min(data.size.h, math.min(data.size.w, data.size.l)) * 2
-        local det_txt1 = minetest.colorize("#a4d0e0", "Jump Range:  " .. min_dist .. " - " .. data.jump_dist .. " Meters")
-        local det_txt2 = minetest.colorize("#9bd1c4", "Hull Rating: " .. data.hp)
+        local det_txt1 = core.colorize("#a4d0e0", "Jump Range:  " .. min_dist .. " - " .. data.jump_dist .. " Meters")
+        local det_txt2 = core.colorize("#9bd1c4", "Hull Rating: " .. data.hp)
         local detail = "image[0.7,0.6;9.2,0.6;bg2.png]" .. "label[0.8,0.625;".. det_txt1 .."]" .. "label[5.1,0.625;".. det_txt2 .."]"
 
         -- combat migrations
@@ -66,7 +66,7 @@ local function update_formspec_nav(pos, data, message)
         local ship_hp_prcnt = (ship_hp / ship_hp_max) * 100
         local hp_tag = "image[5.0,1.2;3.8,0.9;bg2.png]" .. "label[5.1,1.2;Hull Integrity:]"
         local hp_col = ship_machine.colorize_text_hp(ship_hp, ship_hp_max)
-        local hp_prcnt_col = minetest.colorize(hp_col, string.format("%.1f", ship_hp_prcnt) .. "%")
+        local hp_prcnt_col = core.colorize(hp_col, string.format("%.1f", ship_hp_prcnt) .. "%")
         local hp_bar = "image[4.9,0.325;4.025,3.25;ctg_gui_charge_bar_bg.png^[lowpart:" .. tostring(ship_hp_prcnt) .. ":ctg_gui_charge_bar_fg_hp.png^[transformR270]]"
         local hit_points = hp_tag .. "label[7.05,1.2;" .. hp_prcnt_col .. "]" .. hp_bar
         -- shield
@@ -75,7 +75,7 @@ local function update_formspec_nav(pos, data, message)
         local ship_shield_prcnt = (ship_shield / ship_shield_max) * 100
         local shield_tag = "image[5.0,2.0;3.8,0.9;bg2.png]" .. "label[5.1,2.0;Shield Charge:]"
         local shield_col = ship_machine.colorize_text_hp(ship_shield, ship_shield_max)
-        local shield_prcnt_col = minetest.colorize(shield_col, string.format("%.1f", ship_shield_prcnt) .. "%")
+        local shield_prcnt_col = core.colorize(shield_col, string.format("%.1f", ship_shield_prcnt) .. "%")
         local shield_bar = "image[4.9,1.125;4.025,3.25;ctg_gui_charge_bar_bg.png^[lowpart:" .. tostring(ship_shield_prcnt) .. ":ctg_gui_charge_bar_fg_shield.png^[transformR270]]"
         local shield_points = shield_tag .. "label[7.05,2.0;" .. shield_prcnt_col .. "]" .. shield_bar
 
@@ -92,13 +92,13 @@ local function update_formspec_nav(pos, data, message)
         local d_warn_bg = "image[0.42,5.1;5.2,0.74;bg2.png]"
         if ship_hp_prcnt < 10 then
             local d_mes = "Critical Damage - Defense Offline!"
-            damage_warn = d_warn_bg .. "label[0.5,5.2;" .. minetest.colorize('#f02618', d_mes) .. "]"
+            damage_warn = d_warn_bg .. "label[0.5,5.2;" .. core.colorize('#f02618', d_mes) .. "]"
         elseif ship_hp_prcnt < 40 then
             local d_mes = "Severe Damage - Shield Offline!"
-            damage_warn = d_warn_bg .. "label[0.5,5.2;" .. minetest.colorize('#f04a18', d_mes) .. "]"
+            damage_warn = d_warn_bg .. "label[0.5,5.2;" .. core.colorize('#f04a18', d_mes) .. "]"
         elseif ship_meta:get_int("shield_hit") > 0 then
             local d_mes = "Hostile Warning - Recent Attack!"
-            damage_warn = d_warn_bg .. "label[0.5,5.2;" .. minetest.colorize('#f0ac18', d_mes) .. "]"
+            damage_warn = d_warn_bg .. "label[0.5,5.2;" .. core.colorize('#f0ac18', d_mes) .. "]"
         end
         -- ship owner seize
         local ship_owner = ""
@@ -174,8 +174,8 @@ local function update_formspec_nav(pos, data, message)
             img_hole_3 = ""
             img_hole_4 = ""
             dest_dir = "Locked"
-            btn_nav = "label[5,4;" .. minetest.colorize('#8c8c8c', "Interace Locked") .. "]"
-            local msg = minetest.colorize('#ffa600', "Preparing for FTL jump...")
+            btn_nav = "label[5,4;" .. core.colorize('#8c8c8c', "Interace Locked") .. "]"
+            local msg = core.colorize('#ffa600', "Preparing for FTL jump...")
             busy_label = bg_msg .. "label[0.5,4.2;" .. msg .. "]"
             ship_owner = ""
             btn_doc = ""
@@ -185,7 +185,7 @@ local function update_formspec_nav(pos, data, message)
 
         -- messages
         if message ~= nil and message and string.len(message) > 0 then
-            busy_label = bg_msg .. "label[0.5,4.2;" .. minetest.colorize('#f0ce37', message) .. "]"
+            busy_label = bg_msg .. "label[0.5,4.2;" .. core.colorize('#f0ce37', message) .. "]"
         end
 
         -- form setup
@@ -249,15 +249,15 @@ function ship_machine.register_control_console(custom_data)
         if fields.quit then
             return
         end
-        local node = minetest.get_node(pos)
-        local meta = minetest.get_meta(pos)
+        local node = core.get_node(pos)
+        local meta = core.get_meta(pos)
 
         if fields.submit_ctl then
             if (sender and sender:is_player() and sender:get_player_name() ~= meta:get_string("owner")) then
                 local new_owner = sender:get_player_name()
                 local prot = ship_machine.get_protector(pos, def.size)
                 if prot then
-                    local meta2 = minetest.get_meta(prot)
+                    local meta2 = core.get_meta(prot)
                     meta2:set_string("owner", new_owner)
                     meta2:set_string("infotext", S("Protection (owned by @1)", new_owner))
                     ship_machine.update_ship_owner_all(pos, def.size, new_owner)
@@ -270,7 +270,7 @@ function ship_machine.register_control_console(custom_data)
             end
         end
 
-        if sender and sender:is_player() and minetest.is_protected(pos, sender:get_player_name() ) then
+        if sender and sender:is_player() and core.is_protected(pos, sender:get_player_name() ) then
             return
         end
 
@@ -278,7 +278,7 @@ function ship_machine.register_control_console(custom_data)
             local shipp = ship_machine.get_protector(pos, def.size)
             if shipp then
                 meta:set_int("combat_ready", 2)
-                local ship_meta = minetest.get_meta(shipp)
+                local ship_meta = core.get_meta(shipp)
                 ship_meta:set_int("combat_ready", 2)
                 ship_meta:set_int("hp_max", def.hp)
                 ship_meta:set_int("hp", def.hp)
@@ -319,17 +319,17 @@ function ship_machine.register_control_console(custom_data)
         if fields.prot_crew then
             local prot_loc = ship_machine.get_protector(pos, def.size)
             if prot_loc then
-                local prot_meta = minetest.get_meta(prot_loc)
+                local prot_meta = core.get_meta(prot_loc)
                 prot_meta:set_int("menu_level", 1)
-                minetest.registered_nodes[minetest.get_node(prot_loc).name].on_rightclick(prot_loc, node, sender, nil)
+                core.registered_nodes[core.get_node(prot_loc).name].on_rightclick(prot_loc, node, sender, nil)
             end
             return
         elseif fields.prot_ally then
             local prot_loc = ship_machine.get_protector(pos, def.size)
             if prot_loc then
-                local prot_meta = minetest.get_meta(prot_loc)
+                local prot_meta = core.get_meta(prot_loc)
                 prot_meta:set_int("menu_level", 2)
-                minetest.registered_nodes[minetest.get_node(prot_loc).name].on_rightclick(prot_loc, node, sender, nil)
+                core.registered_nodes[core.get_node(prot_loc).name].on_rightclick(prot_loc, node, sender, nil)
             end
             return
         end
@@ -356,7 +356,7 @@ function ship_machine.register_control_console(custom_data)
         local is_deepspace = jpos and jpos.y > 22000;
 
         -- local pos_nav = meta:get_string("pos_nav")
-        -- local nav = minetest.get_meta(pos_nav)
+        -- local nav = core.get_meta(pos_nav)
         -- local nav_ready = nav:get_string("jump_ready")
         local nav_ready = 1
 
@@ -462,7 +462,7 @@ function ship_machine.register_control_console(custom_data)
                 z = 0
             }
             local s = shipyard.ship.size
-            local bays = minetest.find_nodes_in_area({
+            local bays = core.find_nodes_in_area({
                 x = spos.x - s.w,
                 y = spos.y - s.h,
                 z = spos.z - s.l
@@ -485,8 +485,8 @@ function ship_machine.register_control_console(custom_data)
                     if bay_center == jpos then
                         docked = true
                     end
-                    -- local bmeta = minetest.get_meta(bay)
-                    local bnode = minetest.get_node(bay_center)
+                    -- local bmeta = core.get_meta(bay)
+                    local bnode = core.get_node(bay_center)
                     if not bnode.name:match("shield_protect") and bnode.name == "vacuum:vacuum" then
                         move_x = bay_center.x - jpos.x
                         move_y = bay_center.y - jpos.y
@@ -559,24 +559,24 @@ function ship_machine.register_control_console(custom_data)
                 if j == 1 then
                     meta:set_int("travel_ready", 1)
                     meta:set_string("formspec", nil)
-                    minetest.after(0.5, function()
+                    core.after(0.5, function()
                         local panel = core.get_node(panel_dest)
                         if core.get_item_group(panel.name, "jumpship_control") > 0 then
-                            local metad = minetest.get_meta(panel_dest)
+                            local metad = core.get_meta(panel_dest)
                             metad:set_int("travel_ready", 1)
                             local formspec_new = update_formspec_nav(panel_dest, def, "Folding Jump Space...")
                             metad:set_string("formspec", formspec_new)
                         end
                     end)
-                    minetest.after(3, function()
+                    core.after(3, function()
                         local panel = core.get_node(panel_dest)
                         if core.get_item_group(panel.name, "jumpship_control") > 0 then
-                            local metad = minetest.get_meta(panel_dest)
+                            local metad = core.get_meta(panel_dest)
                             local formspec_new = update_formspec_nav(panel_dest, def, "Jump Complete!")
                             metad:set_string("formspec", formspec_new)
                             metad:set_string("dock_with", '')
                             metad:set_int("travel_ready", 0)
-                            minetest.after(1.5, function()
+                            core.after(1.5, function()
                                 if metad then
                                     local formspec_rdy = update_formspec_nav(panel_dest, def, "Ready...")
                                     metad:set_string("formspec", formspec_rdy)
@@ -620,7 +620,7 @@ function ship_machine.register_control_console(custom_data)
         meta:set_string("formspec", formspec)
     end
 
-    minetest.register_node(modname .. ":" .. ltier .. "_" .. lmachine_name .. "", {
+    core.register_node(modname .. ":" .. ltier .. "_" .. lmachine_name .. "", {
         description = machine_desc,
         tiles = {ltier .. "_" .. lmachine_name .. "_top.png", ltier .. "_" .. lmachine_name .. "_bottom.png",
                  ltier .. "_" .. lmachine_name .. "_side.png", ltier .. "_" .. lmachine_name .. "_side.png",
@@ -645,7 +645,7 @@ function ship_machine.register_control_console(custom_data)
         sounds = default.node_sound_metal_defaults(),
 
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            local meta = minetest.get_meta(pos)
+            local meta = core.get_meta(pos)
             meta:set_string("infotext", "Jumpship Control " .. "-" .. " " .. machine_desc)
             local holo_pos = vector.add(pos, vector.new(0,1,0))
             core.set_node(holo_pos, {name = "ship_holodisplay:display_off"})
@@ -656,30 +656,31 @@ function ship_machine.register_control_console(custom_data)
             if node.name == "ship_holodisplay:display" or node.name == "ship_holodisplay:display_off" then
                 core.set_node(holo_pos, {name = "air"})
             end
-            return technic.machine_after_dig_node
+            return technic.machine_after_dig_node(pos, oldnode, oldmetadata, digger)
         end,
         can_dig = technic.machine_can_dig,
         on_rotate = screwdriver.disallow,
         on_construct = function(pos)
-            local node = minetest.get_node(pos)
-            local meta = minetest.get_meta(pos)
+            local node = core.get_node(pos)
+            local meta = core.get_meta(pos)
             local inv = meta:get_inventory()
             meta:set_int("enabled", 1)
             meta:set_int("dest_dir", 0)
             meta:set_int("jump_dist", def.jump_dist)
             meta:set_int("travel_ready", 0)
+            meta:set_int("combat_ready", 2)
             meta:set_string("formspec", update_formspec_nav(pos, def, ''))
             local pos_drive = ship_machine.get_jumpdrive(pos, def.size)
             if pos_drive then
                 local drive_offset = vector.subtract(pos, pos_drive)
-                meta:set_string("drive_offset", minetest.serialize(drive_offset))
+                meta:set_string("drive_offset", core.serialize(drive_offset))
             end
         end,
 
         on_punch = function(pos, node, puncher)
             local drive_loc = ship_machine.get_protector(pos, def.size)
             if drive_loc then
-                minetest.registered_nodes[minetest.get_node(drive_loc).name].on_punch(drive_loc, minetest.get_node(drive_loc), puncher)
+                core.registered_nodes[core.get_node(drive_loc).name].on_punch(drive_loc, core.get_node(drive_loc), puncher)
             end
         end,
 
