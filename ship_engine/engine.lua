@@ -90,7 +90,8 @@ function ship_engine.register_engine(data)
         ctg_machine = 1,
         metal = 1,
         level = 2,
-        ship_engine = 1
+        ship_engine = 1,
+        not_in_creative_inventory = 1,
     }
 
     if data.tube then
@@ -172,7 +173,7 @@ function ship_engine.register_engine(data)
                 meta:set_int(tier .. "_EU_demand", 0)
                 meta:set_int(tier .. "_EU_supply", 0)
                 meta:set_int("src_time", 0)
-                meta:set_int("exhaust_clear", 1)
+                meta:set_int("exhaust_clear", 3)
                 if not editing then
                     local formspec = ship_engine.update_formspec(data, false, enabled, has_mese, 0, charge, charge_max,
                         eu_input, eu_supply, meta:get_int("src_tick"), tick_scl, meta:get_string("digiline_channel"))
@@ -357,11 +358,12 @@ function ship_engine.register_engine(data)
     end
 
     local node_name = data.modname .. ":" .. ltier .. "_" .. machine_name
+    local text_name = 'lv' .. "_" .. tmachine_name
     core.register_node(node_name .. "", {
         description = machine_desc,
-        tiles = {ltier .. "_" .. tmachine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_bottom.png",
-                 ltier .. "_" .. tmachine_name .. "_side.png", ltier .. "_" .. tmachine_name .. "_side.png",
-                 ltier .. "_" .. tmachine_name .. "_back.png", ltier .. "_" .. tmachine_name .. "_front.png"},
+        tiles = {text_name .. "_top.png", text_name .. "_bottom.png",
+                 text_name .. "_side.png", text_name .. "_side.png",
+                 text_name .. "_back.png", text_name .. "_front.png"},
         paramtype2 = "facedir",
         drop = data.modname .. ":" .. ltier .. "_" .. machine_name,
         groups = groups,
@@ -374,7 +376,7 @@ function ship_engine.register_engine(data)
             end
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
-            return technic.machine_after_dig_node
+            return technic.machine_after_dig_node(pos, oldnode, oldmetadata, digger)
         end,
         on_push_item = function(pos, dir, item)
             local tube_dir = core.get_meta(pos):get_int("tube_dir")
@@ -402,7 +404,7 @@ function ship_engine.register_engine(data)
             meta:set_int("charge_max", data.charge_max)
             meta:set_int("demand", data.demand[1])
             meta:set_int("src_tick", 0)
-            meta:set_int("exhaust_clear", 1)
+            meta:set_int("exhaust_clear", 5)
             local charge_max = meta:get_int("charge_max")
             local charge = meta:get_int("charge")
             local eu_input = meta:get_int(tier .. "_EU_input")
@@ -446,7 +448,7 @@ function ship_engine.register_engine(data)
         legacy_facedir_simple = true,
         sounds = default.node_sound_glass_defaults(),
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
-            return technic.machine_after_dig_node
+            return technic.machine_after_dig_node(pos, oldnode, oldmetadata, digger)
         end,
         on_push_item = function(pos, dir, item)
             local tube_dir = core.get_meta(pos):get_int("tube_dir")
@@ -645,7 +647,7 @@ function ship_engine.register_engine_core(data)
             end
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
-            return technic.machine_after_dig_node
+            return technic.machine_after_dig_node(pos, oldnode, oldmetadata, digger)
         end,
         on_rotate = screwdriver.disallow,
         can_dig = technic.machine_can_dig,
@@ -733,7 +735,7 @@ function ship_engine.register_engine_core(data)
             end
         end,
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
-            return technic.machine_after_dig_node
+            return technic.machine_after_dig_node(pos, oldnode, oldmetadata, digger)
         end,
         on_rotate = screwdriver.disallow,
         can_dig = technic.machine_can_dig,
@@ -755,7 +757,7 @@ function ship_engine.register_engine_core(data)
                     meta:set_int("enabled", 0)
                 else
                     meta:set_int("enabled", 1)
-                    meta:set_int("exhaust_clear", 1)
+                    meta:set_int("exhaust_clear", 3)
                     enabled = true
                 end
             end
@@ -899,7 +901,7 @@ end
 local function dmg_object(pos, object, strength)
     -- local obj_pos = vector.add(object:get_pos(), calculate_object_center(object))
     local mul = calculate_damage_multiplier(object)
-    local dmg = math.random(0.25, 1.0) * strength
+    local dmg = math.random(25, 100) * 0.01 * strength
     if not dmg then
         return
     end
@@ -916,7 +918,8 @@ core.register_abm({
     -- neighbors = {"air", "vacuum:vacuum", "vacuum:atmos_thin"},
     interval = 1,
     chance = 1,
-    min_y = vacuum.vac_heights.space.start_height,
+    --min_y = vacuum.vac_heights.space.start_height,
+    min_y = -11000,
     action = function(pos)
 
         local node = core.get_node(pos)
@@ -928,31 +931,37 @@ core.register_abm({
         local zdir = 0;
         if param2 == 0 then
             dir = 2
-            zdir = 1.5
+            zdir = 1.45
         elseif param2 == 1 then
             dir = 3
-            xdir = 1.5
+            xdir = 1.45
         elseif param2 == 2 then
             dir = 0
-            zdir = -1.5
+            zdir = -1.45
         elseif param2 == 3 then
             dir = 1
-            xdir = -1.5
+            xdir = -1.45
         end
 
         local npos = vector.add(pos, {
-            x = xdir,
+            x = math.round(xdir),
             y = 0,
-            z = zdir
+            z = math.round(zdir)
+        })
+        local npos2 = vector.add(npos, {
+            x = math.round(xdir),
+            y = 0,
+            z = math.round(zdir)
         })
 
         local xnode = core.get_node(npos)
         local xclear = meta:get_int("exhaust_clear")
         if xnode.name == "vacuum:vacuum" then
-            meta:set_int("exhaust_clear", 1)
-        elseif xclear == 1 then
+            meta:set_int("exhaust_clear", 5)
+        elseif xclear >= 1 then
             core.set_node(npos, {name = "vacuum:vacuum"})
-            meta:set_int("exhaust_clear", 0)
+            core.set_node(npos2, {name = "vacuum:vacuum"})
+            meta:set_int("exhaust_clear", xclear - 1)
         end
 
         local strength = 4
@@ -962,7 +971,7 @@ core.register_abm({
             end
         end
 
-        ship_engine.spawn_particle(pos, xdir * -1, math.random(-0.005, 0.005), zdir * -1, math.random(0.02, 0.1) * xdir,
-            0, math.random(0.02, 0.1) * zdir, 0.2, 4, 10)
+        ship_engine.spawn_particle(pos, xdir * -1, math.random(-5, 5) * 0.001, zdir * -1, (math.random(2, 10) * 0.01) * xdir,
+            0, (math.random(2, 10) * 0.01) * zdir, 0.2, 4.2, 16)
     end
 })

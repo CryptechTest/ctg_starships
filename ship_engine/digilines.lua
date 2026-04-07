@@ -28,7 +28,7 @@ ship_engine.engine_digiline_effector_l = function(pos, node, channel, msg)
         local inv = meta:get_inventory()
         local mese = ship_engine.get_mese(inv:get_list("src"))
         local last_input = meta:get_int('last_input_type')
-        if mese ~= nil then
+        if mese ~= nil and mese.new_input ~= nil then
             local stackname = mese.new_input:get_name()
             local count = mese.count
             local value = mese.input_type
@@ -103,7 +103,7 @@ ship_engine.engine_digiline_effector_r = function(pos, node, channel, msg)
         local inv = meta:get_inventory()
         local mese = ship_engine.get_mese(inv:get_list("src"))
         local last_input = meta:get_int('last_input_type')
-        if mese ~= nil then
+        if mese ~= nil and mese.new_input ~= nil then
             local stackname = mese.new_input:get_name()
             local count = mese.count
             local value = mese.input_type

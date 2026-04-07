@@ -35,5 +35,30 @@ register_lv_engine({
     engine_digiline_effector = ship_engine.engine_digiline_effector_r
 })
 
+local function register_mv_engine(data)
+    data.modname = "ship_engine"
+    data.charge_max = 350
+    data.demand = {7500}
+    data.supply = 10000
+    data.speed = 2
+    data.tier = "MV"
+    data.typename = "engine"
+    data.machine_name = data.machine_name or "engine"
+    data.machine_desc = data.machine_desc or "Jumpship Engine"
+
+    ship_engine.register_engine(data)
+end
+
+register_mv_engine({
+    machine_name = "engine_l",
+    machine_desc = "MV Port Engine",
+    engine_digiline_effector = ship_engine.engine_digiline_effector_l
+})
+register_mv_engine({
+    machine_name = "engine_r",
+    machine_desc = "MV Starboard Engine",
+    engine_digiline_effector = ship_engine.engine_digiline_effector_r
+})
+
 -- navigator
-ship_engine.register_engine_core({})
+--ship_engine.register_engine_core({})

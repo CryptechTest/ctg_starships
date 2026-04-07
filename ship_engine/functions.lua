@@ -212,7 +212,7 @@ local function spend_charge(pos, amt)
     if new_charge < 0 then
         new_charge = 0
     end
-    meta:set_int("charge", new_charge)
+    meta:set_int("charge", math.round(new_charge))
 end
 
 function ship_engine.ship_jump(pos, chrg)
@@ -244,9 +244,9 @@ function ship_engine.spawn_particle(pos, dir_x, dir_y, dir_z, acl_x, acl_y, acl_
         cols = false
     }
 
-    local rx = dir_x * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
-    local ry = dir_y * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
-    local rz = dir_z * prt.vel * -math.random(0.3 * 100, 0.7 * 100) / 100
+    local rx = dir_x * prt.vel * -math.random(30, 70) / 100
+    local ry = dir_y * prt.vel * -math.random(30, 70) / 100
+    local rz = dir_z * prt.vel * -math.random(30, 70) / 100
     core.add_particlespawner({
         amount = amount,
         -- pos = pos,
@@ -283,8 +283,8 @@ function ship_engine.spawn_particle(pos, dir_x, dir_y, dir_z, acl_x, acl_y, acl_
         time = prt.time + 2,
         minexptime = prt.time - math.random(1, 3),
         maxexptime = prt.time,
-        minsize = ((math.random(0.57, 0.63)) * 2 + 1.6) * prt.size,
-        maxsize = ((math.random(0.77, 0.93)) * 2 + 1.6) * prt.size,
+        minsize = ((math.random(57, 63) * 0.01) * 2 + 1.6) * prt.size,
+        maxsize = ((math.random(77, 93) * 0.01) * 2 + 1.6) * prt.size,
         collisiondetection = prt.cols,
         vertical = false,
         texture = texture,
