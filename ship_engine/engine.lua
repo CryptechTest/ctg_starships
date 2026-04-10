@@ -435,10 +435,10 @@ function ship_engine.register_engine(data)
 
     core.register_node(node_name .. "_active", {
         description = machine_desc,
-        tiles = {ltier .. "_" .. tmachine_name .. "_top.png", ltier .. "_" .. tmachine_name .. "_bottom.png",
-                 ltier .. "_" .. tmachine_name .. "_side.png", ltier .. "_" .. tmachine_name .. "_side.png",
-                 ltier .. "_" .. tmachine_name .. "_back_active.png",
-                 ltier .. "_" .. tmachine_name .. "_front_active.png"},
+        tiles = {text_name .. "_top.png", text_name .. "_bottom.png",
+                 text_name .. "_side.png", text_name .. "_side.png",
+                 text_name .. "_back_active.png",
+                 text_name .. "_front_active.png"},
         param = "light",
         paramtype2 = "facedir",
         light_source = 10,
